@@ -557,9 +557,11 @@ document.addEventListener("DOMContentLoaded", () => {
       // Render top card of stack or Out overlay
       const pile = document.getElementById(`stack-pile-${p.id}`);
       if (!isEliminated) {
-        const topCard = p.stack[0];
-        
-        if (isActive) {
+        const isCardSelectable = window.isOnlineGame 
+          ? (p.username === (window.auth.getCurrentUser()?.username) && p.id === activePlayer.id)
+          : (p.id === activePlayer.id);
+
+        if (isCardSelectable) {
           // ACTIVE player sees top card face-up
           // Clicking the card triggers standard play
           const cardEl = createCardElement(topCard, true, handleCardSelection);
@@ -575,9 +577,13 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById(`shuffle-btn-${p.id}`).addEventListener("click", (e) => {
               e.stopPropagation();
               playShuffleSound();
-              game.shuffleStack(p.id);
-              renderSeats();
-              renderLogs();
+              if (window.isOnlineGame) {
+                window.multiplayer.shuffleStack();
+              } else {
+                game.shuffleStack(p.id);
+                renderSeats();
+                renderLogs();
+              }
             });
           }
         } else {
@@ -613,29 +619,43 @@ document.addEventListener("DOMContentLoaded", () => {
         e.stopPropagation();
         const playerId = parseInt(btn.dataset.playerId);
         
+        // Prevent clicking buy buttons on another player's seat during online matches
+        const playerObj = game.players.find(p => p.id === playerId);
+        if (window.isOnlineGame && playerObj && playerObj.username !== window.auth.getCurrentUser()?.username) {
+          return;
+        }
+
         if (btn.classList.contains("free-buy-btn") || btn.classList.contains("coin-buy-btn")) {
-          const res = game.buyStack(playerId);
-          if (res.success) {
+          if (window.isOnlineGame) {
+            window.multiplayer.buyStack();
+          } else {
+            const res = game.buyStack(playerId);
+            if (res.success) {
+              playReadySound();
+              renderSeats();
+              renderScoreboard();
+              renderLogs();
+              
+              // Update HUD elements
+              const activePlayer = game.getCurrentPlayer();
+              if (activePlayer) {
+                hudActivePlayerName.textContent = activePlayer.name;
+                hudRoundNum.textContent = game.roundNumber;
+              }
+            } else {
+              alert(res.error);
+            }
+          }
+        } else if (btn.classList.contains("broke-buy-btn")) {
+          if (window.isOnlineGame) {
+            window.multiplayer.buyCoins();
+          } else {
+            game.buyCoins(playerId);
             playReadySound();
             renderSeats();
             renderScoreboard();
             renderLogs();
-            
-            // Update HUD elements
-            const activePlayer = game.getCurrentPlayer();
-            if (activePlayer) {
-              hudActivePlayerName.textContent = activePlayer.name;
-              hudRoundNum.textContent = game.roundNumber;
-            }
-          } else {
-            alert(res.error);
           }
-        } else if (btn.classList.contains("broke-buy-btn")) {
-          game.buyCoins(playerId);
-          playReadySound();
-          renderSeats();
-          renderScoreboard();
-          renderLogs();
         }
       });
     });
@@ -835,7 +855,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle playing a card from player's selection
   function handleCardSelection(cardInstanceId) {
     playTouchSound();
-    executePlay(cardInstanceId);
+    if (window.isOnlineGame) {
+      window.multiplayer.playCard(cardInstanceId);
+    } else {
+      executePlay(cardInstanceId);
+    }
   }
 
   // Play execution and fly to pot animation
@@ -1351,6 +1375,84 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener("pointerup", endDragSession);
   window.addEventListener("pointercancel", endDragSession);
+
+  // Expose key UI functions to window for multiplayer.js integration
+  window.renderSeats = renderSeats;
+  window.renderPot = renderPot;
+  window.renderScoreboard = renderScoreboard;
+  window.renderLogs = renderLogs;
+  window.createCardElement = createCardElement;
+  window.playTouchSound = playTouchSound;
+  window.playReadySound = playReadySound;
+  window.playShuffleSound = playShuffleSound;
+  window.triggerCoinMergeAnimation = triggerCoinMergeAnimation;
+  window.renderFinalStandings = renderFinalStandings;
+  window.game = game;
+
+  // Bind Online Lobby Navigation & Action Buttons
+  const playOnlineBtn = document.getElementById("play-online-btn");
+  if (playOnlineBtn) {
+    playOnlineBtn.addEventListener("click", () => {
+      playTouchSound();
+      window.multiplayer.showScreen("online-lobby-screen");
+    });
+  }
+
+  const linkOnlineToDashboard = document.getElementById("link-online-to-dashboard");
+  if (linkOnlineToDashboard) {
+    linkOnlineToDashboard.addEventListener("click", (e) => {
+      e.preventDefault();
+      playTouchSound();
+      window.multiplayer.showScreen("dashboard-screen");
+    });
+  }
+
+  const onlineCreateRoomBtn = document.getElementById("online-create-room-btn");
+  if (onlineCreateRoomBtn) {
+    onlineCreateRoomBtn.addEventListener("click", () => {
+      playTouchSound();
+      window.multiplayer.createRoom();
+    });
+  }
+
+  const onlineJoinRoomBtn = document.getElementById("online-join-room-btn");
+  if (onlineJoinRoomBtn) {
+    onlineJoinRoomBtn.addEventListener("click", () => {
+      playTouchSound();
+      window.multiplayer.joinRoom();
+    });
+  }
+
+  const linkWaitingToLobby = document.getElementById("link-waiting-to-lobby");
+  if (linkWaitingToLobby) {
+    linkWaitingToLobby.addEventListener("click", (e) => {
+      e.preventDefault();
+      playTouchSound();
+      window.multiplayer.leaveRoom();
+    });
+  }
+
+  const onlineStartMatchBtn = document.getElementById("online-start-match-btn");
+  if (onlineStartMatchBtn) {
+    onlineStartMatchBtn.addEventListener("click", () => {
+      playTouchSound();
+      window.multiplayer.startMatch();
+    });
+  }
+
+  const onlineBetSelector = document.getElementById("online-bet-selector");
+  if (onlineBetSelector) {
+    const betBtns = onlineBetSelector.querySelectorAll(".bet-opt-btn");
+    betBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        betBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        playCycleSound();
+        const val = parseInt(btn.dataset.val);
+        window.multiplayer.updateBetVote(val);
+      });
+    });
+  }
 
   // Initialize view
   renderPlayerSetupFields();

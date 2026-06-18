@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1.2.0">
+  <link rel="stylesheet" href="styles.css?v=1.4.0">
 </head>
 <body>
 
@@ -121,8 +121,70 @@
 
         <div class="dashboard-actions">
           <button type="button" id="play-offline-btn" class="btn primary-btn play-mode-btn">Play Offline Game<span class="btn-sub">Local Pass-and-Play (2-6 Players)</span></button>
-          <button type="button" id="play-online-btn" class="btn secondary-btn play-mode-btn disabled-btn" style="opacity: 0.6; cursor: not-allowed;">Play Online Game<span class="btn-sub">Multiplayer Lobby (Coming Soon)</span></button>
+          <button type="button" id="play-online-btn" class="btn secondary-btn play-mode-btn">Play Online Game<span class="btn-sub">Multiplayer Lobby (Real-time Rooms)</span></button>
         </div>
+      </div>
+    </section>
+
+    <!-- ONLINE MULTIPLAYER LOBBY SCREEN -->
+    <section id="online-lobby-screen" class="screen-view hidden">
+      <div class="glass-container auth-box">
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <h1 class="app-title">Online Lobby</h1>
+          <p class="app-tagline">Create or Join a Room</p>
+        </header>
+
+        <div class="online-choice-container">
+          <button type="button" id="online-create-room-btn" class="btn primary-btn play-mode-btn">Create New Room<span class="btn-sub">Start as Host and get a Room Code</span></button>
+          
+          <div class="lobby-divider">OR</div>
+
+          <div class="form-group">
+            <label for="online-join-code">Enter Room Code</label>
+            <input type="text" id="online-join-code" class="auth-input text-center" maxlength="5" placeholder="e.g. XDFRE" style="text-transform: uppercase;">
+          </div>
+          <button type="button" id="online-join-room-btn" class="btn secondary-btn play-mode-btn">Join Existing Room<span class="btn-sub">Enter code to join friends</span></button>
+        </div>
+
+        <p class="auth-toggle-lbl"><a href="#" id="link-online-to-dashboard">Back to Dashboard</a></p>
+      </div>
+    </section>
+
+    <!-- ONLINE ROOM WAITING SCREEN -->
+    <section id="online-waiting-screen" class="screen-view hidden">
+      <div class="glass-container setup-box">
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <h1 class="app-title">Waiting Room</h1>
+          <div class="room-code-badge">Room Code: <strong id="lobby-room-code-lbl">-----</strong></div>
+        </header>
+
+        <div class="lobby-players-section">
+          <h3>Joined Players (<span id="lobby-player-count">0</span> / 6)</h3>
+          <ul id="lobby-players-list" class="lobby-players-list">
+            <!-- Joined players rendered dynamically -->
+          </ul>
+        </div>
+
+        <div class="form-group mt-3">
+          <label>Your Match Bet Selection:</label>
+          <div class="player-bet-selector centered-bet-selector" id="online-bet-selector" style="justify-content: center; margin-top: 10px;">
+            <button type="button" class="bet-opt-btn active" data-val="25">25</button>
+            <button type="button" class="bet-opt-btn" data-val="50">50</button>
+            <button type="button" class="bet-opt-btn" data-val="75">75</button>
+            <button type="button" class="bet-opt-btn" data-val="100">100</button>
+          </div>
+          <p class="form-hint-info text-center mt-2">Consensus bet resolved from player votes on start.</p>
+        </div>
+
+        <div class="form-actions mt-4">
+          <!-- Visible to all, but only Host can start -->
+          <button type="button" id="online-start-match-btn" class="btn primary-btn pulse-anim" style="display: none; width: 100%;">Start Online Match</button>
+          <div id="online-host-msg" class="lobby-waiting-msg text-center mt-2">Waiting for Host to start match...</div>
+        </div>
+
+        <p class="auth-toggle-lbl"><a href="#" id="link-waiting-to-lobby">Leave Room</a></p>
       </div>
     </section>
 
@@ -289,10 +351,15 @@
 
   </div>
 
+  <!-- Firebase Compat Libraries -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
   <!-- Scripts -->
-  <script src="js/config.js?v=1.2.0"></script>
-  <script src="js/auth.js?v=1.2.0"></script>
-  <script src="js/game-logic.js?v=1.2.0"></script>
-  <script src="js/ui-rendering.js?v=1.2.0"></script>
+  <script src="js/config.js?v=1.4.0"></script>
+  <script src="js/auth.js?v=1.4.0"></script>
+  <script src="js/game-logic.js?v=1.4.0"></script>
+  <script src="js/ui-rendering.js?v=1.4.0"></script>
+  <script src="js/multiplayer.js?v=1.4.0"></script>
 </body>
 </html>
