@@ -1454,6 +1454,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const lobbyConfigDbBtn = document.getElementById("lobby-config-db-btn");
+  if (lobbyConfigDbBtn) {
+    lobbyConfigDbBtn.addEventListener("click", () => {
+      playTouchSound();
+      window.multiplayer.openDbConfigModal();
+    });
+  }
+
+  const dbConfigCloseBtn = document.getElementById("db-config-close-btn");
+  if (dbConfigCloseBtn) {
+    dbConfigCloseBtn.addEventListener("click", () => {
+      playTouchSound();
+      window.multiplayer.closeDbConfigModal();
+    });
+  }
+
+  const dbConfigSaveBtn = document.getElementById("db-config-save-btn");
+  if (dbConfigSaveBtn) {
+    dbConfigSaveBtn.addEventListener("click", () => {
+      playTouchSound();
+      const urlInput = document.getElementById("db-config-url");
+      if (urlInput) {
+        window.multiplayer.saveDbConfig(urlInput.value);
+      }
+    });
+  }
+
   // Initialize view
   renderPlayerSetupFields();
 });

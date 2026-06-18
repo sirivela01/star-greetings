@@ -7,10 +7,14 @@ class MultiplayerManager {
     this.isHost = false;
     this.currentUser = null;
     this.lastActionTimestamp = 0;
+    this.db = null;
+    
+    // Check if user has saved a custom database URL in localStorage
+    const savedUrl = localStorage.getItem("star_greetings_firebase_url");
     
     // Default public Firebase Config for out-of-the-box operation
     this.firebaseConfig = {
-      databaseURL: "https://star-greetings-default-default-rtdb.asia-southeast1.firebasedatabase.app"
+      databaseURL: savedUrl || "https://star-greetings-default-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
 
     this.initFirebase();
@@ -18,12 +22,72 @@ class MultiplayerManager {
 
   initFirebase() {
     try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(this.firebaseConfig);
+      this.db = null;
+      if (typeof firebase === 'undefined') {
+        console.error("Firebase is not loaded.");
+        return;
       }
-      this.db = firebase.database();
+      
+      // Initialize Firebase app or use existing one
+      if (firebase.apps.length > 0) {
+        // Since we only change databaseURL, we can re-use or re-initialize
+        this.db = firebase.database();
+      } else {
+        firebase.initializeApp(this.firebaseConfig);
+        this.db = firebase.database();
+      }
     } catch (e) {
       console.error("Failed to initialize Firebase:", e);
+    }
+  }
+
+  // Promise Timeout helper to prevent hanging on write errors or DNS failures
+  withTimeout(promise, ms = 4500) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Database connection timed out. Please check your database settings and internet connection.")), ms))
+    ]);
+  }
+
+  // Open Database config modal
+  openDbConfigModal() {
+    const modal = document.getElementById("db-config-modal");
+    const input = document.getElementById("db-config-url");
+    if (modal && input) {
+      input.value = localStorage.getItem("star_greetings_firebase_url") || this.firebaseConfig.databaseURL;
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
+    }
+  }
+
+  closeDbConfigModal() {
+    const modal = document.getElementById("db-config-modal");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+    }
+  }
+
+  async saveDbConfig(url) {
+    const cleanUrl = url.trim();
+    if (!cleanUrl.startsWith("https://")) {
+      alert("Invalid URL. Must start with https://");
+      return;
+    }
+    
+    localStorage.setItem("star_greetings_firebase_url", cleanUrl);
+    this.firebaseConfig.databaseURL = cleanUrl;
+    
+    try {
+      if (firebase.apps.length > 0) {
+        await firebase.app().delete();
+      }
+      firebase.initializeApp(this.firebaseConfig);
+      this.db = firebase.database();
+      alert("Database settings updated and connected successfully!");
+      this.closeDbConfigModal();
+    } catch (e) {
+      alert("Failed to initialize with new URL: " + e.message);
     }
   }
 
@@ -54,6 +118,12 @@ class MultiplayerManager {
 
   // Create a new room
   async createRoom() {
+    if (!this.db) {
+      alert("Firebase Database is not configured or failed to initialize. Please enter your database settings.");
+      this.openDbConfigModal();
+      return;
+    }
+
     this.currentUser = window.auth.getCurrentUser();
     if (!this.currentUser) {
       alert("Please log in first.");
@@ -83,7 +153,7 @@ class MultiplayerManager {
 
     try {
       this.roomRef = this.db.ref(`rooms/${this.roomCode}`);
-      await this.roomRef.set(roomData);
+      await this.withTimeout(this.roomRef.set(roomData));
       
       // Setup listener
       this.listenToRoom();
@@ -93,11 +163,18 @@ class MultiplayerManager {
       this.showScreen("online-waiting-screen");
     } catch (e) {
       alert("Failed to create room: " + e.message);
+      this.openDbConfigModal();
     }
   }
 
   // Join an existing room
   async joinRoom() {
+    if (!this.db) {
+      alert("Firebase Database is not configured or failed to initialize. Please enter your database settings.");
+      this.openDbConfigModal();
+      return;
+    }
+
     const codeInput = document.getElementById("online-join-code");
     const code = codeInput.value.trim().toUpperCase();
     if (!code || code.length !== 5) {
@@ -118,7 +195,7 @@ class MultiplayerManager {
 
     try {
       this.roomRef = this.db.ref(`rooms/${this.roomCode}`);
-      const snapshot = await this.roomRef.once("value");
+      const snapshot = await this.withTimeout(this.roomRef.once("value"));
       
       if (!snapshot.exists()) {
         alert("Room code not found!");
@@ -142,14 +219,14 @@ class MultiplayerManager {
       const avatarUrl = `assets/avatars/avatar_${avatarIdx + 1}.png`;
 
       // Add current player to room
-      await this.roomRef.child(`players/${this.currentUser.username}`).set({
+      await this.withTimeout(this.roomRef.child(`players/${this.currentUser.username}`).set({
         name: this.currentUser.name,
         username: this.currentUser.username,
         avatar: avatarUrl,
         coins: this.currentUser.coins,
         betVote: 25,
         joinedAt: firebase.database.ServerValue.TIMESTAMP
-      });
+      }));
 
       // Setup listener
       this.listenToRoom();
@@ -159,6 +236,7 @@ class MultiplayerManager {
       this.showScreen("online-waiting-screen");
     } catch (e) {
       alert("Failed to join room: " + e.message);
+      this.openDbConfigModal();
     }
   }
 
