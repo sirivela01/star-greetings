@@ -1179,8 +1179,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // Restart/Play Again clicked
   restartGameBtn.addEventListener("click", () => {
     endScreen.classList.add("hidden");
-    setupScreen.classList.remove("hidden");
-    renderPlayerSetupFields();
+    
+    // Redirect to dashboard and sync coins won/lost during the match
+    const dashboardView = document.getElementById("dashboard-screen");
+    if (dashboardView && window.auth) {
+      dashboardView.classList.remove("hidden");
+      const user = window.auth.getCurrentUser();
+      if (user) {
+        const playerObj = game.players.find(p => p.name === user.name);
+        if (playerObj) {
+          const accounts = window.auth.getAccounts();
+          accounts[user.username].coins = playerObj.coins;
+          window.auth.saveAccounts(accounts);
+        }
+      }
+      // Re-trigger auth initialization to refresh profile stats on dashboard
+      const updatedUser = window.auth.getCurrentUser();
+      if (updatedUser) {
+        document.getElementById("dashboard-profile-name").textContent = updatedUser.name;
+        document.getElementById("dashboard-profile-coins").textContent = updatedUser.coins;
+      }
+    } else {
+      setupScreen.classList.remove("hidden");
+      renderPlayerSetupFields();
+    }
   });
 
   // Seat adjustment event delegation (Front/Back)
