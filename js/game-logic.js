@@ -333,6 +333,23 @@ class GameState {
     return { success: true };
   }
 
+  // Shuffle player's stack
+  shuffleStack(playerId) {
+    const player = this.players.find(p => p.id === playerId);
+    if (!player || player.stackCount <= 1) return { error: "Cannot shuffle stack" };
+
+    // Fisher-Yates shuffle algorithm
+    for (let i = player.stack.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = player.stack[i];
+      player.stack[i] = player.stack[j];
+      player.stack[j] = temp;
+    }
+
+    this.addLog(`${player.name} shuffled their greetings stack.`);
+    return { success: true };
+  }
+
   // Refill coins
   buyCoins(playerId) {
     const player = this.players.find(p => p.id === playerId);

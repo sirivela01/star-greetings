@@ -163,6 +163,37 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {}
   }
 
+  // Synthesize a card shuffling sound using the Web Audio API
+  function playShuffleSound() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Play 8 rapid click/rustle sweeps to mimic shuffling cards
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          
+          // Noise-like triangle/sine waves
+          oscillator.type = i % 2 === 0 ? 'triangle' : 'sine';
+          
+          const startFreq = 200 + Math.random() * 400;
+          oscillator.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.05);
+          
+          gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+          
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.06);
+        }, i * 60);
+      }
+    } catch (e) {}
+  }
+
   // Trigger coin merging flying animation from all player avatars to the center pot
   function triggerCoinMergeAnimation() {
     const potFelt = document.querySelector(".pot-felt-ring");
@@ -534,16 +565,19 @@ document.addEventListener("DOMContentLoaded", () => {
           const cardEl = createCardElement(topCard, true, handleCardSelection);
           pile.appendChild(cardEl);
           
-          // Add strategic choice button if FORCED_TOP_DRAW is false and player has multiple cards
-          if (!game.config.FORCED_TOP_DRAW && p.stackCount > 1) {
+          // Add shuffle button if player has multiple cards
+          if (p.stackCount > 1) {
             const actionOverlay = document.createElement("div");
             actionOverlay.className = "stack-action-overlay";
-            actionOverlay.innerHTML = `<button type="button" class="btn secondary-btn" id="browse-btn-${p.id}">Browse Stack</button>`;
+            actionOverlay.innerHTML = `<button type="button" class="btn secondary-btn" id="shuffle-btn-${p.id}">🔀 Shuffle</button>`;
             seat.appendChild(actionOverlay);
             
-            document.getElementById(`browse-btn-${p.id}`).addEventListener("click", (e) => {
+            document.getElementById(`shuffle-btn-${p.id}`).addEventListener("click", (e) => {
               e.stopPropagation();
-              openPrivateHandModal();
+              playShuffleSound();
+              game.shuffleStack(p.id);
+              renderSeats();
+              renderLogs();
             });
           }
         } else {

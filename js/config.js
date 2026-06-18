@@ -3,7 +3,7 @@ const STAR_CONFIG = {
   // Mode selection:
   // - false: Player can choose any card from their hand (strategic/bluffing)
   // - true: Forced top-card draw (random draw from their stack)
-  FORCED_TOP_DRAW: false,
+  FORCED_TOP_DRAW: true,
   
   // Placement of played cards:
   // - "middle": Tossed in the center of the table (pot pile)
