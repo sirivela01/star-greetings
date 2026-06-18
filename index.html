@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Star Greetings - A highly engaging, fast-paced local multiplayer memory and bluffing card game themed around Tollywood, Bollywood, and Hollywood stars.">
+  <title>Star Greetings - Card Party Game</title>
+  <!-- Google Fonts: Outfit and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=1.1.0">
+</head>
+<body>
+
+  <!-- Game Container -->
+  <div id="app-root">
+
+    <!-- SETUP SCREEN -->
+    <section id="setup-screen" class="screen-view">
+      <div class="glass-container setup-box">
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <h1 class="app-title">Star Greetings</h1>
+          <p class="app-tagline">The Tollywood, Bollywood & Hollywood Card Party Game</p>
+        </header>
+
+        <form id="game-setup-form" onsubmit="return false;">
+          <h2 class="section-title">Configure Game</h2>
+
+          <!-- Stack Size Selection (Locked to 30) -->
+          <div class="form-group">
+            <label for="starting-stack">Starting Cards per Player:</label>
+            <div class="input-slider-group">
+              <input type="number" id="starting-stack" value="30" readonly style="opacity: 0.75; cursor: not-allowed; background: rgba(0,0,0,0.5);">
+              <span class="info-lbl">(Locked to 30 cards per stack)</span>
+            </div>
+          </div>
+
+          <!-- Card Placement Config -->
+          <div class="form-group">
+            <label for="placement-mode">Card Play Location:</label>
+            <select id="placement-mode" class="form-select">
+              <option value="middle" selected>1. Put the greetings at the middle</option>
+              <option value="near">2. Put the greeting near to player on a round table</option>
+            </select>
+          </div>
+
+          <!-- Players Input Area with Avatar Picker -->
+          <div class="form-group">
+            <label>Players & Avatars (2 - 6):</label>
+            <p class="form-hint-info">Click the avatar circles to cycle characters!</p>
+            <div id="players-setup-container">
+              <!-- Dynamically populated with Name inputs and Avatar cyclers -->
+            </div>
+            <button type="button" id="add-player-btn" class="btn secondary-btn">+ Add Player</button>
+          </div>
+
+          <!-- Start Action -->
+          <div class="form-actions">
+            <button type="button" id="start-game-btn" class="btn primary-btn pulse-anim">Start Party Game</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- GAME BOARD SCREEN -->
+    <section id="game-screen" class="screen-view hidden">
+      <div class="tabletop-container">
+        
+        <!-- Game HUD Top Bar -->
+        <header class="game-hud-bar">
+          <div class="hud-logo">★ Star Greetings</div>
+          <div class="hud-status">
+            <span class="hud-round-tag">Round <strong id="hud-round-num">1</strong></span>
+            <span class="hud-bet-tag">Bet: <strong id="hud-bet-amt">🪙25</strong></span>
+            <span class="hud-turn-indicator">Turn: <strong id="hud-active-player-name">Player</strong></span>
+          </div>
+          <button type="button" id="drawer-toggle-btn" class="btn secondary-btn hud-drawer-btn">📜 Logs & Standings</button>
+        </header>
+
+        <!-- Round Table Surface Area -->
+        <div class="table-surface-wrapper">
+          <div id="round-table" class="game-round-table">
+            
+            <!-- Center Pot Pile -->
+            <div class="pot-center-area">
+              <div class="pot-felt-ring">
+                <span class="pot-count-badge" id="pot-count-lbl">0 Cards</span>
+              </div>
+              <div id="pot-cards-container" class="pot-scattered-pile">
+                <!-- Stacked played cards fanned here -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Seated Players Container -->
+          <div id="seats-container" class="players-seats-overlay">
+            <!-- Absolutely positioned player seats rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Slide-out Sidebar Drawer -->
+        <aside id="side-drawer" class="side-drawer glass-container hidden-drawer">
+          <div class="drawer-header">
+            <h3>Leaderboard & Logs</h3>
+            <button type="button" id="drawer-close-btn" class="drawer-close">&times;</button>
+          </div>
+          
+          <div class="drawer-body">
+            <div class="drawer-section">
+              <h4>Leaderboard</h4>
+              <ul id="scoreboard-list" class="sidebar-list">
+                <!-- Scores loaded here -->
+              </ul>
+            </div>
+            
+            <div class="drawer-section log-section">
+              <h4>Round History</h4>
+              <div id="game-log-list" class="log-container">
+                <!-- Logs loaded here -->
+              </div>
+            </div>
+          </div>
+
+          <div class="drawer-footer">
+            <button type="button" id="end-game-btn" class="btn danger-btn">End Game</button>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- PRIVATE HAND BROWSER MODAL (Strategic Mode) -->
+    <div id="private-hand-modal" class="modal-overlay hidden" style="display: none;">
+      <div class="modal-content-box glass-container animate-scale">
+        <header class="modal-header">
+          <h2>Your Hand</h2>
+          <p>Choose a card from your stack to place on top and play:</p>
+          <button type="button" id="modal-close-btn" class="modal-close-x">&times;</button>
+        </header>
+        <div id="modal-hand-container" class="modal-hand-scroll">
+          <!-- Full hand cards rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- END GAME RESULTS SCREEN -->
+    <section id="end-screen" class="screen-view hidden">
+      <div class="glass-container results-box">
+        <header class="results-header">
+          <div class="trophy-icon">🏆</div>
+          <h1 class="results-title">Game Over!</h1>
+          <p class="results-tagline">Here are the final standings:</p>
+        </header>
+
+        <div id="final-standings-list" class="standings-table">
+          <!-- Standings loaded here -->
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="restart-game-btn" class="btn primary-btn">Play Again</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PASS-AND-PLAY SHIELD OVERLAY -->
+    <div id="shield-overlay" class="overlay-shield hidden" style="display: none;">
+      <div class="shield-box glass-container animate-scale">
+        <div class="shield-eye">👁️</div>
+        <h2>Pass the Screen</h2>
+        <p>Give the device to:</p>
+        <div id="shield-player-name" class="shield-name-highlight">Player X</div>
+        <p class="shield-warning">No peeping allowed! Press the button below when ready.</p>
+        <button type="button" id="shield-ready-btn" class="btn primary-btn">I am Ready</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js?v=1.1.0"></script>
+  <script src="js/game-logic.js?v=1.1.0"></script>
+  <script src="js/ui-rendering.js?v=1.1.0"></script>
+</body>
+</html>

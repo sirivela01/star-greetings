@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Star Greetings - Unit Tests</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 30px;
+      margin: 0;
+    }
+    h1 {
+      color: #f8fafc;
+      font-size: 24px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 10px;
+    }
+    .test-case {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 5px solid #64748b;
+    }
+    .test-case.pass {
+      border-left-color: #10b981;
+    }
+    .test-case.fail {
+      border-left-color: #ef4444;
+    }
+    .test-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .pass .status-badge {
+      background: #064e3b;
+      color: #6ee7b7;
+    }
+    .fail .status-badge {
+      background: #7f1d1d;
+      color: #fca5a5;
+    }
+    .details {
+      font-family: monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      white-space: pre-wrap;
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+    .summary {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .summary.all-pass {
+      background: #064e3b;
+      color: #a7f3d0;
+    }
+    .summary.some-fail {
+      background: #7f1d1d;
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Star Greetings - JS Game Engine Unit Tests</h1>
+  <div id="summary-box">Running tests...</div>
+  <div id="test-results"></div>
+
+  <!-- Import source files -->
+  <script src="js/config.js"></script>
+  <script src="js/game-logic.js"></script>
+
+  <!-- Test suite runner -->
+  <script>
+    const resultsContainer = document.getElementById("test-results");
+    const summaryBox = document.getElementById("summary-box");
+    
+    let passedCount = 0;
+    let failedCount = 0;
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message || "Assertion failed");
+      }
+    }
+
+    function runTest(name, testFn) {
+      const testEl = document.createElement("div");
+      testEl.className = "test-case";
+      
+      try {
+        testFn();
+        passedCount++;
+        testEl.classList.add("pass");
+        testEl.innerHTML = `
+          <div class="test-name">
+            <span>${name}</span>
+            <span class="status-badge">Pass</span>
+          </div>
+        `;
+      } catch (error) {
+        failedCount++;
+        testEl.classList.add("fail");
+        testEl.innerHTML = `
+          <div class="test-name">
+            <span>${name}</span>
+            <span class="status-badge">Fail</span>
+          </div>
+          <div class="details">${error.message}\n${error.stack}</div>
+        `;
+      }
+      
+      resultsContainer.appendChild(testEl);
+    }
+
+    // --- TEST DEFINITIONS ---
+
+    runTest("1. Game Initialization", () => {
+      const state = new GameState(window.STAR_CONFIG);
+      state.initializeGame(["Alice", "Bob", "Charlie"], 30);
+      
+      assert(state.players.length === 3, "Should create 3 players");
+      assert(state.players[0].name === "Alice", "Player 0 should be Alice");
+      assert(state.players[1].name === "Bob", "Player 1 should be Bob");
+      assert(state.players[2].name === "Charlie", "Player 2 should be Charlie");
+      
+      assert(state.players[0].stack.length === 30, "Alice should start with 30 cards");
+      assert(state.players[1].stack.length === 30, "Bob should start with 30 cards");
+      assert(state.players[2].stack.length === 30, "Charlie should start with 30 cards");
+      
+      assert(state.pot.length === 0, "Pot should start empty");
+      assert(state.currentPlayerIndex === 0, "Should start with Player 0 (Alice)");
+      assert(state.roundNumber === 1, "Should start at Round 1");
+      assert(state.isGameOver === false, "Game should not be over");
+    });
+
+    runTest("2. Play Card - No Match (Free Hand Mode)", () => {
+      const state = new GameState(window.STAR_CONFIG);
+      state.initializeGame(["Alice", "Bob"], 10);
+      
+      // Inject deterministic cards to avoid randomness in tests
+      const starRoster = window.STAR_CONFIG.roster;
+      const cardAlice = new CardInstance(starRoster[0], "alice_card_1"); // Prabhas
+      const cardBob = new CardInstance(starRoster[1], "bob_card_1"); // Mahesh Babu
+      
+      state.players[0].stack = [cardAlice];
+      state.players[1].stack = [cardBob];
+      
+      // Alice plays cardAlice
+      const outcome = state.playCard("alice_card_1");
+      
+      assert(outcome.hasMatch === false, "Should not be a match");
+      assert(state.pot.length === 1, "Pot should contain 1 card");
+      assert(state.pot[0].instanceId === "alice_card_1", "Pot card should be Alice's card");
+      assert(state.players[0].stack.length === 0, "Alice's stack should be empty");
+      assert(state.currentPlayerIndex === 1, "Turn should rotate to Bob");
+    });
+
+    runTest("3. Play Card - Match and Win Pot", () => {
+      const state = new GameState(window.STAR_CONFIG);
+      state.initializeGame(["Alice", "Bob", "Charlie"], 10);
+      
+      const starRoster = window.STAR_CONFIG.roster;
+      
+      const starPrabhas = starRoster.find(s => s.id === "prabhas");
+      const starZendaya = starRoster.find(s => s.id === "zendaya");
+      
+      const cardAlice = new CardInstance(starZendaya, "alice_card_1");
+      const cardAliceExtra = new CardInstance(starPrabhas, "alice_card_extra");
+      const cardBob = new CardInstance(starPrabhas, "bob_card_1");
+      const cardBobExtra = new CardInstance(starPrabhas, "bob_card_extra");
+      const cardCharlie = new CardInstance(starPrabhas, "charlie_card_1");
+      const cardCharlieExtra = new CardInstance(starZendaya, "charlie_card_extra");
+      
+      state.players[0].stack = [cardAlice, cardAliceExtra];
+      state.players[1].stack = [cardBob, cardBobExtra];
+      state.players[2].stack = [cardCharlie, cardCharlieExtra];
+      
+      // 1. Alice plays Zendaya
+      state.playCard("alice_card_1");
+      assert(state.pot.length === 1, "Pot should have 1 card");
+      assert(state.currentPlayerIndex === 1, "Turn should be Bob");
+      
+      // 2. Bob plays Prabhas (no match)
+      state.playCard("bob_card_1");
+      assert(state.pot.length === 2, "Pot should have 2 cards");
+      assert(state.currentPlayerIndex === 2, "Turn should be Charlie");
+      
+      // 3. Charlie plays Prabhas (matches Bob's Prabhas)
+      const outcome = state.playCard("charlie_card_1");
+      
+      assert(outcome.hasMatch === true, "Should be a match!");
+      assert(outcome.wonCount === 2, "Charlie should win 2 cards from the pot");
+      assert(outcome.matchedWith.instanceId === "bob_card_1", "Should have matched Bob's Prabhas");
+      
+      // Verify Pot is cleared
+      assert(state.pot.length === 0, "Pot should be empty after win");
+      
+      // Verify Charlie's stack got Alice's and Bob's cards from the pot, and Charlie's own played card is returned
+      // Charlie started with 2, played 1 (charlie_card_1), won 2 (alice_card_1, bob_card_1) -> 2 - 1 + 2 + 1 = 4
+      assert(state.players[2].stack.length === 4, "Charlie's stack should contain 4 cards now");
+      const charlieCardIds = state.players[2].stack.map(c => c.instanceId);
+      assert(charlieCardIds.includes("alice_card_1"), "Charlie should have Alice's card");
+      assert(charlieCardIds.includes("bob_card_1"), "Charlie should have Bob's card");
+      assert(charlieCardIds.includes("charlie_card_1"), "Charlie's played card should be returned to stack");
+      
+      // Verify round number remains 1
+      assert(state.roundNumber === 1, "Round should remain at 1 after match win");
+      
+      // Verify turn order remains with the winner (Charlie, index 2) to start the new round
+      assert(state.currentPlayerIndex === 2, "Winner starts the new round. Next turn should remain with Charlie");
+    });
+
+    runTest("4. Skipping Eliminated Players", () => {
+      const state = new GameState(window.STAR_CONFIG);
+      state.initializeGame(["Alice", "Bob", "Charlie"], 10);
+      
+      const starRoster = window.STAR_CONFIG.roster;
+      const cardAlice = new CardInstance(starRoster[0], "alice_card_1");
+      const cardCharlie = new CardInstance(starRoster[1], "charlie_card_1");
+      
+      state.players[0].stack = [cardAlice];
+      state.players[1].stack = []; // Bob is eliminated (0 cards)
+      state.players[2].stack = [cardCharlie];
+      
+      // Alice plays card
+      state.playCard("alice_card_1");
+      
+      // Turn should skip Bob (index 1) and go straight to Charlie (index 2)
+      assert(state.currentPlayerIndex === 2, "Turn should skip Bob and go to Charlie");
+    });
+
+    runTest("5. Forced Top-Card Draw Mode Config", () => {
+      // Toggle config
+      const customConfig = {
+        FORCED_TOP_DRAW: true,
+        roster: window.STAR_CONFIG.roster
+      };
+      const state = new GameState(customConfig);
+      state.initializeGame(["Alice", "Bob"], 10);
+      
+      const starRoster = window.STAR_CONFIG.roster;
+      const firstCard = state.players[0].stack[0]; // Top card
+      
+      // Play card without specifying ID (Forced Top Draw)
+      const outcome = state.playCard();
+      
+      assert(outcome.playedCard.instanceId === firstCard.instanceId, "Should play the top card of the stack");
+    });
+
+    // --- RENDER SUMMARY ---
+    if (failedCount === 0) {
+      summaryBox.className = "summary all-pass";
+      summaryBox.textContent = `All ${passedCount} tests passed successfully!`;
+    } else {
+      summaryBox.className = "summary some-fail";
+      summaryBox.textContent = `${failedCount} tests failed. ${passedCount} passed.`;
+    }
+  </script>
+</body>
+</html>
