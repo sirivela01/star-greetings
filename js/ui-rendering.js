@@ -1458,7 +1458,15 @@ document.addEventListener("DOMContentLoaded", () => {
   if (lobbyConfigDbBtn) {
     lobbyConfigDbBtn.addEventListener("click", () => {
       playTouchSound();
-      window.multiplayer.openDbConfigModal();
+      try {
+        if (!window.multiplayer) {
+          alert("Multiplayer manager not initialized yet!");
+          return;
+        }
+        window.multiplayer.openDbConfigModal();
+      } catch (err) {
+        alert("Settings Error: " + err.message);
+      }
     });
   }
 
@@ -1466,7 +1474,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dbConfigCloseBtn) {
     dbConfigCloseBtn.addEventListener("click", () => {
       playTouchSound();
-      window.multiplayer.closeDbConfigModal();
+      try {
+        if (window.multiplayer) window.multiplayer.closeDbConfigModal();
+      } catch (err) {
+        console.error(err);
+      }
     });
   }
 
@@ -1474,9 +1486,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dbConfigSaveBtn) {
     dbConfigSaveBtn.addEventListener("click", () => {
       playTouchSound();
-      const urlInput = document.getElementById("db-config-url");
-      if (urlInput) {
-        window.multiplayer.saveDbConfig(urlInput.value);
+      try {
+        const urlInput = document.getElementById("db-config-url");
+        if (urlInput && window.multiplayer) {
+          window.multiplayer.saveDbConfig(urlInput.value);
+        }
+      } catch (err) {
+        alert("Save Error: " + err.message);
       }
     });
   }
