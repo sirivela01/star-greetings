@@ -506,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="player-avatar-wrapper">
           <img src="${p.avatar}" alt="${p.name}" draggable="false">
           ${isActive ? `<span class="player-seat-active-badge">Playing</span>` : ""}
-          ${p.id === 0 ? `<span class="player-seat-starter-badge" title="Starter (Played First)">⭐ Starter</span>` : ""}
+          ${p.id === game.currentPotStarterIndex ? `<span class="player-seat-starter-badge" title="Starter (Played First)">⭐ Starter</span>` : ""}
         </div>
         <div class="player-seat-info">
           <span class="player-seat-name">${p.name}</span>

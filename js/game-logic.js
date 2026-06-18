@@ -40,6 +40,7 @@ class GameState {
     this.globalInstanceCounter = 0;
     this.matchBet = 0;
     this.isBetDeductedForCurrentPot = false;
+    this.currentPotStarterIndex = 0;
   }
 
   // Set up the game with player names and stack size
@@ -99,6 +100,7 @@ class GameState {
 
     // Start with the first player
     this.currentPlayerIndex = 0;
+    this.currentPotStarterIndex = 0;
     this.addLog(`Game started with ${this.players.length} players. Match Bet resolved to 🪙${this.matchBet} from player votes.`);
   }
 
@@ -158,6 +160,7 @@ class GameState {
         p.coins -= this.matchBet;
       });
       this.isBetDeductedForCurrentPot = true;
+      this.currentPotStarterIndex = this.currentPlayerIndex;
       this.addLog(`New card matchup started. All active players bet 🪙${this.matchBet}.`);
     }
 
