@@ -880,6 +880,7 @@ GameState.prototype.deserialize = function(data) {
   this.isBetDeductedForCurrentPot = data.isBetDeductedForCurrentPot;
   this.currentPotStarterIndex = data.currentPotStarterIndex;
   
+  const oldPlayers = this.players || [];
   this.players = (data.players || []).map(p => {
     const player = new Player(p.name, p.id);
     player.username = p.username;
@@ -891,8 +892,9 @@ GameState.prototype.deserialize = function(data) {
       card.playedBy = c.playedBy;
       return card;
     });
-    player.radiusOffset = p.radiusOffset || 0;
-    player.angleOffset = p.angleOffset || 0;
+    const existingPlayer = oldPlayers.find(ep => ep.id === p.id);
+    player.radiusOffset = existingPlayer ? (existingPlayer.radiusOffset || 0) : (p.radiusOffset || 0);
+    player.angleOffset = existingPlayer ? (existingPlayer.angleOffset || 0) : (p.angleOffset || 0);
     return player;
   });
 };

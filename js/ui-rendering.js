@@ -595,22 +595,12 @@ document.addEventListener("DOMContentLoaded", () => {
           pile.appendChild(cardEl);
         }
       } else {
-        // Render arcade-style Buy Stack overlay
+        // Render ELIMINATED overlay (no buying allowed during match to guarantee a winner)
         const buyOverlay = document.createElement("div");
         buyOverlay.className = "buy-stack-overlay";
-        
-        let buttonHtml = "";
-        if (p.freeStackBuys > 0) {
-          buttonHtml = `<button type="button" class="btn buy-btn free-buy-btn" data-player-id="${p.id}">Free Stack<br><span class="btn-sub">${p.freeStackBuys} left</span></button>`;
-        } else if (p.coins >= 100) {
-          buttonHtml = `<button type="button" class="btn buy-btn coin-buy-btn" data-player-id="${p.id}">Buy Stack<br><span class="btn-sub">🪙 100 Coins</span></button>`;
-        } else {
-          buttonHtml = `<button type="button" class="btn buy-btn broke-buy-btn" data-player-id="${p.id}">Get 300 Coins<br><span class="btn-sub">Free Coins</span></button>`;
-        }
-        
         buyOverlay.innerHTML = `
-          <div class="buy-overlay-title">OUT</div>
-          ${buttonHtml}
+          <div class="buy-overlay-title" style="color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">ELIMINATED</div>
+          <div class="buy-overlay-sub" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; font-weight: normal;">Out of Greetings</div>
         `;
         pile.appendChild(buyOverlay);
       }
