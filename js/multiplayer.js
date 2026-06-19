@@ -9,6 +9,7 @@ class MultiplayerManager {
     this.lastActionTimestamp = 0;
     this.lastActionId = null;
     this.db = null;
+    this.disconnectTimer = null;
     
     // Clean up old broken default URL from previous builds if saved in local storage
     let savedUrl = localStorage.getItem("star_greetings_firebase_url");
@@ -292,6 +293,10 @@ class MultiplayerManager {
   }
 
   cleanupRoom() {
+    if (this.disconnectTimer) {
+      clearTimeout(this.disconnectTimer);
+      this.disconnectTimer = null;
+    }
     if (this.roomRef) {
       try {
         if (this.currentUser) {
@@ -331,14 +336,53 @@ class MultiplayerManager {
       
       // If we are actively playing, check if an opponent left the match
       if (room.status === "playing" && window.game && !window.game.isGameOver) {
+        // Self-healing during play: if my player node is missing (due to disconnect), re-add myself!
+        if (this.currentUser) {
+          const myUsername = (this.currentUser.username || "").toLowerCase().trim();
+          if (myUsername && (!room.players || !room.players[myUsername])) {
+            console.log("Self-healing during play: Re-registering myself in the players list");
+            
+            // Re-find my avatar from local game if possible
+            const matchMe = window.game.players.find(p => p.username === myUsername);
+            const avatarUrl = matchMe ? matchMe.avatar : "assets/avatars/avatar_1.png";
+            
+            const playerRef = this.roomRef.child(`players/${myUsername}`);
+            playerRef.set({
+              name: this.currentUser.name,
+              username: myUsername,
+              avatar: avatarUrl,
+              coins: this.currentUser.coins,
+              betVote: 25,
+              joinedAt: firebase.database.ServerValue.TIMESTAMP
+            });
+            playerRef.onDisconnect().remove();
+            return;
+          }
+        }
+
         const currentPlayersInRoom = Object.keys(room.players || {});
+        
+        // If players list has restored to full, clear any disconnect timer
+        if (currentPlayersInRoom.length >= window.game.players.length) {
+          if (this.disconnectTimer) {
+            clearTimeout(this.disconnectTimer);
+            this.disconnectTimer = null;
+            console.log("Opponent reconnected. Cancelled default win timer.");
+          }
+        }
+
         // If the number of connected players in DB is less than active game players,
-        // and we are the last player left, we win!
+        // and we are the last player left, start the default win grace period timer!
         if (currentPlayersInRoom.length < window.game.players.length) {
           const isMeInRoom = room.players[this.currentUser.username] !== undefined;
           if (isMeInRoom && currentPlayersInRoom.length === 1) {
-            this.handlePlayerLeftWin();
-            return;
+            if (!this.disconnectTimer) {
+              console.log("Opponent disconnected. Waiting 10 seconds grace period for reconnect...");
+              this.disconnectTimer = setTimeout(() => {
+                this.handlePlayerLeftWin();
+                this.disconnectTimer = null;
+              }, 10000);
+            }
           }
         }
       }
