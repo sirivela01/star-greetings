@@ -23,7 +23,7 @@ class AuthManager {
     localStorage.setItem(this.accountsKey, JSON.stringify(accounts));
   }
 
-  signup(name, username, password) {
+  async signup(name, username, password) {
     const accounts = this.getAccounts();
     const normalizedUsername = username.trim().toLowerCase();
     
@@ -31,54 +31,137 @@ class AuthManager {
       return { error: "Username already exists!" };
     }
 
+    let uid = null;
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      const email = `${normalizedUsername}@stargreetings.com`;
+      try {
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        uid = userCredential.user.uid;
+        
+        // Write profile details to database `/users/{uid}`
+        await firebase.database().ref(`users/${uid}`).set({
+          name: name.trim(),
+          username: normalizedUsername,
+          coins: 300,
+          freeStackBuys: 10
+        });
+      } catch (err) {
+        console.error("Firebase signup error:", err);
+        return { error: "Firebase registration failed: " + err.message };
+      }
+    }
+
     accounts[normalizedUsername] = {
       name: name.trim(),
       password: password,
       coins: 300,
-      freeStackBuys: 10
+      freeStackBuys: 10,
+      uid: uid
     };
 
     this.saveAccounts(accounts);
     return { success: true };
   }
 
-  login(username, password, rememberMe) {
+  async login(username, password, rememberMe) {
     const accounts = this.getAccounts();
     const normalizedUsername = username.trim().toLowerCase();
-    const user = accounts[normalizedUsername];
+    const localUser = accounts[normalizedUsername];
 
-    if (!user || user.password !== password) {
-      return { error: "Invalid username or password!" };
+    let fbUser = null;
+    let uid = null;
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      const email = `${normalizedUsername}@stargreetings.com`;
+      try {
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        uid = userCredential.user.uid;
+        
+        // Fetch profile details from `/users/{uid}`
+        const snapshot = await firebase.database().ref(`users/${uid}`).once("value");
+        if (snapshot.exists()) {
+          fbUser = snapshot.val();
+        } else {
+          fbUser = {
+            name: localUser ? localUser.name : username,
+            username: normalizedUsername,
+            coins: localUser ? localUser.coins : 300,
+            freeStackBuys: localUser ? localUser.freeStackBuys : 10
+          };
+          await firebase.database().ref(`users/${uid}`).set(fbUser);
+        }
+      } catch (err) {
+        console.error("Firebase login error:", err);
+        if (err.code === "auth/wrong-password" || err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
+          return { error: "Invalid username or password!" };
+        }
+        if (!localUser) {
+          return { error: "Firebase login failed: " + err.message };
+        }
+      }
     }
 
-    // Save session
+    let userToUse = localUser;
+    if (fbUser) {
+      userToUse = {
+        name: fbUser.name,
+        password: password,
+        coins: isNaN(parseInt(fbUser.coins, 10)) ? 300 : parseInt(fbUser.coins, 10),
+        freeStackBuys: isNaN(parseInt(fbUser.freeStackBuys, 10)) ? 10 : parseInt(fbUser.freeStackBuys, 10),
+        uid: uid
+      };
+      accounts[normalizedUsername] = userToUse;
+      this.saveAccounts(accounts);
+    } else {
+      if (!localUser || localUser.password !== password) {
+        return { error: "Invalid username or password!" };
+      }
+    }
+
     localStorage.setItem(this.sessionKey, normalizedUsername);
 
-    // Save remember details
     if (rememberMe) {
       localStorage.setItem(this.rememberKey, JSON.stringify({ username: normalizedUsername, password }));
     } else {
       localStorage.removeItem(this.rememberKey);
     }
 
-    return { success: true, user };
+    return { success: true, user: userToUse };
   }
 
-  resetPassword(username, newPassword) {
+  async resetPassword(username, newPassword) {
     const accounts = this.getAccounts();
     const normalizedUsername = username.trim().toLowerCase();
+    const localUser = accounts[normalizedUsername];
 
-    if (!accounts[normalizedUsername]) {
+    if (!localUser) {
       return { error: "Username not found!" };
     }
 
-    accounts[normalizedUsername].password = newPassword;
+    const oldPassword = localUser.password;
+
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      const email = `${normalizedUsername}@stargreetings.com`;
+      try {
+        await firebase.auth().signInWithEmailAndPassword(email, oldPassword);
+        if (firebase.auth().currentUser) {
+          await firebase.auth().currentUser.updatePassword(newPassword);
+        }
+      } catch (err) {
+        console.error("Firebase password update failed:", err);
+        return { error: "Failed to update password on Firebase: " + err.message };
+      }
+    }
+
+    localUser.password = newPassword;
     this.saveAccounts(accounts);
     return { success: true };
   }
 
   logout() {
     localStorage.removeItem(this.sessionKey);
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      firebase.auth().signOut().catch(err => console.error("Firebase signOut error:", err));
+    }
   }
 
   getCurrentUser() {
@@ -159,14 +242,78 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Route initial page load
-  const currentUser = auth.getCurrentUser();
-  if (currentUser) {
-    showDashboard(currentUser);
+  // Handle cold start splash screen fade out
+  let splashResolved = false;
+  function resolveSplash() {
+    if (splashResolved) return;
+    splashResolved = true;
+    const splash = document.getElementById("cold-start-splash");
+    if (splash) {
+      splash.classList.add("fade-out");
+      setTimeout(() => splash.remove(), 500);
+    }
+  }
+
+  // Set a fallback timeout for the splash screen in case we are offline or Firebase is slow
+  setTimeout(resolveSplash, 2000);
+
+  // Initialize Firebase Auth state change listener
+  if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+    firebase.auth().onAuthStateChanged((fbUser) => {
+      const currentUser = auth.getCurrentUser();
+      if (fbUser) {
+        // Firebase user is authenticated
+        if (currentUser) {
+          // Sync local storage coins if they mismatch
+          firebase.database().ref(`users/${fbUser.uid}`).once("value").then(snapshot => {
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              const accounts = auth.getAccounts();
+              if (accounts[currentUser.username]) {
+                accounts[currentUser.username].coins = isNaN(parseInt(data.coins, 10)) ? 300 : parseInt(data.coins, 10);
+                accounts[currentUser.username].freeStackBuys = isNaN(parseInt(data.freeStackBuys, 10)) ? 10 : parseInt(data.freeStackBuys, 10);
+                accounts[currentUser.username].uid = fbUser.uid;
+                auth.saveAccounts(accounts);
+                
+                // Refresh dashboard if visible
+                if (!dashboardView.classList.contains("hidden")) {
+                  showDashboard(auth.getCurrentUser());
+                }
+              }
+            }
+          }).catch(err => console.error("Error syncing user data:", err));
+          showDashboard(currentUser);
+        } else {
+          // Firebase authenticated but no local session? Sign out to stay in sync.
+          firebase.auth().signOut().catch(err => console.error(err));
+          hideAllViews();
+          loginView.classList.remove("hidden");
+          initLoginForm();
+        }
+      } else {
+        // Firebase user is not authenticated
+        if (currentUser) {
+          // We have a local session. Let them stay logged in locally for offline play.
+          showDashboard(currentUser);
+        } else {
+          hideAllViews();
+          loginView.classList.remove("hidden");
+          initLoginForm();
+        }
+      }
+      resolveSplash();
+    });
   } else {
-    hideAllViews();
-    loginView.classList.remove("hidden");
-    initLoginForm();
+    // No Firebase loaded, resolve splash immediately
+    const currentUser = auth.getCurrentUser();
+    if (currentUser) {
+      showDashboard(currentUser);
+    } else {
+      hideAllViews();
+      loginView.classList.remove("hidden");
+      initLoginForm();
+    }
+    resolveSplash();
   }
 
   // --- BUTTON CLICKS & TRIGGERS ---
@@ -232,7 +379,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const p1Input = document.getElementById("player-name-1");
       if (user && p1Input) {
         p1Input.value = user.name;
-        // Make sure it locks Player 1 name or keeps it editable
       }
     });
   }
@@ -241,7 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Handle Login Form Submit
   if (loginForm) {
-    loginForm.addEventListener("submit", (e) => {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const userVal = document.getElementById("login-username").value.trim();
       const passVal = document.getElementById("login-password").value;
@@ -252,18 +398,30 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const res = auth.login(userVal, passVal, rememberVal);
-      if (res.success) {
-        showDashboard(res.user);
-      } else {
-        alert(res.error);
+      const submitBtn = loginForm.querySelector("button[type='submit']");
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Logging in...";
+      submitBtn.setAttribute("disabled", "true");
+
+      try {
+        const res = await auth.login(userVal, passVal, rememberVal);
+        if (res.success) {
+          showDashboard(res.user);
+        } else {
+          alert(res.error);
+        }
+      } catch (err) {
+        alert("An error occurred: " + err.message);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.removeAttribute("disabled");
       }
     });
   }
 
   // Handle Sign Up Form Submit
   if (signupForm) {
-    signupForm.addEventListener("submit", (e) => {
+    signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const nameVal = document.getElementById("signup-name").value.trim();
       const userVal = document.getElementById("signup-username").value.trim();
@@ -284,22 +442,34 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const res = auth.signup(nameVal, userVal, passVal);
-      if (res.success) {
-        alert("Account created successfully! Please log in.");
-        hideAllViews();
-        loginView.classList.remove("hidden");
-        initLoginForm();
-        document.getElementById("login-username").value = userVal;
-      } else {
-        alert(res.error);
+      const submitBtn = signupForm.querySelector("button[type='submit']");
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Creating Account...";
+      submitBtn.setAttribute("disabled", "true");
+
+      try {
+        const res = await auth.signup(nameVal, userVal, passVal);
+        if (res.success) {
+          alert("Account created successfully! Please log in.");
+          hideAllViews();
+          loginView.classList.remove("hidden");
+          initLoginForm();
+          document.getElementById("login-username").value = userVal;
+        } else {
+          alert(res.error);
+        }
+      } catch (err) {
+        alert("An error occurred: " + err.message);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.removeAttribute("disabled");
       }
     });
   }
 
   // Handle Forgot Password Form Submit
   if (forgotForm) {
-    forgotForm.addEventListener("submit", (e) => {
+    forgotForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const userVal = document.getElementById("forgot-username").value.trim();
       const passVal = document.getElementById("forgot-new-password").value;
@@ -320,15 +490,27 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const res = auth.resetPassword(userVal, passVal);
-      if (res.success) {
-        alert("Password updated successfully! Log in with your new password.");
-        hideAllViews();
-        loginView.classList.remove("hidden");
-        initLoginForm();
-        document.getElementById("login-username").value = userVal;
-      } else {
-        alert(res.error);
+      const submitBtn = forgotForm.querySelector("button[type='submit']");
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Resetting...";
+      submitBtn.setAttribute("disabled", "true");
+
+      try {
+        const res = await auth.resetPassword(userVal, passVal);
+        if (res.success) {
+          alert("Password updated successfully! Log in with your new password.");
+          hideAllViews();
+          loginView.classList.remove("hidden");
+          initLoginForm();
+          document.getElementById("login-username").value = userVal;
+        } else {
+          alert(res.error);
+        }
+      } catch (err) {
+        alert("An error occurred: " + err.message);
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.removeAttribute("disabled");
       }
     });
   }

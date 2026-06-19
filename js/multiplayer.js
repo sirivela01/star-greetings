@@ -27,24 +27,110 @@ class MultiplayerManager {
     this.initFirebase();
   }
 
+  showToast(message, type = 'error') {
+    let container = document.querySelector(".toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "toast-container";
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement("div");
+    toast.className = `toast-element ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    // Force reflow
+    toast.getBoundingClientRect();
+    
+    // Add show class
+    toast.classList.add("show");
+    
+    // Hide and remove after 4s
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => {
+        toast.remove();
+        if (container.children.length === 0) {
+          container.remove();
+        }
+      }, 300);
+    }, 4000);
+  }
+
+  verifyAuth() {
+    if (typeof firebase === 'undefined' || !firebase.apps.length || !firebase.auth().currentUser) {
+      this.showToast("Please log in to play online", "error");
+      
+      // Redirect to login screen
+      const loginView = document.getElementById("login-screen");
+      const currentViews = document.querySelectorAll(".screen-view");
+      currentViews.forEach(v => v.classList.add("hidden"));
+      if (loginView) {
+        loginView.classList.remove("hidden");
+        // Reset inputs
+        const usernameInput = document.getElementById("login-username");
+        const passwordInput = document.getElementById("login-password");
+        if (usernameInput) usernameInput.value = "";
+        if (passwordInput) passwordInput.value = "";
+      }
+      return false;
+    }
+    return true;
+  }
+
   initFirebase() {
     try {
       this.db = null;
       if (typeof firebase === 'undefined') {
         console.error("Firebase is not loaded.");
+        this.updateConnectionStatus(false);
         return;
       }
       
       // Initialize Firebase app or use existing one
       if (firebase.apps.length > 0) {
-        // Since we only change databaseURL, we can re-use or re-initialize
         this.db = firebase.database();
       } else {
         firebase.initializeApp(this.firebaseConfig);
         this.db = firebase.database();
       }
+
+      // Listen for connection state changes
+      this.db.ref(".info/connected").on("value", (snapshot) => {
+        const isConnected = snapshot.val() === true;
+        this.updateConnectionStatus(isConnected);
+      });
     } catch (e) {
       console.error("Failed to initialize Firebase:", e);
+      this.updateConnectionStatus(false);
+    }
+  }
+
+  updateConnectionStatus(isConnected) {
+    const banner = document.getElementById("db-status-banner");
+    const createBtn = document.getElementById("online-create-room-btn");
+    const joinBtn = document.getElementById("online-join-room-btn");
+    
+    if (banner) {
+      banner.className = "db-status-banner " + (isConnected ? "connected" : "error");
+      const dot = banner.querySelector(".status-dot") || document.createElement("span");
+      dot.className = "status-dot";
+      const text = banner.querySelector(".status-text") || document.createElement("span");
+      text.className = "status-text";
+      
+      text.textContent = isConnected ? "Connected to database" : "Failed to connect or disconnected from database";
+      
+      banner.innerHTML = "";
+      banner.appendChild(dot);
+      banner.appendChild(text);
+    }
+
+    if (isConnected) {
+      if (createBtn) createBtn.removeAttribute("disabled");
+      if (joinBtn) joinBtn.removeAttribute("disabled");
+    } else {
+      if (createBtn) createBtn.setAttribute("disabled", "true");
+      if (joinBtn) joinBtn.setAttribute("disabled", "true");
     }
   }
 
@@ -52,7 +138,7 @@ class MultiplayerManager {
   withTimeout(promise, ms = 4500) {
     return Promise.race([
       promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Database connection timed out. Please check your database settings and internet connection.")), ms))
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Database connection timed out. Please check your database settings.")), ms))
     ]);
   }
 
@@ -91,6 +177,13 @@ class MultiplayerManager {
       }
       firebase.initializeApp(this.firebaseConfig);
       this.db = firebase.database();
+
+      // Listen for connection state changes
+      this.db.ref(".info/connected").on("value", (snapshot) => {
+        const isConnected = snapshot.val() === true;
+        this.updateConnectionStatus(isConnected);
+      });
+
       alert("Database settings updated and connected successfully!");
       this.closeDbConfigModal();
     } catch (e) {
@@ -109,6 +202,12 @@ class MultiplayerManager {
       }
       firebase.initializeApp(this.firebaseConfig);
       this.db = firebase.database();
+
+      // Listen for connection state changes
+      this.db.ref(".info/connected").on("value", (snapshot) => {
+        const isConnected = snapshot.val() === true;
+        this.updateConnectionStatus(isConnected);
+      });
       
       const input = document.getElementById("db-config-url");
       if (input) input.value = defaultUrl;
@@ -162,18 +261,36 @@ class MultiplayerManager {
       return;
     }
 
+    const codeLabel = document.getElementById("lobby-room-code-lbl");
+    if (codeLabel) {
+      codeLabel.innerHTML = '<span class="spinner-small"></span> Generating...';
+    }
+    this.showScreen("online-waiting-screen");
+
     this.roomCode = this.generateRoomCode();
     this.isHost = true;
     window.isOnlineGame = true;
     window.currentUserUsername = this.currentUser.username;
 
+    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (!myUid) {
+      if (codeLabel) {
+        codeLabel.innerHTML = 'Failed <button id="retry-create-btn" class="btn-retry">Retry</button>';
+        const retryBtn = document.getElementById("retry-create-btn");
+        if (retryBtn) retryBtn.onclick = () => this.createRoom();
+      }
+      this.showToast("Authentication missing. Please log in again.");
+      return;
+    }
+
     const roomData = {
       roomCode: this.roomCode,
       status: "waiting",
       hostUsername: this.currentUser.username,
+      createdBy: myUid,
       placementMode: "middle",
       players: {
-        [this.currentUser.username]: {
+        [myUid]: {
           name: this.currentUser.name || this.currentUser.username || "Player",
           username: this.currentUser.username,
           avatar: "assets/avatars/avatar_1.png", // default Player 1 avatar
@@ -184,20 +301,51 @@ class MultiplayerManager {
       }
     };
 
+    let creationCompleted = false;
+    const timeoutId = setTimeout(() => {
+      if (!creationCompleted) {
+        if (codeLabel) {
+          codeLabel.innerHTML = 'Failed <button id="retry-create-btn" class="btn-retry">Retry</button>';
+          const retryBtn = document.getElementById("retry-create-btn");
+          if (retryBtn) {
+            retryBtn.onclick = (e) => {
+              e.preventDefault();
+              this.createRoom();
+            };
+          }
+        }
+      }
+    }, 5000);
+
     try {
       this.roomRef = this.db.ref(`rooms/${this.roomCode}`);
       await this.withTimeout(this.roomRef.set(roomData));
-      this.roomRef.child(`players/${this.currentUser.username}`).onDisconnect().remove();
+      creationCompleted = true;
+      clearTimeout(timeoutId);
+      
+      this.roomRef.child(`players/${myUid}`).onDisconnect().remove();
       
       // Setup listener
       this.listenToRoom();
       
       // Update UI
-      document.getElementById("lobby-room-code-lbl").textContent = this.roomCode;
-      this.showScreen("online-waiting-screen");
+      if (codeLabel) {
+        codeLabel.textContent = this.roomCode;
+      }
     } catch (e) {
-      alert("Failed to create room: " + e.message);
-      this.openDbConfigModal();
+      creationCompleted = true;
+      clearTimeout(timeoutId);
+      if (codeLabel) {
+        codeLabel.innerHTML = 'Failed <button id="retry-create-btn" class="btn-retry">Retry</button>';
+        const retryBtn = document.getElementById("retry-create-btn");
+        if (retryBtn) {
+          retryBtn.onclick = (e) => {
+            e.preventDefault();
+            this.createRoom();
+          };
+        }
+      }
+      this.showToast("Failed to create room: " + e.message);
     }
   }
 
@@ -227,6 +375,12 @@ class MultiplayerManager {
     window.isOnlineGame = true;
     window.currentUserUsername = this.currentUser.username;
 
+    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (!myUid) {
+      this.showToast("Authentication missing. Please log in again.");
+      return;
+    }
+
     try {
       this.roomRef = this.db.ref(`rooms/${this.roomCode}`);
       const snapshot = await this.withTimeout(this.roomRef.once("value"));
@@ -253,7 +407,7 @@ class MultiplayerManager {
       const avatarUrl = `assets/avatars/avatar_${avatarIdx + 1}.png`;
 
       // Add current player to room
-      const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
+      const playerRef = this.roomRef.child(`players/${myUid}`);
       await this.withTimeout(playerRef.set({
         name: this.currentUser.name || this.currentUser.username || "Player",
         username: this.currentUser.username,
@@ -268,7 +422,10 @@ class MultiplayerManager {
       this.listenToRoom();
 
       // Update UI
-      document.getElementById("lobby-room-code-lbl").textContent = this.roomCode;
+      const codeLabel = document.getElementById("lobby-room-code-lbl");
+      if (codeLabel) {
+        codeLabel.textContent = this.roomCode;
+      }
       this.showScreen("online-waiting-screen");
     } catch (e) {
       alert("Failed to join room: " + e.message);
@@ -278,15 +435,17 @@ class MultiplayerManager {
 
   // Leave room
   async leaveRoom() {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
 
+    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     try {
       if (this.isHost) {
         // Delete the room if host leaves
         await this.roomRef.remove();
-      } else {
+      } else if (myUid) {
         // Remove player
-        await this.roomRef.child(`players/${this.currentUser.username}`).remove();
+        await this.roomRef.child(`players/${myUid}`).remove();
       }
     } catch (e) {
       console.error(e);
@@ -303,8 +462,9 @@ class MultiplayerManager {
     }
     if (this.roomRef) {
       try {
-        if (this.currentUser) {
-          this.roomRef.child(`players/${this.currentUser.username}`).onDisconnect().cancel();
+        const myUid = this.currentUser ? (this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
+        if (myUid) {
+          this.roomRef.child(`players/${myUid}`).onDisconnect().cancel();
         }
       } catch (e) {
         console.error("onDisconnect cancel error:", e);
@@ -339,24 +499,24 @@ class MultiplayerManager {
       }
 
       const room = snapshot.val();
+      const myUid = this.currentUser ? (this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
       
       // If we are actively playing, check if an opponent left the match
       if (room.status === "playing" && window.game && !window.game.isGameOver) {
         // Self-healing during play: if my player node is missing (due to disconnect), re-add myself!
-        if (this.currentUser) {
-          const myUsername = (this.currentUser.username || "").toLowerCase().trim();
-          const playerExists = room.players && Object.keys(room.players).some(k => k.toLowerCase().trim() === myUsername);
-          if (myUsername && !playerExists) {
+        if (myUid) {
+          const playerExists = room.players && room.players[myUid] !== undefined;
+          if (!playerExists) {
             console.log("Self-healing during play: Re-registering myself in the players list");
             
             // Re-find my avatar from local game if possible
             const matchMe = window.game.players.find(p => 
-              (p.username && p.username.toLowerCase().trim() === myUsername) ||
-              (p.name && p.name.toLowerCase().trim() === (this.currentUser.name || "").toLowerCase().trim())
+              p.uid === myUid ||
+              (p.username && p.username.toLowerCase().trim() === (this.currentUser.username || "").toLowerCase().trim())
             );
             const avatarUrl = matchMe ? matchMe.avatar : "assets/avatars/avatar_1.png";
             
-            const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
+            const playerRef = this.roomRef.child(`players/${myUid}`);
             const activeBetBtn = document.querySelector("#online-bet-selector .bet-opt-btn.active");
             const currentBet = activeBetBtn ? (parseInt(activeBetBtn.dataset.val, 10) || 25) : 25;
             playerRef.set({
@@ -386,7 +546,7 @@ class MultiplayerManager {
         // If the number of connected players in DB is less than active game players,
         // and we are the last player left, start the default win grace period timer!
         if (currentPlayersInRoom.length < window.game.players.length) {
-          const isMeInRoom = room.players[this.currentUser.username] !== undefined;
+          const isMeInRoom = myUid && room.players[myUid] !== undefined;
           if (isMeInRoom && currentPlayersInRoom.length === 1) {
             if (!this.disconnectTimer) {
               console.log("Opponent disconnected. Waiting 10 seconds grace period for reconnect...");
@@ -401,17 +561,16 @@ class MultiplayerManager {
       
       if (room.status === "waiting") {
         // Self-healing: if my player node is missing (due to a connection drop), re-add myself!
-        if (this.currentUser) {
-          const myUsername = (this.currentUser.username || "").toLowerCase().trim();
-          const playerExists = room.players && Object.keys(room.players).some(k => k.toLowerCase().trim() === myUsername);
-          if (myUsername && !playerExists) {
+        if (myUid) {
+          const playerExists = room.players && room.players[myUid] !== undefined;
+          if (!playerExists) {
             console.log("Self-healing: Re-registering myself in the waiting room list");
             
             // Assign avatar index
             const playersCount = Object.keys(room.players || {}).length;
             const avatarUrl = this.isHost ? "assets/avatars/avatar_1.png" : `assets/avatars/avatar_${(playersCount % 6) + 1}.png`;
             
-            const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
+            const playerRef = this.roomRef.child(`players/${myUid}`);
             const activeBetBtn = document.querySelector("#online-bet-selector .bet-opt-btn.active");
             const currentBet = activeBetBtn ? (parseInt(activeBetBtn.dataset.val, 10) || 25) : 25;
             playerRef.set({
@@ -423,7 +582,7 @@ class MultiplayerManager {
               joinedAt: firebase.database.ServerValue.TIMESTAMP
             });
             playerRef.onDisconnect().remove();
-            return; // let the set update trigger next sync
+            return;
           }
         }
         this.syncWaitingLobby(room);
@@ -455,9 +614,9 @@ class MultiplayerManager {
       }
     }
     
-    // Sort players by join timestamp to keep consistent order, and guarantee username property is populated from keys
-    const players = Object.entries(room.players || {}).map(([username, p]) => {
-      p.username = username;
+    // Sort players by join timestamp to keep consistent order, and guarantee uid property is populated
+    const players = Object.entries(room.players || {}).map(([uid, p]) => {
+      p.uid = uid;
       return p;
     }).sort((a, b) => a.joinedAt - b.joinedAt);
     playerCountEl.textContent = players.length;
@@ -466,7 +625,7 @@ class MultiplayerManager {
       const row = document.createElement("li");
       row.className = "lobby-player-row";
       
-      const isHost = p.username === room.hostUsername;
+      const isHost = p.uid === room.createdBy;
       
       row.innerHTML = `
         <div class="lobby-player-info">
@@ -480,6 +639,19 @@ class MultiplayerManager {
       `;
       playersListEl.appendChild(row);
     });
+
+    // Calculate live bet tallies
+    const tally = { 25: 0, 50: 0, 75: 0, 100: 0 };
+    players.forEach(p => {
+      const vote = parseInt(p.betVote, 10) || 25;
+      if (tally[vote] !== undefined) {
+        tally[vote]++;
+      }
+    });
+    const tallyEl = document.getElementById("online-bet-tally");
+    if (tallyEl) {
+      tallyEl.textContent = `Tally: 25: ${tally[25]} votes | 50: ${tally[50]} votes | 75: ${tally[75]} votes | 100: ${tally[100]} votes`;
+    }
 
     // Handle Start button visibility
     const startBtn = document.getElementById("online-start-match-btn");
@@ -505,13 +677,18 @@ class MultiplayerManager {
 
   // Update personal bet vote in waiting lobby
   async updateBetVote(val) {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef || !this.currentUser) return;
     const parsedVal = parseInt(val, 10);
-    await this.roomRef.child(`players/${this.currentUser.username}/betVote`).set(isNaN(parsedVal) ? 25 : parsedVal);
+    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (myUid) {
+      await this.roomRef.child(`players/${myUid}/betVote`).set(isNaN(parsedVal) ? 25 : parsedVal);
+    }
   }
 
   // Update card placement mode selection in waiting lobby (Host only)
   async updatePlacementMode(val) {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef || !this.isHost) return;
     try {
       await this.roomRef.child("placementMode").set(val);
@@ -522,12 +699,16 @@ class MultiplayerManager {
 
   // Start the match (Host only)
   async startMatch() {
+    if (!this.verifyAuth()) return;
     if (!this.isHost || !this.roomRef) return;
 
     try {
       const snapshot = await this.roomRef.once("value");
       const room = snapshot.val();
-      const players = Object.values(room.players || {}).sort((a, b) => a.joinedAt - b.joinedAt);
+      const players = Object.entries(room.players || {}).map(([uid, p]) => {
+        p.uid = uid;
+        return p;
+      }).sort((a, b) => a.joinedAt - b.joinedAt);
       
       if (players.length < 2) {
         alert("Need at least 2 players to start.");
@@ -542,10 +723,11 @@ class MultiplayerManager {
       gameEngine.config.CARD_PLACEMENT_MODE = room.placementMode || "middle";
       gameEngine.initializeGame(playerNames, 30, playerBets);
       
-      // Bind avatars and usernames to GameState players
+      // Bind avatars, usernames, and UIDs to GameState players
       gameEngine.players.forEach((p, idx) => {
         p.avatar = players[idx].avatar;
         p.username = players[idx].username;
+        p.uid = players[idx].uid;
         p.coins = isNaN(parseInt(players[idx].coins, 10)) ? 300 : parseInt(players[idx].coins, 10); // carry over actual coins from database
       });
 
@@ -592,6 +774,7 @@ class MultiplayerManager {
         id: p.id,
         name: p.name || p.username || "Player",
         username: p.username || "player",
+        uid: p.uid || "",
         avatar: p.avatar || "assets/avatars/avatar_1.png",
         coins: isNaN(parseInt(p.coins, 10)) ? 300 : parseInt(p.coins, 10),
         freeStackBuys: isNaN(parseInt(p.freeStackBuys, 10)) ? 10 : parseInt(p.freeStackBuys, 10),
@@ -830,11 +1013,13 @@ class MultiplayerManager {
 
   // Play card action online
   async playCard(cardInstanceId = null) {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
 
     // Check if it is currently my turn
     const activePlayer = window.game.getCurrentPlayer();
-    if (!activePlayer || activePlayer.username !== this.currentUser.username) {
+    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (!activePlayer || activePlayer.uid !== myUid) {
       alert("It's not your turn!");
       return;
     }
@@ -885,6 +1070,7 @@ class MultiplayerManager {
 
   // Shuffle stack online
   async shuffleStack() {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
     
     try {
@@ -894,10 +1080,8 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const localPlayer = gameEngine.players.find(p => 
-        (p.username && p.username.toLowerCase().trim() === this.currentUser.username.toLowerCase().trim()) ||
-        (p.name && p.name.toLowerCase().trim() === this.currentUser.name.toLowerCase().trim())
-      );
+      const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+      const localPlayer = gameEngine.players.find(p => p.uid === myUid);
       if (!localPlayer || localPlayer.stackCount <= 1) return;
 
       gameEngine.shuffleStack(localPlayer.id);
@@ -909,6 +1093,7 @@ class MultiplayerManager {
           type: "shuffle",
           actionId: "shuffle_" + Math.random().toString(36).substring(2, 11),
           playerUsername: this.currentUser.username,
+          playerUid: myUid,
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
       });
@@ -919,6 +1104,7 @@ class MultiplayerManager {
 
   // Buy Stack online
   async buyStack() {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
     
     try {
@@ -928,10 +1114,8 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const localPlayer = gameEngine.players.find(p => 
-        (p.username && p.username.toLowerCase().trim() === this.currentUser.username.toLowerCase().trim()) ||
-        (p.name && p.name.toLowerCase().trim() === this.currentUser.name.toLowerCase().trim())
-      );
+      const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+      const localPlayer = gameEngine.players.find(p => p.uid === myUid);
       if (!localPlayer) return;
 
       const res = gameEngine.buyStack(localPlayer.id);
@@ -947,6 +1131,7 @@ class MultiplayerManager {
           type: "buyStack",
           actionId: "buystack_" + Math.random().toString(36).substring(2, 11),
           playerUsername: this.currentUser.username,
+          playerUid: myUid,
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
       });
@@ -957,6 +1142,7 @@ class MultiplayerManager {
 
   // Buy Coins online
   async buyCoins() {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
     
     try {
@@ -966,10 +1152,8 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const localPlayer = gameEngine.players.find(p => 
-        (p.username && p.username.toLowerCase().trim() === this.currentUser.username.toLowerCase().trim()) ||
-        (p.name && p.name.toLowerCase().trim() === this.currentUser.name.toLowerCase().trim())
-      );
+      const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+      const localPlayer = gameEngine.players.find(p => p.uid === myUid);
       if (!localPlayer) return;
 
       gameEngine.buyCoins(localPlayer.id);
@@ -981,6 +1165,7 @@ class MultiplayerManager {
           type: "buyCoins",
           actionId: "buycoins_" + Math.random().toString(36).substring(2, 11),
           playerUsername: this.currentUser.username,
+          playerUid: myUid,
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
       });
@@ -991,6 +1176,7 @@ class MultiplayerManager {
 
   // End Game manually online (Host only)
   async endGame() {
+    if (!this.verifyAuth()) return;
     if (!this.isHost || !this.roomRef) return;
     
     try {
@@ -1040,9 +1226,10 @@ class MultiplayerManager {
     
     // Find local player in game
     const localUser = window.auth.getCurrentUser();
+    const myUid = localUser ? (localUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
     const matchMe = window.game.players.find(p => 
-      (p.username && p.username.toLowerCase().trim() === localUser.username.toLowerCase().trim()) ||
-      (p.name && p.name.toLowerCase().trim() === localUser.name.toLowerCase().trim())
+      p.uid === myUid ||
+      (p.username && p.username.toLowerCase().trim() === localUser.username.toLowerCase().trim())
     );
     
     if (matchMe) {
@@ -1079,6 +1266,7 @@ class MultiplayerManager {
   }
 
   async updatePlayerOffsets(playerId) {
+    if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
     try {
       const snapshot = await this.roomRef.once("value");
@@ -1123,6 +1311,7 @@ GameState.prototype.deserialize = function(data) {
   this.players = (data.players || []).map(p => {
     const player = new Player(p.name, p.id);
     player.username = p.username;
+    player.uid = p.uid;
     player.avatar = p.avatar;
     player.coins = isNaN(parseInt(p.coins, 10)) ? 300 : parseInt(p.coins, 10);
     player.freeStackBuys = isNaN(parseInt(p.freeStackBuys, 10)) ? 10 : parseInt(p.freeStackBuys, 10);

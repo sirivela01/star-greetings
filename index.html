@@ -13,6 +13,15 @@
 </head>
 <body>
 
+  <!-- COLD START SPLASH SCREEN -->
+  <div id="cold-start-splash" class="cold-start-splash">
+    <div class="splash-content">
+      <div class="splash-logo">★ Star Greetings</div>
+      <div class="splash-spinner"></div>
+      <p class="splash-msg">Starting up... this may take a moment ☕</p>
+    </div>
+  </div>
+
   <!-- Game Container -->
   <div id="app-root">
 
@@ -136,6 +145,11 @@
           <button type="button" id="lobby-config-db-btn" class="btn btn-db-config" title="Database Settings">⚙️ Settings</button>
         </header>
 
+        <!-- Database Connection Status Banner -->
+        <div id="db-status-banner" class="db-status-banner connecting">
+          <span class="status-dot"></span> <span class="status-text">Connecting to database...</span>
+        </div>
+
         <div class="online-choice-container">
           <button type="button" id="online-create-room-btn" class="btn primary-btn play-mode-btn">Create New Room<span class="btn-sub">Start as Host and get a Room Code</span></button>
           
@@ -186,7 +200,10 @@
             <button type="button" class="bet-opt-btn" data-val="75">75</button>
             <button type="button" class="bet-opt-btn" data-val="100">100</button>
           </div>
-          <p class="form-hint-info text-center mt-2">Consensus bet resolved from player votes on start.</p>
+          <div id="online-bet-tally" class="bet-tally-box text-center mt-2">Tally: 25: 0 votes | 50: 0 votes | 75: 0 votes | 100: 0 votes</div>
+          <div class="bet-info-box mt-2">
+            ℹ️ All players vote on a bet amount. The most popular choice wins. Ties are broken by selecting the lower amount.
+          </div>
         </div>
 
         <div class="form-actions mt-4">
@@ -213,9 +230,12 @@
 
           <!-- Stack Size Selection (Locked to 30) -->
           <div class="form-group">
-            <label for="starting-stack">Starting Cards per Player:</label>
+            <label for="starting-stack" style="display: inline-flex; align-items: center; gap: 6px;">
+              Starting Cards per Player:
+              <span class="info-tooltip-trigger" title="Card count is fixed at 30 to ensure balanced gameplay for all player counts.">ℹ️</span>
+            </label>
             <div class="input-slider-group">
-              <input type="number" id="starting-stack" value="30" readonly style="opacity: 0.75; cursor: not-allowed; background: rgba(0,0,0,0.5);">
+              <input type="number" id="starting-stack" value="30" readonly class="disabled-stack-input">
               <span class="info-lbl">(Locked to 30 cards per stack)</span>
             </div>
           </div>
@@ -399,6 +419,7 @@
   <!-- Firebase Compat Libraries -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <!-- Scripts -->
   <script src="js/config.js?v=1.20.2"></script>

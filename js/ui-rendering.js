@@ -1126,7 +1126,63 @@ document.addEventListener("DOMContentLoaded", () => {
   // Ready button on Turn Shield clicked
   shieldReadyBtn.addEventListener("click", () => {
     playReadySound();
-    hideTurnShield();
+    
+    // Get active player name
+    const activePlayer = game.getCurrentPlayer();
+    
+    // Hide shield overlay immediately
+    shieldOverlay.classList.add("hidden");
+    shieldOverlay.style.display = "none";
+    
+    // Blur the app root
+    const appRoot = document.getElementById("app-root");
+    if (appRoot) {
+      appRoot.classList.add("screen-blur-active");
+    }
+    
+    // Create countdown overlay box
+    const countdownOverlay = document.createElement("div");
+    countdownOverlay.style.position = "fixed";
+    countdownOverlay.style.top = "0";
+    countdownOverlay.style.left = "0";
+    countdownOverlay.style.width = "100%";
+    countdownOverlay.style.height = "100%";
+    countdownOverlay.style.display = "flex";
+    countdownOverlay.style.alignItems = "center";
+    countdownOverlay.style.justifyContent = "center";
+    countdownOverlay.style.zIndex = "20000";
+    
+    const countdownBox = document.createElement("div");
+    countdownBox.className = "countdown-box animate-scale";
+    countdownBox.innerHTML = `
+      <div class="countdown-title">Passing to ${activePlayer.name}...</div>
+      <div class="countdown-number" id="countdown-num">3</div>
+    `;
+    
+    countdownOverlay.appendChild(countdownBox);
+    document.body.appendChild(countdownOverlay);
+    
+    let count = 3;
+    const interval = setInterval(() => {
+      count--;
+      const numEl = document.getElementById("countdown-num");
+      if (numEl) {
+        numEl.textContent = count;
+        playCycleSound();
+      }
+      
+      if (count <= 0) {
+        clearInterval(interval);
+        // Remove countdown overlay
+        countdownOverlay.remove();
+        // Remove blur
+        if (appRoot) {
+          appRoot.classList.remove("screen-blur-active");
+        }
+        // Complete shield hiding & rendering
+        hideTurnShield();
+      }
+    }, 1000);
   });
 
   startGameBtn.addEventListener("click", (e) => {
