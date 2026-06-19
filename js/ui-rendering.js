@@ -564,6 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isCardSelectable) {
           // ACTIVE player sees top card face-up
           // Clicking the card triggers standard play
+          const topCard = p.stack[0];
           const cardEl = createCardElement(topCard, true, handleCardSelection);
           pile.appendChild(cardEl);
           
