@@ -344,6 +344,29 @@ class MultiplayerManager {
       }
       
       if (room.status === "waiting") {
+        // Self-healing: if my player node is missing (due to a connection drop), re-add myself!
+        if (this.currentUser) {
+          const myUsername = (this.currentUser.username || "").toLowerCase().trim();
+          if (myUsername && (!room.players || !room.players[myUsername])) {
+            console.log("Self-healing: Re-registering myself in the waiting room list");
+            
+            // Assign avatar index
+            const playersCount = Object.keys(room.players || {}).length;
+            const avatarUrl = this.isHost ? "assets/avatars/avatar_1.png" : `assets/avatars/avatar_${(playersCount % 6) + 1}.png`;
+            
+            const playerRef = this.roomRef.child(`players/${myUsername}`);
+            playerRef.set({
+              name: this.currentUser.name,
+              username: myUsername,
+              avatar: avatarUrl,
+              coins: this.currentUser.coins,
+              betVote: 25,
+              joinedAt: firebase.database.ServerValue.TIMESTAMP
+            });
+            playerRef.onDisconnect().remove();
+            return; // let the set update trigger next sync
+          }
+        }
         this.syncWaitingLobby(room);
       } else if (room.status === "playing") {
         this.syncActiveGame(room);
@@ -372,8 +395,11 @@ class MultiplayerManager {
       }
     }
     
-    // Sort players by join timestamp to keep consistent order
-    const players = Object.values(room.players || {}).sort((a, b) => a.joinedAt - b.joinedAt);
+    // Sort players by join timestamp to keep consistent order, and guarantee username property is populated from keys
+    const players = Object.entries(room.players || {}).map(([username, p]) => {
+      p.username = username;
+      return p;
+    }).sort((a, b) => a.joinedAt - b.joinedAt);
     playerCountEl.textContent = players.length;
 
     players.forEach(p => {
