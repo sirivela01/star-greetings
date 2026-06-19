@@ -14,7 +14,7 @@ class MultiplayerManager {
     
     // Default public Firebase Config for out-of-the-box operation
     this.firebaseConfig = {
-      databaseURL: savedUrl || "https://star-greetings-default-default-rtdb.asia-southeast1.firebasedatabase.app"
+      databaseURL: savedUrl || "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
 
     this.initFirebase();
