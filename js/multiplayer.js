@@ -173,10 +173,10 @@ class MultiplayerManager {
       placementMode: "middle",
       players: {
         [this.currentUser.username]: {
-          name: this.currentUser.name,
+          name: this.currentUser.name || this.currentUser.username || "Player",
           username: this.currentUser.username,
           avatar: "assets/avatars/avatar_1.png", // default Player 1 avatar
-          coins: this.currentUser.coins,
+          coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
           betVote: 25,
           joinedAt: firebase.database.ServerValue.TIMESTAMP
         }
@@ -254,10 +254,10 @@ class MultiplayerManager {
       // Add current player to room
       const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
       await this.withTimeout(playerRef.set({
-        name: this.currentUser.name,
+        name: this.currentUser.name || this.currentUser.username || "Player",
         username: this.currentUser.username,
-        avatar: avatarUrl,
-        coins: this.currentUser.coins,
+        avatar: avatarUrl || "assets/avatars/avatar_1.png",
+        coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
         betVote: 25,
         joinedAt: firebase.database.ServerValue.TIMESTAMP
       }));
@@ -352,12 +352,11 @@ class MultiplayerManager {
             );
             const avatarUrl = matchMe ? matchMe.avatar : "assets/avatars/avatar_1.png";
             
-            const playerRef = this.roomRef.child(`players/${myUsername}`);
             playerRef.set({
-              name: this.currentUser.name,
+              name: this.currentUser.name || this.currentUser.username || "Player",
               username: myUsername,
-              avatar: avatarUrl,
-              coins: this.currentUser.coins,
+              avatar: avatarUrl || "assets/avatars/avatar_1.png",
+              coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
               betVote: 25,
               joinedAt: firebase.database.ServerValue.TIMESTAMP
             });
@@ -404,12 +403,11 @@ class MultiplayerManager {
             const playersCount = Object.keys(room.players || {}).length;
             const avatarUrl = this.isHost ? "assets/avatars/avatar_1.png" : `assets/avatars/avatar_${(playersCount % 6) + 1}.png`;
             
-            const playerRef = this.roomRef.child(`players/${myUsername}`);
             playerRef.set({
-              name: this.currentUser.name,
+              name: this.currentUser.name || this.currentUser.username || "Player",
               username: myUsername,
-              avatar: avatarUrl,
-              coins: this.currentUser.coins,
+              avatar: avatarUrl || "assets/avatars/avatar_1.png",
+              coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
               betVote: 25,
               joinedAt: firebase.database.ServerValue.TIMESTAMP
             });
@@ -524,8 +522,8 @@ class MultiplayerManager {
       }
 
       // Initialize game logic engine locally to serialize state
-      const playerNames = players.map(p => p.name);
-      const playerBets = players.map(p => p.betVote);
+      const playerNames = players.map(p => p.name || p.username || "Player");
+      const playerBets = players.map(p => p.betVote || 25);
       
       const gameEngine = new GameState();
       gameEngine.config.CARD_PLACEMENT_MODE = room.placementMode || "middle";
@@ -579,11 +577,11 @@ class MultiplayerManager {
       currentPotStarterIndex: game.currentPotStarterIndex,
       players: game.players.map(p => ({
         id: p.id,
-        name: p.name,
-        username: p.username,
-        avatar: p.avatar,
-        coins: p.coins,
-        freeStackBuys: p.freeStackBuys,
+        name: p.name || p.username || "Player",
+        username: p.username || "player",
+        avatar: p.avatar || "assets/avatars/avatar_1.png",
+        coins: p.coins !== undefined ? p.coins : 300,
+        freeStackBuys: p.freeStackBuys !== undefined ? p.freeStackBuys : 10,
         stack: p.stack.map(c => this.serializeCard(c)),
         radiusOffset: p.radiusOffset || 0,
         angleOffset: p.angleOffset || 0
@@ -593,11 +591,11 @@ class MultiplayerManager {
 
   serializeCard(c) {
     return {
-      id: c.id,
-      name: c.name,
-      industry: c.industry,
-      imagePath: c.imagePath,
-      instanceId: c.instanceId,
+      id: c.id || "",
+      name: c.name || "Unknown Star",
+      industry: c.industry || "Tollywood",
+      imagePath: c.imagePath || "",
+      instanceId: c.instanceId || "",
       playedBy: c.playedBy !== undefined ? c.playedBy : null
     };
   }
