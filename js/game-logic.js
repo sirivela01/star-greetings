@@ -238,13 +238,25 @@ class GameState {
       // No match. Card is added to the pot.
       this.pot.push(cardToPlay);
       
-      // Check if active player just emptied their stack
-      const activePlayers = this.getActivePlayers();
-      if (activePlayers.length === 0) {
-        // All players have 0 cards (extremely rare, but possible if last cards didn't match and stacks depleted)
+      // Check if any player has reached 0 cards (which triggers immediate game end)
+      const hasAnyPlayerReachedZero = this.players.some(p => p.stackCount === 0);
+      if (hasAnyPlayerReachedZero) {
         this.isGameOver = true;
         outcome.gameEnded = true;
-        this.addLog(`Game Over! No players have cards left.`);
+        
+        // Find winner (player with 0 greetings)
+        let winner = this.players.find(p => p.stackCount === 0) || this.players[0];
+        
+        // Award the remaining pot coins to the winner of the match
+        if (this.isBetDeductedForCurrentPot) {
+          const activePlayersCount = this.players.filter(p => p.stackCount > 0 || p.id === winner.id).length;
+          const winnings = activePlayersCount * this.matchBet;
+          winner.coins += winnings;
+          this.addLog(`${winner.name} won the final pot of 🪙${winnings} coins!`);
+          this.isBetDeductedForCurrentPot = false;
+        }
+        
+        this.addLog(`Game Over! ${winner.name} has reached 0 greetings and wins the match!`);
       } else {
         // Turn rotates to next player with cards
         const nextIndex = this.findNextPlayerIndex(this.currentPlayerIndex);
@@ -275,24 +287,24 @@ class GameState {
       stackCount: p.stackCount,
       coins: p.coins,
       freeStackBuys: p.freeStackBuys
-    })).sort((a, b) => b.stackCount - a.stackCount);
+    })).sort((a, b) => a.stackCount - b.stackCount);
   }
 
   // Force end the game and get final standings
   endGame() {
     this.isGameOver = true;
     
-    // Find winner (player with highest card stackCount)
+    // Find winner (player with fewest card stackCount)
     let winner = this.players[0];
-    let maxCards = -1;
+    let minCards = 9999;
     this.players.forEach(p => {
-      if (p.stackCount > maxCards) {
-        maxCards = p.stackCount;
+      if (p.stackCount < minCards) {
+        minCards = p.stackCount;
         winner = p;
       }
     });
     
-    this.addLog(`Game ended by host. ${winner.name} had the most cards.`);
+    this.addLog(`Game ended by host. ${winner.name} had the fewest cards.`);
     return this.getScoreboard();
   }
 

@@ -181,6 +181,7 @@ class MultiplayerManager {
     try {
       this.roomRef = this.db.ref(`rooms/${this.roomCode}`);
       await this.withTimeout(this.roomRef.set(roomData));
+      this.roomRef.onDisconnect().remove();
       
       // Setup listener
       this.listenToRoom();
@@ -246,7 +247,8 @@ class MultiplayerManager {
       const avatarUrl = `assets/avatars/avatar_${avatarIdx + 1}.png`;
 
       // Add current player to room
-      await this.withTimeout(this.roomRef.child(`players/${this.currentUser.username}`).set({
+      const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
+      await this.withTimeout(playerRef.set({
         name: this.currentUser.name,
         username: this.currentUser.username,
         avatar: avatarUrl,
@@ -254,6 +256,7 @@ class MultiplayerManager {
         betVote: 25,
         joinedAt: firebase.database.ServerValue.TIMESTAMP
       }));
+      playerRef.onDisconnect().remove();
 
       // Setup listener
       this.listenToRoom();
@@ -289,6 +292,14 @@ class MultiplayerManager {
 
   cleanupRoom() {
     if (this.roomRef) {
+      try {
+        this.roomRef.onDisconnect().cancel();
+        if (this.currentUser) {
+          this.roomRef.child(`players/${this.currentUser.username}`).onDisconnect().cancel();
+        }
+      } catch (e) {
+        console.error("onDisconnect cancel error:", e);
+      }
       this.roomRef.off();
       this.roomRef = null;
     }
@@ -304,14 +315,33 @@ class MultiplayerManager {
       if (!snapshot.exists()) {
         // Room deleted
         if (window.isOnlineGame) {
-          alert("The room was closed by the host.");
-          this.cleanupRoom();
-          this.showScreen("dashboard-screen");
+          if (window.game && !window.game.isGameOver && window.game.players.length > 0) {
+            // We were in the middle of a match and the host disconnected/deleted room!
+            this.handlePlayerLeftWin();
+          } else {
+            alert("The room was closed by the host.");
+            this.cleanupRoom();
+            this.showScreen("dashboard-screen");
+          }
         }
         return;
       }
 
       const room = snapshot.val();
+      
+      // If we are actively playing, check if an opponent left the match
+      if (room.status === "playing" && window.game && !window.game.isGameOver) {
+        const currentPlayersInRoom = Object.keys(room.players || {});
+        // If the number of connected players in DB is less than active game players,
+        // and we are the last player left, we win!
+        if (currentPlayersInRoom.length < window.game.players.length) {
+          const isMeInRoom = room.players[this.currentUser.username] !== undefined;
+          if (isMeInRoom && currentPlayersInRoom.length === 1) {
+            this.handlePlayerLeftWin();
+            return;
+          }
+        }
+      }
       
       if (room.status === "waiting") {
         this.syncWaitingLobby(room);
@@ -861,6 +891,53 @@ class MultiplayerManager {
 
   syncEndedGame(room) {
     this.triggerGameOver();
+  }
+
+  async handlePlayerLeftWin() {
+    if (window.game.isGameOver) return;
+    
+    // Stop listener to prevent loops
+    if (this.roomRef) {
+      this.roomRef.off();
+    }
+    
+    window.game.isGameOver = true;
+    
+    // Find local player in game
+    const localUser = window.auth.getCurrentUser();
+    const matchMe = window.game.players.find(p => p.username === localUser.username);
+    
+    if (matchMe) {
+      // Award coins: get the total pot bet from all opponents
+      const opponentsCount = window.game.players.length - 1;
+      const winnings = opponentsCount * window.game.matchBet;
+      matchMe.coins += winnings + window.game.matchBet; // Refund bet + win from opponents
+      
+      // Empty cards to force win under 0 cards win condition
+      matchMe.stack = [];
+      
+      // Update local storage coins
+      const accounts = window.auth.getAccounts();
+      if (accounts[localUser.username]) {
+        accounts[localUser.username].coins = matchMe.coins;
+        window.auth.saveAccounts(accounts);
+      }
+      
+      alert(`Your opponent left the match! You win by default and earn the pot of 🪙${winnings} coins!`);
+    }
+    
+    // Trigger game over screen
+    this.triggerGameOver();
+    
+    // Clean up room in database if I am the host
+    if (this.isHost && this.roomRef) {
+      try {
+        await this.roomRef.remove();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    this.cleanupRoom();
   }
 }
 

@@ -595,12 +595,12 @@ document.addEventListener("DOMContentLoaded", () => {
           pile.appendChild(cardEl);
         }
       } else {
-        // Render ELIMINATED overlay (no buying allowed during match to guarantee a winner)
+        // Render WINNER overlay when a player reaches 0 cards
         const buyOverlay = document.createElement("div");
         buyOverlay.className = "buy-stack-overlay";
         buyOverlay.innerHTML = `
-          <div class="buy-overlay-title" style="color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">ELIMINATED</div>
-          <div class="buy-overlay-sub" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; font-weight: normal;">Out of Greetings</div>
+          <div class="buy-overlay-title" style="color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);">WINNER!</div>
+          <div class="buy-overlay-sub" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; font-weight: normal;">0 Greetings!</div>
         `;
         pile.appendChild(buyOverlay);
       }
@@ -662,8 +662,8 @@ document.addEventListener("DOMContentLoaded", () => {
     scoreboardList.innerHTML = "";
     const activePlayer = game.getCurrentPlayer();
     
-    // Sort players by stackCount descending
-    const scores = [...game.players].sort((a, b) => b.stackCount - a.stackCount);
+    // Sort players by stackCount ascending (fewer cards closer to winning)
+    const scores = [...game.players].sort((a, b) => a.stackCount - b.stackCount);
     
     scores.forEach((p, idx) => {
       const item = document.createElement("li");
@@ -671,12 +671,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (activePlayer && p.id === activePlayer.id) {
         item.classList.add("active-turn");
       }
-      if (p.stackCount === 0) {
-        item.classList.add("eliminated");
-      }
       
       let badge = "";
-      if (idx === 0 && p.stackCount > 0) badge = "👑 ";
+      if (idx === 0) badge = "👑 ";
       
       item.innerHTML = `
         <span class="score-player-name">${badge}${p.name}</span>
@@ -1078,22 +1075,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderFinalStandings(standings) {
     finalStandingsList.innerHTML = "";
-    
-    // Check highest count
-    const maxCards = standings[0] ? standings[0].stackCount : 0;
 
     standings.forEach((p, idx) => {
       const item = document.createElement("div");
       item.className = "standing-row";
-      if (p.stackCount === maxCards && maxCards > 0) {
+      if (idx === 0) {
         item.classList.add("winner-highlight");
       }
 
       let medal = "🎗️";
-      if (idx === 0 && p.stackCount > 0) medal = "🥇 Gold (Winner)";
-      else if (idx === 1 && p.stackCount > 0) medal = "🥈 Silver";
-      else if (idx === 2 && p.stackCount > 0) medal = "🥉 Bronze";
-      else if (p.stackCount === 0) medal = "💀 Eliminated";
+      if (idx === 0) medal = "🥇 Gold (Winner)";
+      else if (idx === 1) medal = "🥈 Silver";
+      else if (idx === 2) medal = "🥉 Bronze";
 
       item.innerHTML = `
         <div class="standing-rank">${idx + 1}</div>
