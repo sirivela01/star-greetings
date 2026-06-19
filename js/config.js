@@ -44,24 +44,7 @@ const STAR_CONFIG = {
     { id: "ayushmann_khurrana", name: "Ayushmann Khurrana", industry: "Bollywood", imagePath: "assets/stars/ayushmann_khurrana.jpg" },
     { id: "shraddha_kapoor", name: "Shraddha Kapoor", industry: "Bollywood", imagePath: "assets/stars/shraddha_kapoor.jpg" },
     { id: "rajkummar_rao", name: "Rajkummar Rao", industry: "Bollywood", imagePath: "assets/stars/rajkummar_rao.jpg" },
-    { id: "kriti_sanon", name: "Kriti Sanon", industry: "Bollywood", imagePath: "assets/stars/kriti_sanon.jpg" },
-
-    // --- HOLLYWOOD (15 Stars) ---
-    { id: "tom_holland", name: "Tom Holland", industry: "Hollywood", imagePath: "assets/stars/tom_holland.jpg" },
-    { id: "zendaya", name: "Zendaya", industry: "Hollywood", imagePath: "assets/stars/zendaya.jpg" },
-    { id: "timothee_chalamet", name: "Timothée Chalamet", industry: "Hollywood", imagePath: "assets/stars/timothee_chalamet.jpg" },
-    { id: "margot_robbie", name: "Margot Robbie", industry: "Hollywood", imagePath: "assets/stars/margot_robbie.jpg" },
-    { id: "florence_pugh", name: "Florence Pugh", industry: "Hollywood", imagePath: "assets/stars/florence_pugh.jpg" },
-    { id: "robert_downey_jr", name: "Robert Downey Jr.", industry: "Hollywood", imagePath: "assets/stars/robert_downey_jr.jpg" },
-    { id: "scarlett_johansson", name: "Scarlett Johansson", industry: "Hollywood", imagePath: "assets/stars/scarlett_johansson.jpg" },
-    { id: "chris_hemsworth", name: "Chris Hemsworth", industry: "Hollywood", imagePath: "assets/stars/chris_hemsworth.jpg" },
-    { id: "emma_stone", name: "Emma Stone", industry: "Hollywood", imagePath: "assets/stars/emma_stone.jpg" },
-    { id: "cillian_murphy", name: "Cillian Murphy", industry: "Hollywood", imagePath: "assets/stars/cillian_murphy.jpg" },
-    { id: "austin_butler", name: "Austin Butler", industry: "Hollywood", imagePath: "assets/stars/austin_butler.jpg" },
-    { id: "jenna_ortega", name: "Jenna Ortega", industry: "Hollywood", imagePath: "assets/stars/jenna_ortega.jpg" },
-    { id: "pedro_pascal", name: "Pedro Pascal", industry: "Hollywood", imagePath: "assets/stars/pedro_pascal.jpg" },
-    { id: "sydney_sweeney", name: "Sydney Sweeney", industry: "Hollywood", imagePath: "assets/stars/sydney_sweeney.jpg" },
-    { id: "anya_taylor_joy", name: "Anya Taylor-Joy", industry: "Hollywood", imagePath: "assets/stars/anya_taylor_joy.jpg" }
+    { id: "kriti_sanon", name: "Kriti Sanon", industry: "Bollywood", imagePath: "assets/stars/kriti_sanon.jpg" }
   ]
 };
 

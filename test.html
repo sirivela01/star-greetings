@@ -183,20 +183,20 @@
       const starRoster = window.STAR_CONFIG.roster;
       
       const starPrabhas = starRoster.find(s => s.id === "prabhas");
-      const starZendaya = starRoster.find(s => s.id === "zendaya");
+      const starAlia = starRoster.find(s => s.id === "alia_bhatt");
       
-      const cardAlice = new CardInstance(starZendaya, "alice_card_1");
+      const cardAlice = new CardInstance(starAlia, "alice_card_1");
       const cardAliceExtra = new CardInstance(starPrabhas, "alice_card_extra");
       const cardBob = new CardInstance(starPrabhas, "bob_card_1");
       const cardBobExtra = new CardInstance(starPrabhas, "bob_card_extra");
       const cardCharlie = new CardInstance(starPrabhas, "charlie_card_1");
-      const cardCharlieExtra = new CardInstance(starZendaya, "charlie_card_extra");
+      const cardCharlieExtra = new CardInstance(starAlia, "charlie_card_extra");
       
       state.players[0].stack = [cardAlice, cardAliceExtra];
       state.players[1].stack = [cardBob, cardBobExtra];
       state.players[2].stack = [cardCharlie, cardCharlieExtra];
       
-      // 1. Alice plays Zendaya
+      // 1. Alice plays Alia
       state.playCard("alice_card_1");
       assert(state.pot.length === 1, "Pot should have 1 card");
       assert(state.currentPlayerIndex === 1, "Turn should be Bob");

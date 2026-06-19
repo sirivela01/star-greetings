@@ -1,6 +1,6 @@
 # Star Greetings - Card Party Game
 
-★ A premium, high-fidelity local multiplayer card party game themed around Tollywood, Bollywood, and Hollywood stars. Players vote on match bets, bluff, match cards, and merge coins with fluid animations and synthesized metallic sounds.
+★ A premium, high-fidelity local multiplayer card party game themed around Tollywood and Bollywood stars. Players vote on match bets, bluff, match cards, and merge coins with fluid animations and synthesized metallic sounds.
 
 ---
 

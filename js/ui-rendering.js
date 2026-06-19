@@ -558,7 +558,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const pile = document.getElementById(`stack-pile-${p.id}`);
       if (!isEliminated) {
         const isCardSelectable = window.isOnlineGame 
-          ? (p.username === (window.auth.getCurrentUser()?.username) && p.id === activePlayer.id)
+          ? (p.username && window.auth.getCurrentUser() && p.username.toLowerCase().trim() === window.auth.getCurrentUser().username.toLowerCase().trim() && p.id === activePlayer.id)
           : (p.id === activePlayer.id);
 
         if (isCardSelectable) {
@@ -614,7 +614,9 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Prevent clicking buy buttons on another player's seat during online matches
         const playerObj = game.players.find(p => p.id === playerId);
-        if (window.isOnlineGame && playerObj && playerObj.username !== window.auth.getCurrentUser()?.username) {
+        if (window.isOnlineGame && playerObj && 
+            (!playerObj.username || !window.auth.getCurrentUser() || 
+             playerObj.username.toLowerCase().trim() !== window.auth.getCurrentUser().username.toLowerCase().trim())) {
           return;
         }
 
@@ -1064,8 +1066,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function cleanupFloatingElements() {
+    document.querySelectorAll(".floating-card-anim, .win-flash-overlay, .coin-anim-element").forEach(el => el.remove());
+  }
+  window.cleanupFloatingElements = cleanupFloatingElements;
+
   // Trigger final screen and results
   function triggerGameOver() {
+    cleanupFloatingElements();
     const standings = game.endGame();
     renderFinalStandings(standings);
     
@@ -1123,6 +1131,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   startGameBtn.addEventListener("click", (e) => {
     e.preventDefault();
+    cleanupFloatingElements();
     
     const playerNames = [];
     const playerAvatarUrls = [];
@@ -1190,6 +1199,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Restart/Play Again clicked
   restartGameBtn.addEventListener("click", () => {
+    cleanupFloatingElements();
     endScreen.classList.add("hidden");
     
     // Redirect to dashboard and sync coins won/lost during the match
@@ -1230,6 +1240,9 @@ document.addEventListener("DOMContentLoaded", () => {
         playerObj.radiusOffset = (playerObj.radiusOffset || 0) - 25;
         if (playerObj.radiusOffset < -80) playerObj.radiusOffset = -80;
         positionSeats();
+        if (window.isOnlineGame && window.multiplayer) {
+          window.multiplayer.updatePlayerOffsets(playerId);
+        }
       }
     }
     
@@ -1241,6 +1254,9 @@ document.addEventListener("DOMContentLoaded", () => {
         playerObj.radiusOffset = (playerObj.radiusOffset || 0) + 25;
         if (playerObj.radiusOffset > 80) playerObj.radiusOffset = 80;
         positionSeats();
+        if (window.isOnlineGame && window.multiplayer) {
+          window.multiplayer.updatePlayerOffsets(playerId);
+        }
       }
     }
   });
@@ -1355,6 +1371,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (avatarWrapper) avatarWrapper.classList.remove("dragging-active");
       }
       document.body.style.cursor = "";
+      
+      // Save offsets in online multiplayer if it is an online match
+      if (window.isOnlineGame && window.multiplayer) {
+        window.multiplayer.updatePlayerOffsets(activeDragPlayerId);
+      }
     }
 
     activeDragPlayerId = null;

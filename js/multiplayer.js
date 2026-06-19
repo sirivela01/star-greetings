@@ -131,6 +131,9 @@ class MultiplayerManager {
 
   // Hide all screens and show a specific one
   showScreen(screenId) {
+    if (window.cleanupFloatingElements) {
+      window.cleanupFloatingElements();
+    }
     const screens = [
       "login-screen", "signup-screen", "forgot-password-screen",
       "dashboard-screen", "online-lobby-screen", "online-waiting-screen",
@@ -343,7 +346,10 @@ class MultiplayerManager {
             console.log("Self-healing during play: Re-registering myself in the players list");
             
             // Re-find my avatar from local game if possible
-            const matchMe = window.game.players.find(p => p.username === myUsername);
+            const matchMe = window.game.players.find(p => 
+              (p.username && p.username.toLowerCase().trim() === myUsername) ||
+              (p.name && p.name.toLowerCase().trim() === (this.currentUser.name || "").toLowerCase().trim())
+            );
             const avatarUrl = matchMe ? matchMe.avatar : "assets/avatars/avatar_1.png";
             
             const playerRef = this.roomRef.child(`players/${myUsername}`);
@@ -650,7 +656,10 @@ class MultiplayerManager {
   syncLocalCoinsWithMatch() {
     const localUser = window.auth.getCurrentUser();
     if (localUser && window.game && window.game.players) {
-      const matchMe = window.game.players.find(p => p.username === localUser.username);
+      const matchMe = window.game.players.find(p => 
+        (p.username && p.username.toLowerCase().trim() === localUser.username.toLowerCase().trim()) ||
+        (p.name && p.name.toLowerCase().trim() === localUser.name.toLowerCase().trim())
+      );
       if (matchMe && matchMe.coins !== localUser.coins) {
         const accounts = window.auth.getAccounts();
         if (accounts[localUser.username]) {
@@ -863,7 +872,10 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const localPlayer = gameEngine.players.find(p => p.username === this.currentUser.username);
+      const localPlayer = gameEngine.players.find(p => 
+        (p.username && p.username.toLowerCase().trim() === this.currentUser.username.toLowerCase().trim()) ||
+        (p.name && p.name.toLowerCase().trim() === this.currentUser.name.toLowerCase().trim())
+      );
       if (!localPlayer || localPlayer.stackCount <= 1) return;
 
       gameEngine.shuffleStack(localPlayer.id);
@@ -894,7 +906,10 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const localPlayer = gameEngine.players.find(p => p.username === this.currentUser.username);
+      const localPlayer = gameEngine.players.find(p => 
+        (p.username && p.username.toLowerCase().trim() === this.currentUser.username.toLowerCase().trim()) ||
+        (p.name && p.name.toLowerCase().trim() === this.currentUser.name.toLowerCase().trim())
+      );
       if (!localPlayer) return;
 
       const res = gameEngine.buyStack(localPlayer.id);
@@ -929,7 +944,10 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const localPlayer = gameEngine.players.find(p => p.username === this.currentUser.username);
+      const localPlayer = gameEngine.players.find(p => 
+        (p.username && p.username.toLowerCase().trim() === this.currentUser.username.toLowerCase().trim()) ||
+        (p.name && p.name.toLowerCase().trim() === this.currentUser.name.toLowerCase().trim())
+      );
       if (!localPlayer) return;
 
       gameEngine.buyCoins(localPlayer.id);
@@ -1000,7 +1018,10 @@ class MultiplayerManager {
     
     // Find local player in game
     const localUser = window.auth.getCurrentUser();
-    const matchMe = window.game.players.find(p => p.username === localUser.username);
+    const matchMe = window.game.players.find(p => 
+      (p.username && p.username.toLowerCase().trim() === localUser.username.toLowerCase().trim()) ||
+      (p.name && p.name.toLowerCase().trim() === localUser.name.toLowerCase().trim())
+    );
     
     if (matchMe) {
       // Award coins: get the total pot bet from all opponents
@@ -1034,6 +1055,30 @@ class MultiplayerManager {
     }
     this.cleanupRoom();
   }
+
+  async updatePlayerOffsets(playerId) {
+    if (!this.roomRef) return;
+    try {
+      const snapshot = await this.roomRef.once("value");
+      const room = snapshot.val();
+      if (!room || !room.gameState) return;
+      
+      const gameEngine = new GameState();
+      gameEngine.deserialize(room.gameState);
+      
+      const localPlayer = window.game ? window.game.players.find(p => p.id === playerId) : null;
+      const enginePlayer = gameEngine.players.find(p => p.id === playerId);
+      if (localPlayer && enginePlayer) {
+        enginePlayer.angleOffset = localPlayer.angleOffset || 0;
+        enginePlayer.radiusOffset = localPlayer.radiusOffset || 0;
+        
+        const serializedGameState = this.serializeGameState(gameEngine);
+        await this.roomRef.child("gameState").set(serializedGameState);
+      }
+    } catch (e) {
+      console.error("Failed to update player offsets in DB:", e);
+    }
+  }
 }
 
 // Reconstruct game logic from deserialization helper
@@ -1064,7 +1109,7 @@ GameState.prototype.deserialize = function(data) {
       card.playedBy = c.playedBy;
       return card;
     });
-    const existingPlayer = oldPlayers.find(ep => ep.id === p.id);
+    const existingPlayer = oldPlayers.find(ep => String(ep.id) === String(p.id));
     player.radiusOffset = existingPlayer ? (existingPlayer.radiusOffset || 0) : (p.radiusOffset || 0);
     player.angleOffset = existingPlayer ? (existingPlayer.angleOffset || 0) : (p.angleOffset || 0);
     return player;
