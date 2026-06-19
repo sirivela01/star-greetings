@@ -651,6 +651,13 @@ class MultiplayerManager {
           this.playActionAnimation(lastAction, room.gameState);
           return;
         }
+      } else {
+        // If the action has already been processed or is currently playing,
+        // return early to prevent subsequent events (like timestamp resolution)
+        // from running static rendering and clearing active animations/overlays.
+        if (this.lastActionId) {
+          return;
+        }
       }
     }
 
