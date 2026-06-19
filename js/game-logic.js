@@ -74,14 +74,15 @@ class GameState {
       const counts = {};
       let maxCount = 0;
       playerBets.forEach(b => {
-        counts[b] = (counts[b] || 0) + 1;
-        if (counts[b] > maxCount) {
-          maxCount = counts[b];
-          resolvedBet = b;
-        } else if (counts[b] === maxCount) {
+        const val = parseInt(b, 10) || 25;
+        counts[val] = (counts[val] || 0) + 1;
+        if (counts[val] > maxCount) {
+          maxCount = counts[val];
+          resolvedBet = val;
+        } else if (counts[val] === maxCount) {
           // tie breaker: lower bet
-          if (b < resolvedBet) {
-            resolvedBet = b;
+          if (val < resolvedBet) {
+            resolvedBet = val;
           }
         }
       });
@@ -90,6 +91,7 @@ class GameState {
 
     // Deduct bet from players immediately at start (so balances show 275 right away)
     this.players.forEach(player => {
+      player.coins = isNaN(parseInt(player.coins, 10)) ? 300 : parseInt(player.coins, 10);
       if (player.coins < this.matchBet) {
         player.coins += 300;
         this.addLog(`${player.name} was auto-refilled with 300 coins to cover the bet.`);
@@ -153,6 +155,7 @@ class GameState {
     if (!this.isBetDeductedForCurrentPot) {
       const activePlayers = this.getActivePlayers();
       activePlayers.forEach(p => {
+        p.coins = isNaN(parseInt(p.coins, 10)) ? 300 : parseInt(p.coins, 10);
         if (p.coins < this.matchBet) {
           p.coins += 300;
           this.addLog(`${p.name} was auto-refilled with 300 coins to cover the bet.`);

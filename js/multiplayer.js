@@ -176,7 +176,7 @@ class MultiplayerManager {
           name: this.currentUser.name || this.currentUser.username || "Player",
           username: this.currentUser.username,
           avatar: "assets/avatars/avatar_1.png", // default Player 1 avatar
-          coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
+          coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
           betVote: 25,
           joinedAt: firebase.database.ServerValue.TIMESTAMP
         }
@@ -257,7 +257,7 @@ class MultiplayerManager {
         name: this.currentUser.name || this.currentUser.username || "Player",
         username: this.currentUser.username,
         avatar: avatarUrl || "assets/avatars/avatar_1.png",
-        coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
+        coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
         betVote: 25,
         joinedAt: firebase.database.ServerValue.TIMESTAMP
       }));
@@ -342,7 +342,8 @@ class MultiplayerManager {
         // Self-healing during play: if my player node is missing (due to disconnect), re-add myself!
         if (this.currentUser) {
           const myUsername = (this.currentUser.username || "").toLowerCase().trim();
-          if (myUsername && (!room.players || !room.players[myUsername])) {
+          const playerExists = room.players && Object.keys(room.players).some(k => k.toLowerCase().trim() === myUsername);
+          if (myUsername && !playerExists) {
             console.log("Self-healing during play: Re-registering myself in the players list");
             
             // Re-find my avatar from local game if possible
@@ -352,11 +353,12 @@ class MultiplayerManager {
             );
             const avatarUrl = matchMe ? matchMe.avatar : "assets/avatars/avatar_1.png";
             
+            const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
             playerRef.set({
               name: this.currentUser.name || this.currentUser.username || "Player",
-              username: myUsername,
+              username: this.currentUser.username,
               avatar: avatarUrl || "assets/avatars/avatar_1.png",
-              coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
+              coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
               betVote: 25,
               joinedAt: firebase.database.ServerValue.TIMESTAMP
             });
@@ -396,18 +398,20 @@ class MultiplayerManager {
         // Self-healing: if my player node is missing (due to a connection drop), re-add myself!
         if (this.currentUser) {
           const myUsername = (this.currentUser.username || "").toLowerCase().trim();
-          if (myUsername && (!room.players || !room.players[myUsername])) {
+          const playerExists = room.players && Object.keys(room.players).some(k => k.toLowerCase().trim() === myUsername);
+          if (myUsername && !playerExists) {
             console.log("Self-healing: Re-registering myself in the waiting room list");
             
             // Assign avatar index
             const playersCount = Object.keys(room.players || {}).length;
             const avatarUrl = this.isHost ? "assets/avatars/avatar_1.png" : `assets/avatars/avatar_${(playersCount % 6) + 1}.png`;
             
+            const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
             playerRef.set({
               name: this.currentUser.name || this.currentUser.username || "Player",
-              username: myUsername,
+              username: this.currentUser.username,
               avatar: avatarUrl || "assets/avatars/avatar_1.png",
-              coins: this.currentUser.coins !== undefined ? this.currentUser.coins : 300,
+              coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
               betVote: 25,
               joinedAt: firebase.database.ServerValue.TIMESTAMP
             });
@@ -494,7 +498,8 @@ class MultiplayerManager {
   // Update personal bet vote in waiting lobby
   async updateBetVote(val) {
     if (!this.roomRef || !this.currentUser) return;
-    await this.roomRef.child(`players/${this.currentUser.username}/betVote`).set(val);
+    const parsedVal = parseInt(val, 10);
+    await this.roomRef.child(`players/${this.currentUser.username}/betVote`).set(isNaN(parsedVal) ? 25 : parsedVal);
   }
 
   // Update card placement mode selection in waiting lobby (Host only)
@@ -523,7 +528,7 @@ class MultiplayerManager {
 
       // Initialize game logic engine locally to serialize state
       const playerNames = players.map(p => p.name || p.username || "Player");
-      const playerBets = players.map(p => p.betVote || 25);
+      const playerBets = players.map(p => parseInt(p.betVote, 10) || 25);
       
       const gameEngine = new GameState();
       gameEngine.config.CARD_PLACEMENT_MODE = room.placementMode || "middle";
@@ -533,7 +538,7 @@ class MultiplayerManager {
       gameEngine.players.forEach((p, idx) => {
         p.avatar = players[idx].avatar;
         p.username = players[idx].username;
-        p.coins = players[idx].coins; // carry over actual coins from database
+        p.coins = isNaN(parseInt(players[idx].coins, 10)) ? 300 : parseInt(players[idx].coins, 10); // carry over actual coins from database
       });
 
       // Re-deduct initial bets based on actual player coins
@@ -572,7 +577,7 @@ class MultiplayerManager {
       roundNumber: game.roundNumber,
       isGameOver: game.isGameOver,
       globalInstanceCounter: game.globalInstanceCounter,
-      matchBet: game.matchBet,
+      matchBet: parseInt(game.matchBet, 10) || 25,
       isBetDeductedForCurrentPot: game.isBetDeductedForCurrentPot,
       currentPotStarterIndex: game.currentPotStarterIndex,
       players: game.players.map(p => ({
@@ -580,8 +585,8 @@ class MultiplayerManager {
         name: p.name || p.username || "Player",
         username: p.username || "player",
         avatar: p.avatar || "assets/avatars/avatar_1.png",
-        coins: p.coins !== undefined ? p.coins : 300,
-        freeStackBuys: p.freeStackBuys !== undefined ? p.freeStackBuys : 10,
+        coins: isNaN(parseInt(p.coins, 10)) ? 300 : parseInt(p.coins, 10),
+        freeStackBuys: isNaN(parseInt(p.freeStackBuys, 10)) ? 10 : parseInt(p.freeStackBuys, 10),
         stack: p.stack.map(c => this.serializeCard(c)),
         radiusOffset: p.radiusOffset || 0,
         angleOffset: p.angleOffset || 0
@@ -1091,7 +1096,7 @@ GameState.prototype.deserialize = function(data) {
   this.roundNumber = data.roundNumber;
   this.isGameOver = data.isGameOver;
   this.globalInstanceCounter = data.globalInstanceCounter;
-  this.matchBet = data.matchBet;
+  this.matchBet = parseInt(data.matchBet, 10) || 25;
   this.isBetDeductedForCurrentPot = data.isBetDeductedForCurrentPot;
   this.currentPotStarterIndex = data.currentPotStarterIndex;
   
@@ -1100,8 +1105,8 @@ GameState.prototype.deserialize = function(data) {
     const player = new Player(p.name, p.id);
     player.username = p.username;
     player.avatar = p.avatar;
-    player.coins = p.coins;
-    player.freeStackBuys = p.freeStackBuys;
+    player.coins = isNaN(parseInt(p.coins, 10)) ? 300 : parseInt(p.coins, 10);
+    player.freeStackBuys = isNaN(parseInt(p.freeStackBuys, 10)) ? 10 : parseInt(p.freeStackBuys, 10);
     player.stack = (p.stack || []).map(c => {
       const card = new CardInstance(c, c.instanceId);
       card.playedBy = c.playedBy;
