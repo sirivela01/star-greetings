@@ -166,6 +166,7 @@ class MultiplayerManager {
       roomCode: this.roomCode,
       status: "waiting",
       hostUsername: this.currentUser.username,
+      placementMode: "middle",
       players: {
         [this.currentUser.username]: {
           name: this.currentUser.name,
@@ -361,6 +362,17 @@ class MultiplayerManager {
     if (!playersListEl || !playerCountEl) return;
     playersListEl.innerHTML = "";
     
+    // Sync placement mode selection
+    const placementSelect = document.getElementById("online-placement-mode");
+    if (placementSelect) {
+      placementSelect.value = room.placementMode || "middle";
+      if (this.isHost) {
+        placementSelect.removeAttribute("disabled");
+      } else {
+        placementSelect.setAttribute("disabled", "true");
+      }
+    }
+    
     // Sort players by join timestamp to keep consistent order
     const players = Object.values(room.players || {}).sort((a, b) => a.joinedAt - b.joinedAt);
     playerCountEl.textContent = players.length;
@@ -412,6 +424,16 @@ class MultiplayerManager {
     await this.roomRef.child(`players/${this.currentUser.username}/betVote`).set(val);
   }
 
+  // Update card placement mode selection in waiting lobby (Host only)
+  async updatePlacementMode(val) {
+    if (!this.roomRef || !this.isHost) return;
+    try {
+      await this.roomRef.child("placementMode").set(val);
+    } catch (e) {
+      console.error("Failed to update placement mode:", e);
+    }
+  }
+
   // Start the match (Host only)
   async startMatch() {
     if (!this.isHost || !this.roomRef) return;
@@ -431,6 +453,7 @@ class MultiplayerManager {
       const playerBets = players.map(p => p.betVote);
       
       const gameEngine = new GameState();
+      gameEngine.config.CARD_PLACEMENT_MODE = room.placementMode || "middle";
       gameEngine.initializeGame(playerNames, 30, playerBets);
       
       // Bind avatars and usernames to GameState players
@@ -508,6 +531,9 @@ class MultiplayerManager {
   syncActiveGame(room) {
     // Hide waiting room screen and show game screen
     this.showScreen("game-screen");
+
+    // Sync card placement mode
+    window.game.config.CARD_PLACEMENT_MODE = room.placementMode || "middle";
 
     const stateData = room.gameState;
     if (!stateData) return;

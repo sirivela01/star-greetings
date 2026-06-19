@@ -1499,6 +1499,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const onlinePlacementMode = document.getElementById("online-placement-mode");
+  if (onlinePlacementMode) {
+    onlinePlacementMode.addEventListener("change", () => {
+      const val = onlinePlacementMode.value;
+      if (window.multiplayer) {
+        window.multiplayer.updatePlacementMode(val);
+      }
+    });
+  }
+
   // Initialize view
   renderPlayerSetupFields();
 });
