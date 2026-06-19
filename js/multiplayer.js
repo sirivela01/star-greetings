@@ -7,6 +7,7 @@ class MultiplayerManager {
     this.isHost = false;
     this.currentUser = null;
     this.lastActionTimestamp = 0;
+    this.lastActionId = null;
     this.db = null;
     
     // Clean up old broken default URL from previous builds if saved in local storage
@@ -427,6 +428,7 @@ class MultiplayerManager {
         gameState: serializedGameState,
         lastAction: {
           type: "gameStart",
+          actionId: "start_" + Math.random().toString(36).substring(2, 11),
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
       });
@@ -496,13 +498,16 @@ class MultiplayerManager {
 
     // Check last action to play animations
     const lastAction = room.lastAction;
-    if (lastAction && lastAction.timestamp > this.lastActionTimestamp) {
-      const isInitialLoad = this.lastActionTimestamp === 0;
-      this.lastActionTimestamp = lastAction.timestamp;
+    if (lastAction) {
+      const isNewAction = lastAction.actionId && lastAction.actionId !== this.lastActionId;
+      const isInitialLoad = !this.lastActionId;
 
-      if (!isInitialLoad) {
-        this.playActionAnimation(lastAction, room.gameState);
-        return;
+      if (isNewAction) {
+        this.lastActionId = lastAction.actionId;
+        if (!isInitialLoad) {
+          this.playActionAnimation(lastAction, room.gameState);
+          return;
+        }
       }
     }
 
@@ -707,6 +712,7 @@ class MultiplayerManager {
         gameState: serializedGameState,
         lastAction: {
           type: "play",
+          actionId: "play_" + Math.random().toString(36).substring(2, 11),
           playerIndex: outcome.playerIndex,
           playerName: outcome.playerName,
           card: this.serializeCard(cardToAnimate),
@@ -742,6 +748,7 @@ class MultiplayerManager {
         gameState: serializedGameState,
         lastAction: {
           type: "shuffle",
+          actionId: "shuffle_" + Math.random().toString(36).substring(2, 11),
           playerUsername: this.currentUser.username,
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
@@ -776,6 +783,7 @@ class MultiplayerManager {
         gameState: serializedGameState,
         lastAction: {
           type: "buyStack",
+          actionId: "buystack_" + Math.random().toString(36).substring(2, 11),
           playerUsername: this.currentUser.username,
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
@@ -806,6 +814,7 @@ class MultiplayerManager {
         gameState: serializedGameState,
         lastAction: {
           type: "buyCoins",
+          actionId: "buycoins_" + Math.random().toString(36).substring(2, 11),
           playerUsername: this.currentUser.username,
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
@@ -834,6 +843,7 @@ class MultiplayerManager {
         gameState: serializedGameState,
         lastAction: {
           type: "endGame",
+          actionId: "end_" + Math.random().toString(36).substring(2, 11),
           timestamp: firebase.database.ServerValue.TIMESTAMP
         }
       });
