@@ -577,7 +577,9 @@ document.addEventListener("DOMContentLoaded", () => {
             
             document.getElementById(`shuffle-btn-${p.id}`).addEventListener("click", (e) => {
               e.stopPropagation();
-              playShuffleSound();
+              if (!window.isOnlineGame) {
+                playShuffleSound();
+              }
               if (window.isOnlineGame) {
                 window.multiplayer.shuffleStack();
               } else {
@@ -855,7 +857,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Handle playing a card from player's selection
   function handleCardSelection(cardInstanceId) {
-    playTouchSound();
+    if (!window.isOnlineGame) {
+      playTouchSound();
+    }
     if (window.isOnlineGame) {
       window.multiplayer.playCard(cardInstanceId);
     } else {
