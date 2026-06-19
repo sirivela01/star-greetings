@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1.7.0">
+  <link rel="stylesheet" href="styles.css?v=1.8.0">
 </head>
 <body>
 
@@ -376,7 +376,10 @@
 }</pre>
             4. Copy your Database URL from the Data tab and paste it above!
           </div>
-          <button type="button" id="db-config-save-btn" class="btn primary-btn mt-3" style="width: 100%;">Save & Connect</button>
+          <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="button" id="db-config-save-btn" class="btn primary-btn" style="flex: 1; padding: 12px 6px; font-size: 0.9rem;">Save & Connect</button>
+            <button type="button" id="db-config-reset-btn" class="btn secondary-btn" style="flex: 1; padding: 12px 6px; font-size: 0.9rem; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #f87171;">Reset to Default</button>
+          </div>
         </div>
       </div>
     </div>
@@ -388,10 +391,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="js/config.js?v=1.7.0"></script>
-  <script src="js/auth.js?v=1.7.0"></script>
-  <script src="js/game-logic.js?v=1.7.0"></script>
-  <script src="js/ui-rendering.js?v=1.7.0"></script>
-  <script src="js/multiplayer.js?v=1.7.0"></script>
+  <script src="js/config.js?v=1.8.0"></script>
+  <script src="js/auth.js?v=1.8.0"></script>
+  <script src="js/game-logic.js?v=1.8.0"></script>
+  <script src="js/ui-rendering.js?v=1.8.0"></script>
+  <script src="js/multiplayer.js?v=1.8.0"></script>
 </body>
 </html>

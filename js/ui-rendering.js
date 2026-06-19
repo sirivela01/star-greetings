@@ -1497,6 +1497,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const dbConfigResetBtn = document.getElementById("db-config-reset-btn");
+  if (dbConfigResetBtn) {
+    dbConfigResetBtn.addEventListener("click", () => {
+      playTouchSound();
+      try {
+        if (window.multiplayer) {
+          window.multiplayer.resetDbConfigToDefault();
+        }
+      } catch (err) {
+        alert("Reset Error: " + err.message);
+      }
+    });
+  }
+
   // Initialize view
   renderPlayerSetupFields();
 });

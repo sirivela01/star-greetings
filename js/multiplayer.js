@@ -9,8 +9,12 @@ class MultiplayerManager {
     this.lastActionTimestamp = 0;
     this.db = null;
     
-    // Check if user has saved a custom database URL in localStorage
-    const savedUrl = localStorage.getItem("star_greetings_firebase_url");
+    // Clean up old broken default URL from previous builds if saved in local storage
+    let savedUrl = localStorage.getItem("star_greetings_firebase_url");
+    if (savedUrl && savedUrl.includes("star-greetings-default-default-rtdb")) {
+      localStorage.removeItem("star_greetings_firebase_url");
+      savedUrl = null;
+    }
     
     // Default public Firebase Config for out-of-the-box operation
     this.firebaseConfig = {
@@ -88,6 +92,28 @@ class MultiplayerManager {
       this.closeDbConfigModal();
     } catch (e) {
       alert("Failed to initialize with new URL: " + e.message);
+    }
+  }
+
+  async resetDbConfigToDefault() {
+    localStorage.removeItem("star_greetings_firebase_url");
+    const defaultUrl = "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+    this.firebaseConfig.databaseURL = defaultUrl;
+    
+    try {
+      if (firebase.apps.length > 0) {
+        await firebase.app().delete();
+      }
+      firebase.initializeApp(this.firebaseConfig);
+      this.db = firebase.database();
+      
+      const input = document.getElementById("db-config-url");
+      if (input) input.value = defaultUrl;
+      
+      alert("Database settings reset to default successfully!");
+      this.closeDbConfigModal();
+    } catch (e) {
+      alert("Failed to reset: " + e.message);
     }
   }
 
