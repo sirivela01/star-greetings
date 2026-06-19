@@ -10,6 +10,7 @@ class MultiplayerManager {
     this.lastActionId = null;
     this.db = null;
     this.disconnectTimer = null;
+    this.wasInWaitingLobby = false;
     
     // Clean up old broken default URL from previous builds if saved in local storage
     let savedUrl = localStorage.getItem("star_greetings_firebase_url");
@@ -315,6 +316,8 @@ class MultiplayerManager {
     this.isHost = false;
     window.isOnlineGame = false;
     window.currentUserUsername = null;
+    this.lastActionId = null;
+    this.wasInWaitingLobby = false;
   }
 
   // Listen for changes to the room
@@ -354,12 +357,14 @@ class MultiplayerManager {
             const avatarUrl = matchMe ? matchMe.avatar : "assets/avatars/avatar_1.png";
             
             const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
+            const activeBetBtn = document.querySelector("#online-bet-selector .bet-opt-btn.active");
+            const currentBet = activeBetBtn ? (parseInt(activeBetBtn.dataset.val, 10) || 25) : 25;
             playerRef.set({
               name: this.currentUser.name || this.currentUser.username || "Player",
               username: this.currentUser.username,
               avatar: avatarUrl || "assets/avatars/avatar_1.png",
               coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
-              betVote: 25,
+              betVote: currentBet,
               joinedAt: firebase.database.ServerValue.TIMESTAMP
             });
             playerRef.onDisconnect().remove();
@@ -407,12 +412,14 @@ class MultiplayerManager {
             const avatarUrl = this.isHost ? "assets/avatars/avatar_1.png" : `assets/avatars/avatar_${(playersCount % 6) + 1}.png`;
             
             const playerRef = this.roomRef.child(`players/${this.currentUser.username}`);
+            const activeBetBtn = document.querySelector("#online-bet-selector .bet-opt-btn.active");
+            const currentBet = activeBetBtn ? (parseInt(activeBetBtn.dataset.val, 10) || 25) : 25;
             playerRef.set({
               name: this.currentUser.name || this.currentUser.username || "Player",
               username: this.currentUser.username,
               avatar: avatarUrl || "assets/avatars/avatar_1.png",
               coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
-              betVote: 25,
+              betVote: currentBet,
               joinedAt: firebase.database.ServerValue.TIMESTAMP
             });
             playerRef.onDisconnect().remove();
@@ -430,6 +437,7 @@ class MultiplayerManager {
 
   // Render Waiting Lobby players list
   syncWaitingLobby(room) {
+    this.wasInWaitingLobby = true;
     const playersListEl = document.getElementById("lobby-players-list");
     const playerCountEl = document.getElementById("lobby-player-count");
     
@@ -634,10 +642,11 @@ class MultiplayerManager {
     const lastAction = room.lastAction;
     if (lastAction) {
       const isNewAction = lastAction.actionId && lastAction.actionId !== this.lastActionId;
-      const isInitialLoad = !this.lastActionId;
+      const isInitialLoad = !this.lastActionId && !this.wasInWaitingLobby;
 
       if (isNewAction) {
         this.lastActionId = lastAction.actionId;
+        this.wasInWaitingLobby = false;
         if (!isInitialLoad) {
           this.playActionAnimation(lastAction, room.gameState);
           return;
@@ -745,6 +754,9 @@ class MultiplayerManager {
           window.renderSeats();
           window.renderScoreboard();
           window.renderLogs();
+          if (gameState.isGameOver) {
+            this.triggerGameOver();
+          }
         }
       }, 500);
     } else if (lastAction.type === "shuffle") {
