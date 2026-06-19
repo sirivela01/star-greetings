@@ -182,7 +182,7 @@ class MultiplayerManager {
     try {
       this.roomRef = this.db.ref(`rooms/${this.roomCode}`);
       await this.withTimeout(this.roomRef.set(roomData));
-      this.roomRef.onDisconnect().remove();
+      this.roomRef.child(`players/${this.currentUser.username}`).onDisconnect().remove();
       
       // Setup listener
       this.listenToRoom();
@@ -294,7 +294,6 @@ class MultiplayerManager {
   cleanupRoom() {
     if (this.roomRef) {
       try {
-        this.roomRef.onDisconnect().cancel();
         if (this.currentUser) {
           this.roomRef.child(`players/${this.currentUser.username}`).onDisconnect().cancel();
         }
