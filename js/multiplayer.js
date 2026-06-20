@@ -621,22 +621,39 @@ class MultiplayerManager {
     }).sort((a, b) => a.joinedAt - b.joinedAt);
     playerCountEl.textContent = players.length;
 
-    players.forEach(p => {
+    // Log the received players data from Firebase for diagnostics
+    console.log("Firebase syncWaitingLobby players data:", room.players);
+
+    players.forEach((p, idx) => {
       const row = document.createElement("li");
       row.className = "lobby-player-row";
       
       const isHost = p.uid === room.createdBy;
       
-      row.innerHTML = `
-        <div class="lobby-player-info">
-          <img src="${p.avatar}" class="lobby-player-avatar" alt="Avatar">
-          <span class="lobby-player-name">${p.name}</span>
-        </div>
-        <div class="lobby-player-badges">
-          ${isHost ? `<span class="lobby-badge host">Host</span>` : ""}
-          <span class="lobby-badge bet">Vote: 🪙${p.betVote}</span>
-        </div>
-      `;
+      // If name or avatar is not fully resolved/loaded, show a skeleton placeholder row
+      if (!p.name || !p.avatar) {
+        row.innerHTML = `
+          <div class="lobby-player-info skeleton-pulse" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);"></div>
+            <div style="width: 120px; height: 16px; border-radius: 4px; background: rgba(255, 255, 255, 0.1);"></div>
+          </div>
+        `;
+      } else {
+        const displayName = p.name || p.username || `Player ${idx + 1}`;
+        const displayAvatar = p.avatar || "assets/avatars/avatar_1.png";
+        const displayBetVote = p.betVote !== undefined ? p.betVote : 25;
+        
+        row.innerHTML = `
+          <div class="lobby-player-info">
+            <img src="${displayAvatar}" class="lobby-player-avatar" alt="Avatar">
+            <span class="lobby-player-name">${displayName}</span>
+          </div>
+          <div class="lobby-player-badges">
+            ${isHost ? `<span class="lobby-badge host">Host</span>` : ""}
+            <span class="lobby-badge bet">Vote: 🪙${displayBetVote}</span>
+          </div>
+        `;
+      }
       playersListEl.appendChild(row);
     });
 
@@ -682,7 +699,10 @@ class MultiplayerManager {
     const parsedVal = parseInt(val, 10);
     const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     if (myUid) {
-      await this.roomRef.child(`players/${myUid}/betVote`).set(isNaN(parsedVal) ? 25 : parsedVal);
+      // Use .update() instead of .set() to prevent overwriting other player properties
+      await this.roomRef.child(`players/${myUid}`).update({
+        betVote: isNaN(parsedVal) ? 25 : parsedVal
+      });
     }
   }
 

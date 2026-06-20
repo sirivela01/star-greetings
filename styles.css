@@ -2539,5 +2539,22 @@ select.form-select option {
   cursor: pointer;
 }
 
+/* Skeleton Loading Pulse Keyframes */
+.skeleton-pulse {
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
 
 
