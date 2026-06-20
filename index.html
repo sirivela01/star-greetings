@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Star Greetings">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Star Greetings - A highly engaging, fast-paced local multiplayer memory and bluffing card game themed around Tollywood and Bollywood stars.">
   <title>Star Greetings - Card Party Game</title>
   <!-- Google Fonts: Outfit and Inter -->
@@ -279,7 +283,10 @@
             <span class="hud-bet-tag">Bet: <strong id="hud-bet-amt">🪙25</strong></span>
             <span class="hud-turn-indicator">Turn: <strong id="hud-active-player-name">Player</strong></span>
           </div>
-          <button type="button" id="drawer-toggle-btn" class="btn secondary-btn hud-drawer-btn">📜 Logs & Standings</button>
+          <div class="hud-actions" style="display: flex; gap: 8px;">
+            <button type="button" id="fullscreen-btn" class="btn secondary-btn hud-drawer-btn" title="Toggle Fullscreen">📺 Fullscreen</button>
+            <button type="button" id="drawer-toggle-btn" class="btn secondary-btn hud-drawer-btn">📜 Logs & Standings</button>
+          </div>
         </header>
 
         <!-- Round Table Surface Area -->

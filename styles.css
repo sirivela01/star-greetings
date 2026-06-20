@@ -73,6 +73,7 @@ body {
   background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -101,7 +102,9 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
+  width: 100dvw;
   position: relative;
 }
 
@@ -497,7 +500,9 @@ select.form-select option {
   display: flex;
   flex-direction: column;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
   user-select: none;
@@ -579,6 +584,7 @@ select.form-select option {
   position: relative;
   width: 100%;
   height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
 }
 
 /* The Round Table surface */
@@ -1088,6 +1094,7 @@ select.form-select option {
   top: 0;
   right: 0;
   height: 100vh;
+  height: 100dvh;
   width: 360px;
   z-index: 990;
   display: flex;
@@ -1260,7 +1267,9 @@ select.form-select option {
   top: 0;
   left: 0;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   background: rgba(3, 2, 10, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -1346,7 +1355,9 @@ select.form-select option {
   top: 0;
   left: 0;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   background: rgba(3, 2, 12, 0.95);
   z-index: 1020;
   display: flex;
@@ -1413,7 +1424,9 @@ select.form-select option {
   top: 0;
   left: 0;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   background: rgba(3, 2, 12, 0.85);
   backdrop-filter: blur(8px);
   z-index: 1000;
@@ -2009,6 +2022,7 @@ select.form-select option {
 
   .side-drawer {
     width: 100vw;
+    width: 100dvw;
   }
 
   .standing-row {
@@ -2252,7 +2266,9 @@ select.form-select option {
   top: 0;
   left: 0;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   background: #08090d;
   display: flex;
   align-items: center;

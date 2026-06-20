@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Side Drawer Elements
   const sideDrawer = document.getElementById("side-drawer");
   const drawerToggleBtn = document.getElementById("drawer-toggle-btn");
+  const fullscreenBtn = document.getElementById("fullscreen-btn");
   const drawerCloseBtn = document.getElementById("drawer-close-btn");
 
   // Private Hand Modal elements
@@ -1114,6 +1115,32 @@ document.addEventListener("DOMContentLoaded", () => {
   drawerCloseBtn.addEventListener("click", () => {
     sideDrawer.classList.add("hidden-drawer");
   });
+
+  // Fullscreen Toggle
+  if (fullscreenBtn) {
+    fullscreenBtn.addEventListener("click", () => {
+      playReadySound();
+      const docEl = document.documentElement;
+      const requestFS = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
+      const exitFS = document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen;
+      
+      const isFS = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+      
+      if (!isFS) {
+        if (requestFS) {
+          requestFS.call(docEl).catch(err => {
+            console.warn(`Fullscreen request failed: ${err.message}`);
+          });
+        } else {
+          alert("Fullscreen mode is not supported directly by this mobile browser. You can get a full-screen app experience by opening this page in Safari/Chrome and selecting 'Add to Home Screen'!");
+        }
+      } else {
+        if (exitFS) {
+          exitFS.call(document);
+        }
+      }
+    });
+  }
 
   // Close hand modal clicks
   modalCloseBtn.addEventListener("click", closePrivateHandModal);
