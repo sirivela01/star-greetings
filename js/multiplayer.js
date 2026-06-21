@@ -21,6 +21,7 @@ class MultiplayerManager {
     
     // Default public Firebase Config for out-of-the-box operation
     this.firebaseConfig = {
+      apiKey: "AIzaSyFakeKeyForAuthCompatibilityCheckOnly",
       databaseURL: savedUrl || "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
 
