@@ -28,6 +28,13 @@ class MultiplayerManager {
     this.initFirebase();
   }
 
+  getMyUid() {
+    if (!this.currentUser) return null;
+    const uid = this.currentUser.uid || (firebase.auth && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (uid) return uid;
+    return "guest_" + this.currentUser.username;
+  }
+
   showToast(message, type = 'error') {
     let container = document.querySelector(".toast-container");
     if (!container) {
@@ -93,7 +100,7 @@ class MultiplayerManager {
   }
 
   async registerPresence() {
-    const myUid = this.currentUser ? (this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
+    const myUid = this.getMyUid();
     if (!this.roomRef || !myUid) return;
 
     const playerRef = this.roomRef.child(`players/${myUid}`);
@@ -295,7 +302,7 @@ class MultiplayerManager {
     window.isOnlineGame = true;
     window.currentUserUsername = this.currentUser.username;
 
-    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const myUid = this.getMyUid();
     if (!myUid) {
       if (codeLabel) {
         codeLabel.innerHTML = 'Failed <button id="retry-create-btn" class="btn-retry">Retry</button>';
@@ -400,7 +407,7 @@ class MultiplayerManager {
     window.isOnlineGame = true;
     window.currentUserUsername = this.currentUser.username;
 
-    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const myUid = this.getMyUid();
     if (!myUid) {
       this.showToast("Authentication missing. Please log in again.");
       return;
@@ -464,7 +471,7 @@ class MultiplayerManager {
     if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
 
-    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const myUid = this.getMyUid();
     try {
       if (this.isHost) {
         // Delete the room if host leaves
@@ -488,7 +495,7 @@ class MultiplayerManager {
     }
     if (this.roomRef) {
       try {
-        const myUid = this.currentUser ? (this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
+        const myUid = this.getMyUid();
         if (myUid) {
           this.roomRef.child(`players/${myUid}`).onDisconnect().cancel();
         }
@@ -525,7 +532,7 @@ class MultiplayerManager {
       }
 
       const room = snapshot.val();
-      const myUid = this.currentUser ? (this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
+      const myUid = this.getMyUid();
       
       // If we are actively playing, check if an opponent left the match
       if (room.status === "playing" && window.game && !window.game.isGameOver) {
@@ -771,7 +778,7 @@ class MultiplayerManager {
     if (!this.verifyAuth()) return;
     if (!this.roomRef || !this.currentUser) return;
     const parsedVal = parseInt(val, 10);
-    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const myUid = this.getMyUid();
     if (myUid) {
       // Use .update() instead of .set() to prevent overwriting other player properties
       await this.roomRef.child(`players/${myUid}`).update({
@@ -1124,7 +1131,7 @@ class MultiplayerManager {
 
     // Check if it is currently my turn
     const activePlayer = window.game.getCurrentPlayer();
-    const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const myUid = this.getMyUid();
     if (!activePlayer || activePlayer.uid !== myUid) {
       alert("It's not your turn!");
       return;
@@ -1186,7 +1193,7 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+      const myUid = this.getMyUid();
       const localPlayer = gameEngine.players.find(p => p.uid === myUid);
       if (!localPlayer || localPlayer.stackCount <= 1) return;
 
@@ -1220,7 +1227,7 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+      const myUid = this.getMyUid();
       const localPlayer = gameEngine.players.find(p => p.uid === myUid);
       if (!localPlayer) return;
 
@@ -1258,7 +1265,7 @@ class MultiplayerManager {
       const gameEngine = new GameState();
       gameEngine.deserialize(room.gameState);
       
-      const myUid = this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+      const myUid = this.getMyUid();
       const localPlayer = gameEngine.players.find(p => p.uid === myUid);
       if (!localPlayer) return;
 
@@ -1336,7 +1343,7 @@ class MultiplayerManager {
     
     // Find local player in game
     const localUser = window.auth.getCurrentUser();
-    const myUid = localUser ? (localUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
+    const myUid = this.getMyUid();
     const matchMe = window.game.players.find(p => 
       p.uid === myUid ||
       (p.username && p.username.toLowerCase().trim() === localUser.username.toLowerCase().trim())
