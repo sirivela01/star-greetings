@@ -21,6 +21,7 @@ class Player {
     this.angleOffset = 0; // Custom angle offset around table (radians)
     this.coins = 300;
     this.freeStackBuys = 10;
+    this.isBot = false;
   }
 
   get stackCount() {
@@ -41,28 +42,34 @@ class GameState {
     this.matchBet = 0;
     this.isBetDeductedForCurrentPot = false;
     this.currentPotStarterIndex = 0;
+    this.selectedCategory = "Tollywood";
   }
 
   // Set up the game with player names and stack size
-  initializeGame(playerNames, startingStackSize, playerBets = []) {
+  initializeGame(playerNames, startingStackSize, playerBets = [], selectedCategory = "Tollywood") {
     this.players = playerNames.map((name, index) => new Player(name, index));
     this.pot = [];
     this.logs = [];
     this.roundNumber = 1;
     this.isGameOver = false;
     this.globalInstanceCounter = 0;
+    this.selectedCategory = selectedCategory;
 
     const roster = this.config.roster;
     if (!roster || roster.length === 0) {
       throw new Error("Star roster is empty or not loaded.");
     }
 
+    const activeCategory = this.selectedCategory || "Tollywood";
+    const filteredRoster = roster.filter(c => c.industry.toLowerCase() === activeCategory.toLowerCase());
+    const finalRoster = filteredRoster.length > 0 ? filteredRoster : roster;
+
     const lockedSize = 30; // Lock starting stack size to exactly 30 greetings
 
     this.players.forEach(player => {
       player.stack = [];
       for (let i = 0; i < lockedSize; i++) {
-        const randomStar = roster[Math.floor(Math.random() * roster.length)];
+        const randomStar = finalRoster[Math.floor(Math.random() * finalRoster.length)];
         this.globalInstanceCounter++;
         player.stack.push(new CardInstance(randomStar, `card_${this.globalInstanceCounter}`));
       }
@@ -328,10 +335,14 @@ class GameState {
       return { error: "Not enough coins or free buys" };
     }
 
-    // Add 30 cards to player's stack
+    // Add 30 cards to player's stack from selected deck theme
     const roster = this.config.roster;
+    const activeCategory = this.selectedCategory || "Tollywood";
+    const filteredRoster = roster.filter(c => c.industry.toLowerCase() === activeCategory.toLowerCase());
+    const finalRoster = filteredRoster.length > 0 ? filteredRoster : roster;
+
     for (let i = 0; i < 30; i++) {
-      const randomStar = roster[Math.floor(Math.random() * roster.length)];
+      const randomStar = finalRoster[Math.floor(Math.random() * finalRoster.length)];
       this.globalInstanceCounter++;
       player.stack.push(new CardInstance(randomStar, `card_${this.globalInstanceCounter}`));
     }

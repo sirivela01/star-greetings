@@ -78,6 +78,40 @@ class MultiplayerManager {
     return true;
   }
 
+  setupConnectionListener() {
+    if (this.db) {
+      this.db.ref(".info/connected").off();
+      this.db.ref(".info/connected").on("value", async (snapshot) => {
+        const isConnected = snapshot.val() === true;
+        this.updateConnectionStatus(isConnected);
+        if (isConnected && this.roomRef) {
+          await this.registerPresence();
+        }
+      });
+    }
+  }
+
+  async registerPresence() {
+    const myUid = this.currentUser ? (this.currentUser.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)) : null;
+    if (!this.roomRef || !myUid) return;
+
+    const playerRef = this.roomRef.child(`players/${myUid}`);
+    try {
+      await playerRef.onDisconnect().cancel();
+      await playerRef.update({
+        status: 'connected',
+        disconnectedAt: null
+      });
+      await playerRef.onDisconnect().update({
+        status: 'disconnected',
+        disconnectedAt: firebase.database.ServerValue.TIMESTAMP
+      });
+      console.log("Presence registered successfully for:", myUid);
+    } catch (e) {
+      console.error("Failed to register presence:", e);
+    }
+  }
+
   initFirebase() {
     try {
       this.db = null;
@@ -95,11 +129,7 @@ class MultiplayerManager {
         this.db = firebase.database();
       }
 
-      // Listen for connection state changes
-      this.db.ref(".info/connected").on("value", (snapshot) => {
-        const isConnected = snapshot.val() === true;
-        this.updateConnectionStatus(isConnected);
-      });
+      this.setupConnectionListener();
     } catch (e) {
       console.error("Failed to initialize Firebase:", e);
       this.updateConnectionStatus(false);
@@ -178,11 +208,7 @@ class MultiplayerManager {
       firebase.initializeApp(this.firebaseConfig);
       this.db = firebase.database();
 
-      // Listen for connection state changes
-      this.db.ref(".info/connected").on("value", (snapshot) => {
-        const isConnected = snapshot.val() === true;
-        this.updateConnectionStatus(isConnected);
-      });
+      this.setupConnectionListener();
 
       alert("Database settings updated and connected successfully!");
       this.closeDbConfigModal();
@@ -203,11 +229,7 @@ class MultiplayerManager {
       firebase.initializeApp(this.firebaseConfig);
       this.db = firebase.database();
 
-      // Listen for connection state changes
-      this.db.ref(".info/connected").on("value", (snapshot) => {
-        const isConnected = snapshot.val() === true;
-        this.updateConnectionStatus(isConnected);
-      });
+      this.setupConnectionListener();
       
       const input = document.getElementById("db-config-url");
       if (input) input.value = defaultUrl;
@@ -248,7 +270,7 @@ class MultiplayerManager {
   }
 
   // Create a new room
-  async createRoom() {
+  async createRoom(selectedTheme = "Tollywood") {
     if (!this.db) {
       alert("Firebase Database is not configured or failed to initialize. Please enter your database settings.");
       this.openDbConfigModal();
@@ -277,7 +299,7 @@ class MultiplayerManager {
       if (codeLabel) {
         codeLabel.innerHTML = 'Failed <button id="retry-create-btn" class="btn-retry">Retry</button>';
         const retryBtn = document.getElementById("retry-create-btn");
-        if (retryBtn) retryBtn.onclick = () => this.createRoom();
+        if (retryBtn) retryBtn.onclick = () => this.createRoom(selectedTheme);
       }
       this.showToast("Authentication missing. Please log in again.");
       return;
@@ -289,6 +311,7 @@ class MultiplayerManager {
       hostUsername: this.currentUser.username,
       createdBy: myUid,
       placementMode: "middle",
+      deckTheme: selectedTheme,
       players: {
         [myUid]: {
           name: this.currentUser.name || this.currentUser.username || "Player",
@@ -296,7 +319,8 @@ class MultiplayerManager {
           avatar: "assets/avatars/avatar_1.png", // default Player 1 avatar
           coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
           betVote: 25,
-          joinedAt: firebase.database.ServerValue.TIMESTAMP
+          joinedAt: firebase.database.ServerValue.TIMESTAMP,
+          status: "connected"
         }
       }
     };
@@ -323,7 +347,7 @@ class MultiplayerManager {
       creationCompleted = true;
       clearTimeout(timeoutId);
       
-      this.roomRef.child(`players/${myUid}`).onDisconnect().remove();
+      await this.registerPresence();
       
       // Setup listener
       this.listenToRoom();
@@ -414,9 +438,10 @@ class MultiplayerManager {
         avatar: avatarUrl || "assets/avatars/avatar_1.png",
         coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
         betVote: 25,
-        joinedAt: firebase.database.ServerValue.TIMESTAMP
+        joinedAt: firebase.database.ServerValue.TIMESTAMP,
+        status: "connected"
       }));
-      playerRef.onDisconnect().remove();
+      await this.registerPresence();
 
       // Setup listener
       this.listenToRoom();
@@ -457,7 +482,7 @@ class MultiplayerManager {
 
   cleanupRoom() {
     if (this.disconnectTimer) {
-      clearTimeout(this.disconnectTimer);
+      clearInterval(this.disconnectTimer);
       this.disconnectTimer = null;
     }
     if (this.roomRef) {
@@ -503,10 +528,10 @@ class MultiplayerManager {
       
       // If we are actively playing, check if an opponent left the match
       if (room.status === "playing" && window.game && !window.game.isGameOver) {
-        // Self-healing during play: if my player node is missing (due to disconnect), re-add myself!
+        // Self-healing during play: if my player node is missing or marked disconnected, restore it!
         if (myUid) {
-          const playerExists = room.players && room.players[myUid] !== undefined;
-          if (!playerExists) {
+          const dbPlayer = room.players && room.players[myUid];
+          if (!dbPlayer) {
             console.log("Self-healing during play: Re-registering myself in the players list");
             
             // Re-find my avatar from local game if possible
@@ -525,45 +550,69 @@ class MultiplayerManager {
               avatar: avatarUrl || "assets/avatars/avatar_1.png",
               coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
               betVote: currentBet,
-              joinedAt: firebase.database.ServerValue.TIMESTAMP
+              joinedAt: firebase.database.ServerValue.TIMESTAMP,
+              status: "connected"
             });
-            playerRef.onDisconnect().remove();
+            this.registerPresence();
             return;
+          } else if (dbPlayer.status !== "connected") {
+            console.log("Self-healing during play: restabilizing my status to connected");
+            this.registerPresence();
           }
         }
 
-        const currentPlayersInRoom = Object.keys(room.players || {});
-        
-        // If players list has restored to full, clear any disconnect timer
-        if (currentPlayersInRoom.length >= window.game.players.length) {
-          if (this.disconnectTimer) {
-            clearTimeout(this.disconnectTimer);
-            this.disconnectTimer = null;
-            console.log("Opponent reconnected. Cancelled default win timer.");
-          }
-        }
-
-        // If the number of connected players in DB is less than active game players,
-        // and we are the last player left, start the default win grace period timer!
-        if (currentPlayersInRoom.length < window.game.players.length) {
-          const isMeInRoom = myUid && room.players[myUid] !== undefined;
-          if (isMeInRoom && currentPlayersInRoom.length === 1) {
-            if (!this.disconnectTimer) {
-              console.log("Opponent disconnected. Waiting 10 seconds grace period for reconnect...");
-              this.disconnectTimer = setTimeout(() => {
-                this.handlePlayerLeftWin();
-                this.disconnectTimer = null;
-              }, 10000);
+        // Check if any opponent is marked disconnected
+        let disconnectedOpponents = [];
+        if (room.players && window.game.players) {
+          window.game.players.forEach(p => {
+            if (p.uid !== myUid) {
+              const dbPlayer = room.players[p.uid];
+              if (dbPlayer && dbPlayer.status === "disconnected") {
+                disconnectedOpponents.push({
+                  uid: p.uid,
+                  name: p.name || p.username || "Opponent",
+                  disconnectedAt: dbPlayer.disconnectedAt
+                });
+              }
             }
+          });
+        }
+
+        if (disconnectedOpponents.length > 0) {
+          const opponent = disconnectedOpponents[0];
+          if (!this.disconnectedOpponentInfo || this.disconnectedOpponentInfo.uid !== opponent.uid) {
+            this.disconnectedOpponentInfo = {
+              uid: opponent.uid,
+              name: opponent.name,
+              disconnectedAt: opponent.disconnectedAt || Date.now()
+            };
+            
+            // Start the disconnect banner update timer (25 second grace period)
+            if (this.disconnectTimer) {
+              clearInterval(this.disconnectTimer);
+            }
+            this.disconnectTimer = setInterval(() => this.updateDisconnectBanner(), 1000);
+            this.updateDisconnectBanner(); // Run immediately
+          }
+        } else {
+          // Clear any disconnect warnings if all opponents are connected
+          if (this.disconnectedOpponentInfo) {
+            console.log("Opponent reconnected! Clearing disconnect timer.");
+            this.disconnectedOpponentInfo = null;
+            if (this.disconnectTimer) {
+              clearInterval(this.disconnectTimer);
+              this.disconnectTimer = null;
+            }
+            this.hideDisconnectBanner();
           }
         }
       }
       
       if (room.status === "waiting") {
-        // Self-healing: if my player node is missing (due to a connection drop), re-add myself!
+        // Self-healing: if my player node is missing or marked disconnected, restore it!
         if (myUid) {
-          const playerExists = room.players && room.players[myUid] !== undefined;
-          if (!playerExists) {
+          const dbPlayer = room.players && room.players[myUid];
+          if (!dbPlayer) {
             console.log("Self-healing: Re-registering myself in the waiting room list");
             
             // Assign avatar index
@@ -579,10 +628,14 @@ class MultiplayerManager {
               avatar: avatarUrl || "assets/avatars/avatar_1.png",
               coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
               betVote: currentBet,
-              joinedAt: firebase.database.ServerValue.TIMESTAMP
+              joinedAt: firebase.database.ServerValue.TIMESTAMP,
+              status: "connected"
             });
-            playerRef.onDisconnect().remove();
+            this.registerPresence();
             return;
+          } else if (dbPlayer.status !== "connected") {
+            console.log("Self-healing: restabilizing my status to connected in waiting room");
+            this.registerPresence();
           }
         }
         this.syncWaitingLobby(room);
@@ -613,6 +666,24 @@ class MultiplayerManager {
         placementSelect.setAttribute("disabled", "true");
       }
     }
+
+    // Sync deck theme selection badge
+    const roomThemeBadge = document.getElementById("lobby-room-theme-badge");
+    if (roomThemeBadge) {
+      const themeVal = room.deckTheme || "Tollywood";
+      let themeText = themeVal;
+      let badgeClass = "theme-badge tollywood";
+      const lowerTheme = themeVal.toLowerCase();
+      if (lowerTheme === "tollywood") {
+        themeText = "Tollywood 🎬";
+        badgeClass = "theme-badge tollywood";
+      } else if (lowerTheme === "bollywood") {
+        themeText = "Bollywood 🎥";
+        badgeClass = "theme-badge bollywood";
+      }
+      roomThemeBadge.textContent = themeText;
+      roomThemeBadge.className = badgeClass;
+    }
     
     // Sort players by join timestamp to keep consistent order, and guarantee uid property is populated
     const players = Object.entries(room.players || {}).map(([uid, p]) => {
@@ -642,14 +713,16 @@ class MultiplayerManager {
         const displayName = p.name || p.username || `Player ${idx + 1}`;
         const displayAvatar = p.avatar || "assets/avatars/avatar_1.png";
         const displayBetVote = p.betVote !== undefined ? p.betVote : 25;
+        const isOffline = p.status === "disconnected";
         
         row.innerHTML = `
           <div class="lobby-player-info">
             <img src="${displayAvatar}" class="lobby-player-avatar" alt="Avatar">
-            <span class="lobby-player-name">${displayName}</span>
+            <span class="lobby-player-name" style="${isOffline ? 'opacity: 0.6;' : ''}">${displayName}</span>
           </div>
           <div class="lobby-player-badges">
             ${isHost ? `<span class="lobby-badge host">Host</span>` : ""}
+            ${isOffline ? `<span class="lobby-badge disconnected" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Offline</span>` : ""}
             <span class="lobby-badge bet">Vote: 🪙${displayBetVote}</span>
           </div>
         `;
@@ -709,11 +782,22 @@ class MultiplayerManager {
   // Update card placement mode selection in waiting lobby (Host only)
   async updatePlacementMode(val) {
     if (!this.verifyAuth()) return;
-    if (!this.roomRef || !this.isHost) return;
+    if (!this.isHost || !this.roomRef) return;
     try {
       await this.roomRef.child("placementMode").set(val);
     } catch (e) {
       console.error("Failed to update placement mode:", e);
+    }
+  }
+
+  // Update deck theme selection in waiting lobby (Host only)
+  async updateDeckTheme(val) {
+    if (!this.verifyAuth()) return;
+    if (!this.isHost || !this.roomRef) return;
+    try {
+      await this.roomRef.child("deckTheme").set(val);
+    } catch (e) {
+      console.error("Failed to update deck theme:", e);
     }
   }
 
@@ -741,7 +825,7 @@ class MultiplayerManager {
       
       const gameEngine = new GameState();
       gameEngine.config.CARD_PLACEMENT_MODE = room.placementMode || "middle";
-      gameEngine.initializeGame(playerNames, 30, playerBets);
+      gameEngine.initializeGame(playerNames, 30, playerBets, room.deckTheme || "Tollywood");
       
       // Bind avatars, usernames, and UIDs to GameState players
       gameEngine.players.forEach((p, idx) => {
@@ -790,6 +874,7 @@ class MultiplayerManager {
       matchBet: parseInt(game.matchBet, 10) || 25,
       isBetDeductedForCurrentPot: game.isBetDeductedForCurrentPot,
       currentPotStarterIndex: game.currentPotStarterIndex,
+      selectedCategory: game.selectedCategory || "Tollywood",
       players: game.players.map(p => ({
         id: p.id,
         name: p.name || p.username || "Player",
@@ -1227,6 +1312,10 @@ class MultiplayerManager {
     const standings = window.game.getScoreboard();
     window.renderFinalStandings(standings);
     
+    if (window.playVictorySound) {
+      window.playVictorySound();
+    }
+    
     this.showScreen("end-screen");
   }
 
@@ -1285,6 +1374,109 @@ class MultiplayerManager {
     this.cleanupRoom();
   }
 
+  updateDisconnectBanner() {
+    if (!this.disconnectedOpponentInfo) {
+      this.hideDisconnectBanner();
+      return;
+    }
+    
+    const { name, disconnectedAt } = this.disconnectedOpponentInfo;
+    const gracePeriodSeconds = 25;
+    const elapsedSeconds = Math.floor((Date.now() - disconnectedAt) / 1000);
+    const remainingSeconds = Math.max(0, gracePeriodSeconds - elapsedSeconds);
+    
+    this.showDisconnectBanner(`${name}'s connection is unstable, waiting for them to reconnect... (${remainingSeconds}s)`);
+    
+    if (remainingSeconds <= 0) {
+      console.log("Grace period elapsed. Player left match default win triggered.");
+      if (this.disconnectTimer) {
+        clearInterval(this.disconnectTimer);
+        this.disconnectTimer = null;
+      }
+      this.disconnectedOpponentInfo = null;
+      this.hideDisconnectBanner();
+      this.handlePlayerLeftWin();
+    }
+  }
+
+  showDisconnectBanner(message) {
+    let banner = document.getElementById("game-disconnect-banner");
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.id = "game-disconnect-banner";
+      banner.style.position = "fixed";
+      banner.style.top = "20px";
+      banner.style.left = "50%";
+      banner.style.transform = "translateX(-50%) translateY(-20px)";
+      banner.style.opacity = "0";
+      banner.style.background = "rgba(239, 68, 68, 0.95)";
+      banner.style.color = "#ffffff";
+      banner.style.padding = "12px 24px";
+      banner.style.borderRadius = "8px";
+      banner.style.fontFamily = "'Inter', sans-serif";
+      banner.style.fontSize = "0.9rem";
+      banner.style.fontWeight = "600";
+      banner.style.boxShadow = "0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4)";
+      banner.style.backdropFilter = "blur(8px)";
+      banner.style.webkitBackdropFilter = "blur(8px)";
+      banner.style.border = "1px solid rgba(255, 255, 255, 0.15)";
+      banner.style.zIndex = "99999";
+      banner.style.transition = "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
+      banner.style.display = "flex";
+      banner.style.alignItems = "center";
+      banner.style.gap = "10px";
+      
+      const spinner = document.createElement("div");
+      spinner.className = "banner-spinner";
+      spinner.style.width = "16px";
+      spinner.style.height = "16px";
+      spinner.style.borderRadius = "50%";
+      spinner.style.border = "2px solid rgba(255, 255, 255, 0.3)";
+      spinner.style.borderTopColor = "#ffffff";
+      spinner.style.animation = "banner-spin 0.8s linear infinite";
+      banner.appendChild(spinner);
+      
+      const textSpan = document.createElement("span");
+      textSpan.id = "game-disconnect-banner-text";
+      banner.appendChild(textSpan);
+      
+      if (!document.getElementById("banner-spin-style")) {
+        const style = document.createElement("style");
+        style.id = "banner-spin-style";
+        style.textContent = `
+          @keyframes banner-spin {
+            to { transform: rotate(360deg); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      document.body.appendChild(banner);
+      
+      banner.getBoundingClientRect(); // force reflow
+      banner.style.transform = "translateX(-50%) translateY(0)";
+      banner.style.opacity = "1";
+    }
+    
+    const textSpan = document.getElementById("game-disconnect-banner-text");
+    if (textSpan) {
+      textSpan.textContent = message;
+    }
+  }
+
+  hideDisconnectBanner() {
+    const banner = document.getElementById("game-disconnect-banner");
+    if (banner) {
+      banner.style.transform = "translateX(-50%) translateY(-20px)";
+      banner.style.opacity = "0";
+      setTimeout(() => {
+        if (banner.parentNode) {
+          banner.parentNode.removeChild(banner);
+        }
+      }, 300);
+    }
+  }
+
   async updatePlayerOffsets(playerId) {
     if (!this.verifyAuth()) return;
     if (!this.roomRef) return;
@@ -1326,6 +1518,7 @@ GameState.prototype.deserialize = function(data) {
   this.matchBet = parseInt(data.matchBet, 10) || 25;
   this.isBetDeductedForCurrentPot = data.isBetDeductedForCurrentPot;
   this.currentPotStarterIndex = data.currentPotStarterIndex;
+  this.selectedCategory = data.selectedCategory || "Tollywood";
   
   const oldPlayers = this.players || [];
   this.players = (data.players || []).map(p => {
