@@ -346,7 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="card-inner">
         <div class="card-industry-tag">${card.industry}</div>
         <div class="card-image-area">
-          <img class="card-img" src="${card.imagePath}?v=1.22.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img class="card-img" src="${card.imagePath}?v=1.23.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="card-fallback-placeholder">
             <span class="card-initials">${initials}</span>
           </div>
