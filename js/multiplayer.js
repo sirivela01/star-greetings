@@ -607,7 +607,7 @@ class MultiplayerManager {
               disconnectedAt: Date.now()
             };
             
-            // Start the disconnect banner update timer (25 second grace period)
+            // Start the disconnect banner update timer (60 second grace period)
             if (this.disconnectTimer) {
               clearInterval(this.disconnectTimer);
             }
@@ -1401,12 +1401,12 @@ class MultiplayerManager {
     }
     
     const { name, disconnectedAt } = this.disconnectedOpponentInfo;
-    const gracePeriodSeconds = 25;
+    const gracePeriodSeconds = 60;
     const elapsedSeconds = Math.floor((Date.now() - disconnectedAt) / 1000);
     
-    if (elapsedSeconds >= 5) {
+    if (elapsedSeconds >= 8) {
       const remainingSeconds = Math.max(0, gracePeriodSeconds - elapsedSeconds);
-      this.showDisconnectBanner(`${name}'s connection is unstable, waiting for them to reconnect... (${remainingSeconds}s)`);
+      this.showDisconnectBanner(`Waiting for ${name} to reconnect... (${remainingSeconds}s)`);
       
       if (remainingSeconds <= 0) {
         console.log("Grace period elapsed. Player left match default win triggered.");
