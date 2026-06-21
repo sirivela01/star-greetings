@@ -11,3 +11,8 @@ desktop.ini
 *.njsproj
 *.sln
 *.swp
+
+# Local user data and temporary folders
+chrome_user_data/
+assets/real_stars/
+
