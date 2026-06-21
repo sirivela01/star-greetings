@@ -133,8 +133,41 @@
         </div>
 
         <div class="dashboard-actions">
+          <button type="button" id="play-ai-btn" class="btn play-mode-btn">Play with AI BOT<span class="btn-sub">Quick 1v1 match against Computer AI</span></button>
           <button type="button" id="play-offline-btn" class="btn primary-btn play-mode-btn">Play Offline Game<span class="btn-sub">Local Pass-and-Play (2-6 Players)</span></button>
           <button type="button" id="play-online-btn" class="btn secondary-btn play-mode-btn">Play Online Game<span class="btn-sub">Multiplayer Lobby (Real-time Rooms)</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- THEME SELECTION SCREEN -->
+    <section id="theme-selection-screen" class="screen-view hidden">
+      <div class="glass-container theme-box">
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <h1 class="app-title">Select Theme</h1>
+          <p class="app-tagline">Choose a deck to play with</p>
+        </header>
+
+        <div class="themes-grid" id="themes-selection-grid">
+          <!-- Tollywood Card -->
+          <div class="theme-card active" data-theme="tollywood">
+            <span class="theme-icon">🎬</span>
+            <h3 class="theme-name">Tollywood</h3>
+            <p class="theme-desc">🎬 Tollywood — Telugu cinema icons</p>
+          </div>
+
+          <!-- Bollywood Card -->
+          <div class="theme-card" data-theme="bollywood">
+            <span class="theme-icon">🎥</span>
+            <h3 class="theme-name">Bollywood</h3>
+            <p class="theme-desc">🎥 Bollywood — Hindi cinema icons</p>
+          </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: 30px; display: flex; gap: 15px;">
+          <button type="button" id="confirm-theme-btn" class="btn primary-btn pulse-anim" style="flex: 1;">Confirm Theme</button>
+          <button type="button" id="back-theme-btn" class="btn secondary-btn" style="flex: 1;">Back</button>
         </div>
       </div>
     </section>
@@ -177,6 +210,10 @@
           <div class="logo-icon">★</div>
           <h1 class="app-title">Waiting Room</h1>
           <div class="room-code-badge">Room Code: <strong id="lobby-room-code-lbl">-----</strong></div>
+          <div style="margin-top: 10px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>Room Theme:</span>
+            <span id="lobby-room-theme-badge" class="theme-badge tollywood">Tollywood 🎬</span>
+          </div>
         </header>
 
         <div class="lobby-players-section">
@@ -255,7 +292,7 @@
 
           <!-- Players Input Area with Avatar Picker -->
           <div class="form-group">
-            <label>Players & Avatars (2 - 6):</label>
+            <label>Players & Avatars (1 - 6):</label>
             <p class="form-hint-info">Click the avatar circles to cycle characters!</p>
             <div id="players-setup-container">
               <!-- Dynamically populated with Name inputs and Avatar cyclers -->

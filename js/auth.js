@@ -212,6 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Action Buttons
   const logoutBtn = document.getElementById("dashboard-logout-btn");
   const playOfflineBtn = document.getElementById("play-offline-btn");
+  const playAiBtn = document.getElementById("play-ai-btn");
 
   // Helper to hide all main views
   function hideAllViews() {
@@ -372,14 +373,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (playOfflineBtn) {
     playOfflineBtn.addEventListener("click", () => {
       hideAllViews();
-      setupView.classList.remove("hidden");
-      
-      // Auto-fill logged in user as Player 1 name in the game-setup form
-      const user = auth.getCurrentUser();
-      const p1Input = document.getElementById("player-name-1");
-      if (user && p1Input) {
-        p1Input.value = user.name;
+      const themeSelectionView = document.getElementById("theme-selection-screen");
+      if (themeSelectionView) {
+        themeSelectionView.classList.remove("hidden");
       }
+      window.themeSelectMode = "offline";
+    });
+  }
+
+  // Play AI Click
+  if (playAiBtn) {
+    playAiBtn.addEventListener("click", () => {
+      hideAllViews();
+      const themeSelectionView = document.getElementById("theme-selection-screen");
+      if (themeSelectionView) {
+        themeSelectionView.classList.remove("hidden");
+      }
+      window.themeSelectMode = "ai_bot";
     });
   }
 

@@ -53,11 +53,55 @@ document.addEventListener("DOMContentLoaded", () => {
   // Game instances
   let game = new GameState();
   let maxPlayers = 6;
-  let minPlayers = 2;
-  let playerInputCount = 3; // Default starting count of player input fields
+  let minPlayers = 1;
+  let playerInputCount = 2; // Default starting count of player input fields (1 Human + 1 Bot)
 
   // Store avatar selection state per row index (1-based)
   let playerAvatars = {};
+  // Store player type selection state per row index (1-based)
+  let playerTypes = {};
+
+  // Synthesize a celebratory victory fanfare using the Web Audio API
+  function playVictorySound() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      const playTone = (delay, pitch, duration, type = 'sine', gainVal = 0.12) => {
+        setTimeout(() => {
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          
+          oscillator.type = type;
+          oscillator.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+          
+          // Add a slight frequency vibrato/swell for the final note
+          if (delay >= 360) {
+            oscillator.frequency.exponentialRampToValueAtTime(pitch * 1.015, audioCtx.currentTime + 0.05);
+            oscillator.frequency.exponentialRampToValueAtTime(pitch, audioCtx.currentTime + 0.1);
+            oscillator.frequency.exponentialRampToValueAtTime(pitch * 1.015, audioCtx.currentTime + 0.15);
+            oscillator.frequency.exponentialRampToValueAtTime(pitch, audioCtx.currentTime + 0.2);
+          }
+          
+          gainNode.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + duration + 0.02);
+        }, delay);
+      };
+
+      // Play rising arpeggio chord (C major triad ending on high C)
+      playTone(0, 523.25, 0.15, 'triangle', 0.12);     // C5
+      playTone(120, 659.25, 0.15, 'triangle', 0.12);   // E5
+      playTone(240, 783.99, 0.15, 'triangle', 0.12);   // G5
+      playTone(360, 1046.50, 0.8, 'sine', 0.15);       // C6 (Triumphant peak note)
+    } catch (e) {
+      console.warn("AudioContext playback blocked or failed:", e);
+    }
+  }
 
   // Synthesize a clean, satisfying touch sound using the Web Audio API
   function playTouchSound() {
@@ -346,7 +390,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const fieldRow = document.createElement("div");
       fieldRow.className = "player-setup-row";
       
-      const defaultVal = defaultNames[i - 1] || `Player ${i}`;
+      // Default player type assignment: Player 2 defaults to bot, others to human
+      if (playerTypes[i] === undefined) {
+        playerTypes[i] = (i === 2) ? "bot" : "human";
+      }
+      
+      let defaultVal = defaultNames[i - 1] || `Player ${i}`;
+      if (playerTypes[i] === "bot") {
+        defaultVal = `Bot ${defaultNames[i - 1] || i}`;
+      }
       
       // Default avatar assignment
       const currentAvatarIdx = (i - 1) % AVATARS.length;
@@ -364,7 +416,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
           
           <div class="input-row-main">
-            <input type="text" id="player-name-${i}" class="player-name-input" value="${defaultVal}" placeholder="Enter Name" maxlength="15" required>
+            <div style="display: flex; gap: 8px; width: 100%;">
+              <input type="text" id="player-name-${i}" class="player-name-input" value="${defaultVal}" placeholder="Enter Name" maxlength="15" required style="flex: 1;">
+              ${i > 1 ? `<button type="button" class="player-type-toggle-btn ${playerTypes[i] === "bot" ? "bot" : ""}" id="type-toggle-btn-${i}" data-row="${i}">${playerTypes[i] === "bot" ? "🤖 Bot" : "👤 Human"}</button>` : ""}
+            </div>
             
             <!-- Bet options selector -->
             <div class="player-bet-selector" id="bet-selector-${i}">
@@ -386,6 +441,30 @@ document.addEventListener("DOMContentLoaded", () => {
       avatarBtn.addEventListener("click", () => {
         cycleAvatar(i);
       });
+
+      // Attach click listener to type toggle button (only Player 2 and up)
+      if (i > 1) {
+        const typeToggleBtn = document.getElementById(`type-toggle-btn-${i}`);
+        typeToggleBtn.addEventListener("click", () => {
+          playTouchSound();
+          const nameInput = document.getElementById(`player-name-${i}`);
+          if (playerTypes[i] === "bot") {
+            playerTypes[i] = "human";
+            typeToggleBtn.textContent = "👤 Human";
+            typeToggleBtn.classList.remove("bot");
+            if (nameInput.value === `Bot ${defaultNames[i - 1] || i}`) {
+              nameInput.value = defaultNames[i - 1] || `Player ${i}`;
+            }
+          } else {
+            playerTypes[i] = "bot";
+            typeToggleBtn.textContent = "🤖 Bot";
+            typeToggleBtn.classList.add("bot");
+            if (nameInput.value === (defaultNames[i - 1] || `Player ${i}`)) {
+              nameInput.value = `Bot ${defaultNames[i - 1] || i}`;
+            }
+          }
+        });
+      }
 
       // Attach click listeners to bet buttons
       const betSelector = document.getElementById(`bet-selector-${i}`);
@@ -435,20 +514,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if (playerInputCount > minPlayers) {
       const currentValues = [];
       const currentSelectedAvatars = [];
+      const currentSelectedTypes = [];
       for (let i = 1; i <= playerInputCount; i++) {
         if (i !== index) {
           const inputVal = document.getElementById(`player-name-${i}`).value;
           currentValues.push(inputVal);
           currentSelectedAvatars.push(playerAvatars[i]);
+          currentSelectedTypes.push(playerTypes[i] || "human");
         }
       }
       
       playerInputCount--;
       
-      // Re-map avatars
+      // Re-map avatars and types
       playerAvatars = {};
+      playerTypes = {};
       currentSelectedAvatars.forEach((avatarIdx, idx) => {
         playerAvatars[idx + 1] = avatarIdx;
+      });
+      currentSelectedTypes.forEach((typeVal, idx) => {
+        playerTypes[idx + 1] = typeVal;
       });
 
       renderPlayerSetupFields();
@@ -541,7 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ${p.id === game.currentPotStarterIndex ? `<span class="player-seat-starter-badge" title="Starter (Played First)">⭐ Starter</span>` : ""}
         </div>
         <div class="player-seat-info">
-          <span class="player-seat-name">${p.name}</span>
+          <span class="player-seat-name">${p.name} ${p.isBot ? '🤖' : ''}</span>
           <span class="player-seat-count">${p.stackCount} cards | 🪙${p.coins}</span>
           <div class="seat-adjust-controls">
             <button type="button" class="btn-adjust move-front-btn" data-player-id="${p.id}" title="Move Front (Closer)">▲</button>
@@ -560,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!isEliminated) {
         const isCardSelectable = window.isOnlineGame 
           ? (p.username && window.auth.getCurrentUser() && p.username.toLowerCase().trim() === window.auth.getCurrentUser().username.toLowerCase().trim() && p.id === activePlayer.id)
-          : (p.id === activePlayer.id);
+          : (p.id === activePlayer.id && !p.isBot);
 
         if (isCardSelectable) {
           // ACTIVE player sees top card face-up
@@ -848,6 +933,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Handle playing a card from player's selection
   function handleCardSelection(cardInstanceId) {
     if (!window.isOnlineGame) {
+      const activePlayer = game.getCurrentPlayer();
+      if (activePlayer && activePlayer.isBot) {
+        console.warn("Input blocked: bot turn in progress.");
+        return;
+      }
       playTouchSound();
     }
     if (window.isOnlineGame) {
@@ -1048,9 +1138,26 @@ document.addEventListener("DOMContentLoaded", () => {
           hudActivePlayerName.textContent = nextPlayer.name;
           hudRoundNum.textContent = game.roundNumber;
           renderSeats();
+          
+          if (nextPlayer.isBot) {
+            checkAndTriggerBotTurn();
+          }
         }
       }, 300);
     }, 1800);
+  }
+
+  function checkAndTriggerBotTurn() {
+    if (game.isGameOver) return;
+    const activePlayer = game.getCurrentPlayer();
+    if (activePlayer && activePlayer.isBot) {
+      console.log(`Bot ${activePlayer.name} is taking its turn...`);
+      hudActivePlayerName.textContent = `${activePlayer.name} (Bot)...`;
+      
+      setTimeout(() => {
+        executePlay();
+      }, 1200);
+    }
   }
 
   function proceedToNextTurn(outcome) {
@@ -1064,6 +1171,10 @@ document.addEventListener("DOMContentLoaded", () => {
       renderPot();
       renderScoreboard();
       renderLogs();
+      
+      if (nextPlayer.isBot) {
+        checkAndTriggerBotTurn();
+      }
     }
   }
 
@@ -1078,12 +1189,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const standings = game.endGame();
     renderFinalStandings(standings);
     
+    playVictorySound();
+    
     gameScreen.classList.add("hidden");
     endScreen.classList.remove("hidden");
   }
 
   function renderFinalStandings(standings) {
     finalStandingsList.innerHTML = "";
+
+    const tagline = document.querySelector(".results-tagline");
+    if (tagline && standings.length > 0) {
+      tagline.innerHTML = `🎉 <strong style="color: #fbbf24; font-size: 1.15rem; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);">${standings[0].name}</strong> wins the match! 🎉`;
+    }
 
     standings.forEach((p, idx) => {
       const item = document.createElement("div");
@@ -1237,17 +1355,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const stackSize = 30; // Lock stack size to 30 greetings
+    const deckTheme = window.selectedOfflineTheme || "Tollywood";
+
+    // If only 1 player is configured, automatically append a bot opponent
+    if (playerInputCount === 1) {
+      playerNames.push("Bot Ranbir");
+      playerAvatarUrls.push(AVATARS[1]);
+      playerBets.push(25);
+      playerTypes[2] = "bot";
+      playerAvatars[2] = 1;
+    }
 
     // Initialize state
-    game.initializeGame(playerNames, stackSize, playerBets);
+    game.initializeGame(playerNames, stackSize, playerBets, deckTheme);
     
     // Load placement config option
     const placementMode = document.getElementById("placement-mode").value || "middle";
     game.config.CARD_PLACEMENT_MODE = placementMode;
     
-    // Bind avatar URL properties to the player objects dynamically
+    // Bind avatar URL and bot properties to the player objects dynamically
     game.players.forEach((p, idx) => {
       p.avatar = playerAvatarUrls[idx];
+      p.isBot = (playerTypes[idx + 1] === "bot");
     });
 
     // UI transition
@@ -1268,7 +1397,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Delay displaying first turn shield by 1.6s to let animation finish
     setTimeout(() => {
-      showTurnShield(game.getCurrentPlayer());
+      const firstPlayer = game.getCurrentPlayer();
+      if (firstPlayer.isBot) {
+        hideTurnShield();
+        checkAndTriggerBotTurn();
+      } else {
+        showTurnShield(firstPlayer);
+      }
     }, 1600);
   });
 
@@ -1477,6 +1612,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.playTouchSound = playTouchSound;
   window.playReadySound = playReadySound;
   window.playShuffleSound = playShuffleSound;
+  window.playVictorySound = playVictorySound;
   window.triggerCoinMergeAnimation = triggerCoinMergeAnimation;
   window.renderFinalStandings = renderFinalStandings;
   window.game = game;
@@ -1499,11 +1635,136 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Selected theme tracking
+  let selectedTheme = "tollywood";
+
+  // Bind click event on theme cards
+  const themeCards = document.querySelectorAll(".theme-card");
+  themeCards.forEach(card => {
+    card.addEventListener("click", () => {
+      playTouchSound();
+      themeCards.forEach(c => c.classList.remove("active"));
+      card.classList.add("active");
+      selectedTheme = card.dataset.theme || "tollywood";
+    });
+  });
+
   const onlineCreateRoomBtn = document.getElementById("online-create-room-btn");
   if (onlineCreateRoomBtn) {
     onlineCreateRoomBtn.addEventListener("click", () => {
       playTouchSound();
-      window.multiplayer.createRoom();
+      const lobbyView = document.getElementById("online-lobby-screen");
+      if (lobbyView) lobbyView.classList.add("hidden");
+      const themeSelectionView = document.getElementById("theme-selection-screen");
+      if (themeSelectionView) themeSelectionView.classList.remove("hidden");
+      window.themeSelectMode = "online";
+    });
+  }
+
+  // Confirm Theme Button Click
+  const confirmThemeBtn = document.getElementById("confirm-theme-btn");
+  if (confirmThemeBtn) {
+    confirmThemeBtn.addEventListener("click", () => {
+      playTouchSound();
+      const themeSelectionView = document.getElementById("theme-selection-screen");
+      if (themeSelectionView) themeSelectionView.classList.add("hidden");
+
+      if (window.themeSelectMode === "online") {
+        if (window.multiplayer) {
+          window.multiplayer.createRoom(selectedTheme);
+        }
+      } else if (window.themeSelectMode === "ai_bot") {
+        cleanupFloatingElements();
+        
+        let p1Name = "Player 1";
+        if (window.auth) {
+          const user = window.auth.getCurrentUser();
+          if (user && user.name) {
+            p1Name = user.name;
+          }
+        }
+        
+        const playerNames = [p1Name, "Bot Ranbir"];
+        const playerAvatarUrls = [AVATARS[0], AVATARS[1]];
+        const playerBets = [25, 25];
+        const stackSize = 30;
+        const deckTheme = selectedTheme || "tollywood";
+        
+        // Initialize state
+        game.initializeGame(playerNames, stackSize, playerBets, deckTheme);
+        
+        // Load placement config option
+        const placementEl = document.getElementById("placement-mode");
+        const placementMode = placementEl ? placementEl.value : "middle";
+        game.config.CARD_PLACEMENT_MODE = placementMode;
+        
+        // Bind avatar URL and bot properties
+        game.players.forEach((p, idx) => {
+          p.avatar = playerAvatarUrls[idx];
+          p.isBot = (idx === 1); // Second player is bot
+        });
+        
+        // UI transition
+        const gameScreen = document.getElementById("game-screen");
+        if (gameScreen) gameScreen.classList.remove("hidden");
+        
+        // Close slide drawer initially
+        const sideDrawer = document.getElementById("side-drawer");
+        if (sideDrawer) sideDrawer.classList.add("hidden-drawer");
+        
+        // Render initial board elements
+        renderSeats();
+        renderPot();
+        renderScoreboard();
+        renderLogs();
+        
+        // Trigger coin merging flying animation
+        triggerCoinMergeAnimation();
+        
+        // Delay displaying first turn shield by 1.6s to let animation finish
+        setTimeout(() => {
+          const firstPlayer = game.getCurrentPlayer();
+          if (firstPlayer.isBot) {
+            hideTurnShield();
+            checkAndTriggerBotTurn();
+          } else {
+            showTurnShield(firstPlayer);
+          }
+        }, 1600);
+      } else {
+        // Offline pass-and-play setup transition
+        window.selectedOfflineTheme = selectedTheme;
+        const setupView = document.getElementById("setup-screen");
+        if (setupView) {
+          setupView.classList.remove("hidden");
+        }
+        // Auto-fill logged in user as Player 1 name in the game-setup form
+        if (window.auth) {
+          const user = window.auth.getCurrentUser();
+          const p1Input = document.getElementById("player-name-1");
+          if (user && p1Input) {
+            p1Input.value = user.name;
+          }
+        }
+      }
+    });
+  }
+
+  // Back Theme Button Click
+  const backThemeBtn = document.getElementById("back-theme-btn");
+  if (backThemeBtn) {
+    backThemeBtn.addEventListener("click", () => {
+      playTouchSound();
+      const themeSelectionView = document.getElementById("theme-selection-screen");
+      if (themeSelectionView) themeSelectionView.classList.add("hidden");
+
+      if (window.themeSelectMode === "online") {
+        const lobbyView = document.getElementById("online-lobby-screen");
+        if (lobbyView) lobbyView.classList.remove("hidden");
+      } else {
+        const dashboardView = document.getElementById("dashboard-screen");
+        if (dashboardView) dashboardView.classList.remove("hidden");
+      }
     });
   }
 
@@ -1612,6 +1873,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+
 
   // Initialize view
   renderPlayerSetupFields();
