@@ -160,7 +160,11 @@ class AuthManager {
   logout() {
     localStorage.removeItem(this.sessionKey);
     if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-      firebase.auth().signOut().catch(err => console.error("Firebase signOut error:", err));
+      try {
+        firebase.auth().signOut().catch(err => console.error("Firebase signOut error:", err));
+      } catch (err) {
+        console.warn("Firebase signOut failed synchronously:", err);
+      }
     }
   }
 
@@ -260,50 +264,68 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize Firebase Auth state change listener
   if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-    firebase.auth().onAuthStateChanged((fbUser) => {
-      const currentUser = auth.getCurrentUser();
-      if (fbUser) {
-        // Firebase user is authenticated
-        if (currentUser) {
-          // Sync local storage coins if they mismatch
-          firebase.database().ref(`users/${fbUser.uid}`).once("value").then(snapshot => {
-            if (snapshot.exists()) {
-              const data = snapshot.val();
-              const accounts = auth.getAccounts();
-              if (accounts[currentUser.username]) {
-                accounts[currentUser.username].coins = isNaN(parseInt(data.coins, 10)) ? 300 : parseInt(data.coins, 10);
-                accounts[currentUser.username].freeStackBuys = isNaN(parseInt(data.freeStackBuys, 10)) ? 10 : parseInt(data.freeStackBuys, 10);
-                accounts[currentUser.username].uid = fbUser.uid;
-                auth.saveAccounts(accounts);
-                
-                // Refresh dashboard if visible
-                if (!dashboardView.classList.contains("hidden")) {
-                  showDashboard(auth.getCurrentUser());
+    try {
+      firebase.auth().onAuthStateChanged((fbUser) => {
+        const currentUser = auth.getCurrentUser();
+        if (fbUser) {
+          // Firebase user is authenticated
+          if (currentUser) {
+            // Sync local storage coins if they mismatch
+            firebase.database().ref(`users/${fbUser.uid}`).once("value").then(snapshot => {
+              if (snapshot.exists()) {
+                const data = snapshot.val();
+                const accounts = auth.getAccounts();
+                if (accounts[currentUser.username]) {
+                  accounts[currentUser.username].coins = isNaN(parseInt(data.coins, 10)) ? 300 : parseInt(data.coins, 10);
+                  accounts[currentUser.username].freeStackBuys = isNaN(parseInt(data.freeStackBuys, 10)) ? 10 : parseInt(data.freeStackBuys, 10);
+                  accounts[currentUser.username].uid = fbUser.uid;
+                  auth.saveAccounts(accounts);
+                  
+                  // Refresh dashboard if visible
+                  if (!dashboardView.classList.contains("hidden")) {
+                    showDashboard(auth.getCurrentUser());
+                  }
                 }
               }
+            }).catch(err => console.error("Error syncing user data:", err));
+            showDashboard(currentUser);
+          } else {
+            // Firebase authenticated but no local session? Sign out to stay in sync.
+            try {
+              firebase.auth().signOut().catch(err => console.error(err));
+            } catch (signOutErr) {
+              console.warn("Sign out failed:", signOutErr);
             }
-          }).catch(err => console.error("Error syncing user data:", err));
-          showDashboard(currentUser);
+            hideAllViews();
+            loginView.classList.remove("hidden");
+            initLoginForm();
+          }
         } else {
-          // Firebase authenticated but no local session? Sign out to stay in sync.
-          firebase.auth().signOut().catch(err => console.error(err));
-          hideAllViews();
-          loginView.classList.remove("hidden");
-          initLoginForm();
+          // Firebase user is not authenticated
+          if (currentUser) {
+            // We have a local session. Let them stay logged in locally for offline play.
+            showDashboard(currentUser);
+          } else {
+            hideAllViews();
+            loginView.classList.remove("hidden");
+            initLoginForm();
+          }
         }
+        resolveSplash();
+      });
+    } catch (authInitErr) {
+      console.warn("Firebase Auth state listener initialization failed:", authInitErr);
+      // Fallback: resolve splash screen with local session
+      const currentUser = auth.getCurrentUser();
+      if (currentUser) {
+        showDashboard(currentUser);
       } else {
-        // Firebase user is not authenticated
-        if (currentUser) {
-          // We have a local session. Let them stay logged in locally for offline play.
-          showDashboard(currentUser);
-        } else {
-          hideAllViews();
-          loginView.classList.remove("hidden");
-          initLoginForm();
-        }
+        hideAllViews();
+        loginView.classList.remove("hidden");
+        initLoginForm();
       }
       resolveSplash();
-    });
+    }
   } else {
     // No Firebase loaded, resolve splash immediately
     const currentUser = auth.getCurrentUser();

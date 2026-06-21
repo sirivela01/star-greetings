@@ -30,9 +30,20 @@ class MultiplayerManager {
 
   getMyUid() {
     if (!this.currentUser) return null;
-    const uid = this.currentUser.uid || (firebase.auth && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
-    if (uid) return uid;
-    return "guest_" + this.currentUser.username;
+    let uid = this.currentUser.uid;
+    if (!uid) {
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && firebase.auth) {
+          const fbUser = firebase.auth().currentUser;
+          if (fbUser) {
+            uid = fbUser.uid;
+          }
+        }
+      } catch (e) {
+        console.warn("Firebase auth query failed:", e);
+      }
+    }
+    return uid || "guest_" + this.currentUser.username;
   }
 
   showToast(message, type = 'error') {
@@ -66,7 +77,8 @@ class MultiplayerManager {
   }
 
   verifyAuth() {
-    if (typeof firebase === 'undefined' || !firebase.apps.length || !firebase.auth().currentUser) {
+    const user = window.auth ? window.auth.getCurrentUser() : this.currentUser;
+    if (!user) {
       this.showToast("Please log in to play online", "error");
       
       // Redirect to login screen
