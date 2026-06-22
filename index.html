@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1.28.0">
+  <link rel="stylesheet" href="styles.css?v=1.29.0">
 </head>
 <body>
 
@@ -445,10 +445,14 @@
           <button type="button" id="db-config-close-btn" class="modal-close-x">&times;</button>
         </header>
         <div class="modal-body" style="padding: 20px;">
-          <p class="form-hint-info" style="margin-bottom: 15px;">To play online, you need a free Firebase Realtime Database. Enter your database URL below:</p>
+          <p class="form-hint-info" style="margin-bottom: 15px;">To play online and use social login, you need a Firebase project. Enter your settings below:</p>
           <div class="form-group">
             <label for="db-config-url">Firebase Database URL</label>
             <input type="url" id="db-config-url" class="auth-input" placeholder="https://your-project-rtdb.firebaseio.com" required>
+          </div>
+          <div class="form-group">
+            <label for="db-config-api-key">Firebase API Key</label>
+            <input type="text" id="db-config-api-key" class="auth-input" placeholder="AIzaSy..." required>
           </div>
           <div class="form-hint-info" style="margin-top: 15px; font-size: 0.8rem; line-height: 1.4; color: var(--text-muted);">
             <strong>Step-by-step setup (1 minute):</strong><br>
@@ -479,10 +483,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="js/config.js?v=1.28.0"></script>
-  <script src="js/auth.js?v=1.28.0"></script>
-  <script src="js/game-logic.js?v=1.28.0"></script>
-  <script src="js/ui-rendering.js?v=1.28.0"></script>
-  <script src="js/multiplayer.js?v=1.28.0"></script>
+  <script src="js/config.js?v=1.29.0"></script>
+  <script src="js/auth.js?v=1.29.0"></script>
+  <script src="js/game-logic.js?v=1.29.0"></script>
+  <script src="js/ui-rendering.js?v=1.29.0"></script>
+  <script src="js/multiplayer.js?v=1.29.0"></script>
 </body>
 </html>

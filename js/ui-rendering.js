@@ -352,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="card-inner">
         <div class="card-industry-tag">${card.industry}</div>
         <div class="card-image-area">
-          <img class="card-img" src="${card.imagePath}?v=1.28.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img class="card-img" src="${card.imagePath}?v=1.29.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="card-fallback-placeholder">
             <span class="card-initials">${initials}</span>
           </div>
@@ -1881,8 +1881,9 @@ document.addEventListener("DOMContentLoaded", () => {
       playTouchSound();
       try {
         const urlInput = document.getElementById("db-config-url");
-        if (urlInput && window.multiplayer) {
-          window.multiplayer.saveDbConfig(urlInput.value);
+        const apiKeyInput = document.getElementById("db-config-api-key");
+        if (urlInput && apiKeyInput && window.multiplayer) {
+          window.multiplayer.saveDbConfig(urlInput.value, apiKeyInput.value);
         }
       } catch (err) {
         alert("Save Error: " + err.message);

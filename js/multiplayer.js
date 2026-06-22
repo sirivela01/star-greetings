@@ -19,11 +19,14 @@ class MultiplayerManager {
       savedUrl = null;
     }
     
+    let savedApiKey = localStorage.getItem("star_greetings_firebase_api_key");
+    
     const activeUrl = savedUrl || "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+    const activeApiKey = savedApiKey || "AIzaSyFakeKeyForAuthCompatibilityCheckOnly";
 
     // Default public Firebase Config for out-of-the-box operation
     this.firebaseConfig = {
-      apiKey: "AIzaSyFakeKeyForAuthCompatibilityCheckOnly",
+      apiKey: activeApiKey,
       databaseURL: activeUrl,
       authDomain: this.getAuthDomainFromDbUrl(activeUrl)
     };
@@ -214,9 +217,15 @@ class MultiplayerManager {
   // Open Database config modal
   openDbConfigModal() {
     const modal = document.getElementById("db-config-modal");
-    const input = document.getElementById("db-config-url");
-    if (modal && input) {
-      input.value = localStorage.getItem("star_greetings_firebase_url") || this.firebaseConfig.databaseURL;
+    const inputUrl = document.getElementById("db-config-url");
+    const inputApiKey = document.getElementById("db-config-api-key");
+    if (modal) {
+      if (inputUrl) {
+        inputUrl.value = localStorage.getItem("star_greetings_firebase_url") || this.firebaseConfig.databaseURL;
+      }
+      if (inputApiKey) {
+        inputApiKey.value = localStorage.getItem("star_greetings_firebase_api_key") || (this.firebaseConfig.apiKey !== "AIzaSyFakeKeyForAuthCompatibilityCheckOnly" ? this.firebaseConfig.apiKey : "");
+      }
       modal.classList.remove("hidden");
       modal.style.display = "flex";
     }
@@ -230,14 +239,23 @@ class MultiplayerManager {
     }
   }
 
-  async saveDbConfig(url) {
+  async saveDbConfig(url, apiKey) {
     const cleanUrl = url.trim();
+    const cleanApiKey = apiKey ? apiKey.trim() : "";
     if (!cleanUrl.startsWith("https://")) {
       alert("Invalid URL. Must start with https://");
       return;
     }
     
     localStorage.setItem("star_greetings_firebase_url", cleanUrl);
+    if (cleanApiKey) {
+      localStorage.setItem("star_greetings_firebase_api_key", cleanApiKey);
+      this.firebaseConfig.apiKey = cleanApiKey;
+    } else {
+      localStorage.removeItem("star_greetings_firebase_api_key");
+      this.firebaseConfig.apiKey = "AIzaSyFakeKeyForAuthCompatibilityCheckOnly";
+    }
+    
     this.firebaseConfig.databaseURL = cleanUrl;
     this.firebaseConfig.authDomain = this.getAuthDomainFromDbUrl(cleanUrl);
     
@@ -259,8 +277,12 @@ class MultiplayerManager {
 
   async resetDbConfigToDefault() {
     localStorage.removeItem("star_greetings_firebase_url");
+    localStorage.removeItem("star_greetings_firebase_api_key");
     const defaultUrl = "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+    const defaultApiKey = "AIzaSyFakeKeyForAuthCompatibilityCheckOnly";
+    
     this.firebaseConfig.databaseURL = defaultUrl;
+    this.firebaseConfig.apiKey = defaultApiKey;
     this.firebaseConfig.authDomain = this.getAuthDomainFromDbUrl(defaultUrl);
     
     try {
@@ -272,8 +294,10 @@ class MultiplayerManager {
 
       this.setupConnectionListener();
       
-      const input = document.getElementById("db-config-url");
-      if (input) input.value = defaultUrl;
+      const inputUrl = document.getElementById("db-config-url");
+      const inputApiKey = document.getElementById("db-config-api-key");
+      if (inputUrl) inputUrl.value = defaultUrl;
+      if (inputApiKey) inputApiKey.value = "";
       
       alert("Database settings reset to default successfully!");
       this.closeDbConfigModal();
