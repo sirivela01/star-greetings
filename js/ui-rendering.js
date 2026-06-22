@@ -329,9 +329,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Create card DOM element with fallback placeholder support
-  function createCardElement(card, isClickable = false, onClickHandler = null) {
+  function createCardElement(card, isClickable = false, onClickHandler = null, ownerId = null) {
     const cardEl = document.createElement("div");
     cardEl.className = `star-card ${card.industry.toLowerCase()}`;
+    
+    const activeOwnerId = ownerId !== null ? ownerId : card.playedBy;
+    if (activeOwnerId !== null && activeOwnerId !== undefined) {
+      cardEl.classList.add(`player-card-color-${activeOwnerId}`);
+    }
+    
     cardEl.dataset.instanceId = card.instanceId;
 
     // Get initials of star
@@ -346,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="card-inner">
         <div class="card-industry-tag">${card.industry}</div>
         <div class="card-image-area">
-          <img class="card-img" src="${card.imagePath}?v=1.24.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img class="card-img" src="${card.imagePath}?v=1.25.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="card-fallback-placeholder">
             <span class="card-initials">${initials}</span>
           </div>
@@ -369,9 +375,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Create card back DOM element
-  function createCardBackElement() {
+  function createCardBackElement(ownerId = null) {
     const cardEl = document.createElement("div");
     cardEl.className = `star-card card-back`;
+    if (ownerId !== null && ownerId !== undefined) {
+      cardEl.classList.add(`player-card-color-${ownerId}`);
+    }
     cardEl.innerHTML = `
       <div class="card-inner">
         <div class="card-logo">★</div>
@@ -600,7 +609,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     game.players.forEach(p => {
       const seat = document.createElement("div");
-      seat.className = "player-seat";
+      seat.className = `player-seat player-color-${p.id}`;
       seat.dataset.playerId = p.id;
       
       const isActive = activePlayer && p.id === activePlayer.id;
@@ -651,7 +660,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // ACTIVE player sees top card face-up
           // Clicking the card triggers standard play
           const topCard = p.stack[0];
-          const cardEl = createCardElement(topCard, true, handleCardSelection);
+          const cardEl = createCardElement(topCard, true, handleCardSelection, p.id);
           pile.appendChild(cardEl);
           
           // Add shuffle button if player has multiple cards
@@ -677,7 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } else {
           // NON-ACTIVE players see card face-down
-          const cardEl = createCardBackElement();
+          const cardEl = createCardBackElement(p.id);
           pile.appendChild(cardEl);
         }
       } else {
@@ -917,7 +926,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const cardEl = createCardElement(card, true, (cardInstanceId) => {
         closePrivateHandModal();
         handleCardSelection(cardInstanceId);
-      });
+      }, activePlayer.id);
       modalHandContainer.appendChild(cardEl);
     });
 
@@ -972,7 +981,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- ANIMATION: FLY CARD TO POT ---
-    const floatCard = createCardElement(cardToAnimate);
+    const floatCard = createCardElement(cardToAnimate, false, null, outcome.playerIndex);
     floatCard.classList.add("floating-card-anim");
     document.body.appendChild(floatCard);
 
@@ -1032,7 +1041,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (outcome.hasMatch) {
         // Temporarily add the played card to the visual pot DOM so it can be fanned and animated
-        const tempCardEl = createCardElement(cardToAnimate);
+        const tempCardEl = createCardElement(cardToAnimate, false, null, outcome.playerIndex);
         const idx = outcome.potBeforePlay.length + 1;
         
         if (game.config.CARD_PLACEMENT_MODE === 'near') {

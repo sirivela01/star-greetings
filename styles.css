@@ -732,7 +732,7 @@ select.form-select option {
   height: 76px;
   border-radius: 50%;
   background: #0f0c29;
-  border: 3px solid rgba(255, 255, 255, 0.15);
+  border: 3px solid var(--player-border-color-translucent, rgba(255, 255, 255, 0.15));
   padding: 2px;
   box-shadow: var(--shadow-sm);
   position: relative;
@@ -743,8 +743,8 @@ select.form-select option {
 
 .player-avatar-wrapper.dragging-active {
   transform: scale(1.18);
-  border-color: var(--accent-cyan) !important;
-  box-shadow: 0 0 30px rgba(6, 182, 212, 0.9) !important;
+  border-color: var(--player-border-color, var(--accent-cyan)) !important;
+  box-shadow: 0 0 30px var(--player-glow-color-bright, rgba(6, 182, 212, 0.9)) !important;
   cursor: grabbing !important;
   z-index: 100;
 }
@@ -767,8 +767,8 @@ select.form-select option {
 
 /* Active Glow Halos */
 .player-seat.active-turn-seat .player-avatar-wrapper {
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 25px rgba(6, 182, 212, 0.7);
+  border-color: var(--player-border-color, var(--accent-cyan));
+  box-shadow: 0 0 25px var(--player-glow-color-bright, rgba(6, 182, 212, 0.7));
   animation: activeRingGlow 2s infinite ease-in-out;
 }
 
@@ -872,8 +872,8 @@ select.form-select option {
 }
 
 @keyframes activeRingGlow {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(6, 182, 212, 0.5); }
-  50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(6, 182, 212, 0.9); }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px var(--player-glow-color, rgba(6, 182, 212, 0.5)); }
+  50% { transform: scale(1.05); box-shadow: 0 0 35px var(--player-glow-color-bright, rgba(6, 182, 212, 0.9)); }
 }
 
 /* ==========================================================================
@@ -2698,6 +2698,118 @@ select.form-select option {
   background: rgba(6, 182, 212, 0.15);
   border-color: rgba(6, 182, 212, 0.4);
   color: #22d3ee;
+}
+
+/* ==========================================================================
+   Unique Player Color Themes (6 Seats & Greeting Card Borders)
+   ========================================================================== */
+
+/* Player 1 (Index 0) - Cyan */
+.player-color-0 {
+  --player-border-color: #06b6d4;
+  --player-border-color-translucent: rgba(6, 182, 212, 0.4);
+  --player-glow-color: rgba(6, 182, 212, 0.5);
+  --player-glow-color-bright: rgba(6, 182, 212, 0.9);
+}
+.player-card-color-0 {
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3) !important;
+}
+.player-card-color-0 .card-inner {
+  border-color: rgba(6, 182, 212, 0.45) !important;
+}
+.star-card.clickable.player-card-color-0:hover {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.8) !important;
+}
+
+/* Player 2 (Index 1) - Pink */
+.player-color-1 {
+  --player-border-color: #ec4899;
+  --player-border-color-translucent: rgba(236, 72, 153, 0.4);
+  --player-glow-color: rgba(236, 72, 153, 0.5);
+  --player-glow-color-bright: rgba(236, 72, 153, 0.9);
+}
+.player-card-color-1 {
+  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%) !important;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3) !important;
+}
+.player-card-color-1 .card-inner {
+  border-color: rgba(236, 72, 153, 0.45) !important;
+}
+.star-card.clickable.player-card-color-1:hover {
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.8) !important;
+}
+
+/* Player 3 (Index 2) - Emerald Green */
+.player-color-2 {
+  --player-border-color: #10b981;
+  --player-border-color-translucent: rgba(16, 185, 129, 0.4);
+  --player-glow-color: rgba(16, 185, 129, 0.5);
+  --player-glow-color-bright: rgba(16, 185, 129, 0.9);
+}
+.player-card-color-2 {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+.player-card-color-2 .card-inner {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+.star-card.clickable.player-card-color-2:hover {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.8) !important;
+}
+
+/* Player 4 (Index 3) - Amber/Gold */
+.player-color-3 {
+  --player-border-color: #f59e0b;
+  --player-border-color-translucent: rgba(245, 158, 11, 0.4);
+  --player-glow-color: rgba(245, 158, 11, 0.5);
+  --player-glow-color-bright: rgba(245, 158, 11, 0.9);
+}
+.player-card-color-3 {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+.player-card-color-3 .card-inner {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+.star-card.clickable.player-card-color-3:hover {
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.8) !important;
+}
+
+/* Player 5 (Index 4) - Purple/Indigo */
+.player-color-4 {
+  --player-border-color: #8b5cf6;
+  --player-border-color-translucent: rgba(139, 92, 246, 0.4);
+  --player-glow-color: rgba(139, 92, 246, 0.5);
+  --player-glow-color-bright: rgba(139, 92, 246, 0.9);
+}
+.player-card-color-4 {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
+}
+.player-card-color-4 .card-inner {
+  border-color: rgba(139, 92, 246, 0.45) !important;
+}
+.star-card.clickable.player-card-color-4:hover {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.8) !important;
+}
+
+/* Player 6 (Index 5) - Coral/Red */
+.player-color-5 {
+  --player-border-color: #ff7849;
+  --player-border-color-translucent: rgba(255, 120, 73, 0.4);
+  --player-glow-color: rgba(255, 120, 73, 0.5);
+  --player-glow-color-bright: rgba(255, 120, 73, 0.9);
+}
+.player-card-color-5 {
+  background: linear-gradient(135deg, #ff7849 0%, #ff4b2b 100%) !important;
+  box-shadow: 0 4px 12px rgba(255, 75, 43, 0.3) !important;
+}
+.player-card-color-5 .card-inner {
+  border-color: rgba(255, 75, 43, 0.45) !important;
+}
+.star-card.clickable.player-card-color-5:hover {
+  box-shadow: 0 0 15px rgba(255, 75, 43, 0.8) !important;
 }
 
 
