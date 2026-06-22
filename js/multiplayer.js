@@ -988,11 +988,7 @@ class MultiplayerManager {
         (p.name && p.name.toLowerCase().trim() === localUser.name.toLowerCase().trim())
       );
       if (matchMe && matchMe.coins !== localUser.coins) {
-        const accounts = window.auth.getAccounts();
-        if (accounts[localUser.username]) {
-          accounts[localUser.username].coins = matchMe.coins;
-          window.auth.saveAccounts(accounts);
-        }
+        window.auth.updateCoins(matchMe.coins);
       }
     }
   }
@@ -1370,12 +1366,8 @@ class MultiplayerManager {
       // Empty cards to force win under 0 cards win condition
       matchMe.stack = [];
       
-      // Update local storage coins
-      const accounts = window.auth.getAccounts();
-      if (accounts[localUser.username]) {
-        accounts[localUser.username].coins = matchMe.coins;
-        window.auth.saveAccounts(accounts);
-      }
+      // Update coins locally and in Firebase database
+      window.auth.updateCoins(matchMe.coins);
       
       alert(`Your opponent left the match! You win by default and earn the pot of 🪙${winnings} coins!`);
     }

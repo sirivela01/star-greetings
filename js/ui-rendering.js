@@ -352,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="card-inner">
         <div class="card-industry-tag">${card.industry}</div>
         <div class="card-image-area">
-          <img class="card-img" src="${card.imagePath}?v=1.25.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <img class="card-img" src="${card.imagePath}?v=1.26.0" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="card-fallback-placeholder">
             <span class="card-initials">${initials}</span>
           </div>
@@ -1382,6 +1382,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const placementMode = document.getElementById("placement-mode").value || "middle";
     game.config.CARD_PLACEMENT_MODE = placementMode;
     
+    // Load actual coin balances of local accounts if they exist
+    if (window.auth) {
+      const accounts = window.auth.getAccounts();
+      game.players.forEach(p => {
+        const normalizedPlayerName = p.name.trim().toLowerCase();
+        const matchKey = Object.keys(accounts).find(key => 
+          key === normalizedPlayerName || 
+          accounts[key].name.trim().toLowerCase() === normalizedPlayerName
+        );
+        if (matchKey) {
+          p.coins = isNaN(parseInt(accounts[matchKey].coins, 10)) ? 300 : parseInt(accounts[matchKey].coins, 10);
+        }
+      });
+    }
+
     // Bind avatar URL and bot properties to the player objects dynamically
     game.players.forEach((p, idx) => {
       p.avatar = playerAvatarUrls[idx];
@@ -1433,15 +1448,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const dashboardView = document.getElementById("dashboard-screen");
     if (dashboardView && window.auth) {
       dashboardView.classList.remove("hidden");
+      
+      const accounts = window.auth.getAccounts();
+      
+      // Update coins for ALL local accounts that participated in the match
+      game.players.forEach(p => {
+        const normalizedPlayerName = p.name.trim().toLowerCase();
+        const matchKey = Object.keys(accounts).find(key => 
+          key === normalizedPlayerName || 
+          accounts[key].name.trim().toLowerCase() === normalizedPlayerName
+        );
+        if (matchKey) {
+          accounts[matchKey].coins = p.coins;
+        }
+      });
+      window.auth.saveAccounts(accounts);
+
+      // Sync active user coins back to Firebase profile
       const user = window.auth.getCurrentUser();
       if (user) {
         const playerObj = game.players.find(p => p.name === user.name);
         if (playerObj) {
-          const accounts = window.auth.getAccounts();
-          accounts[user.username].coins = playerObj.coins;
-          window.auth.saveAccounts(accounts);
+          window.auth.updateCoins(playerObj.coins);
         }
       }
+
       // Re-trigger auth initialization to refresh profile stats on dashboard
       const updatedUser = window.auth.getCurrentUser();
       if (updatedUser) {

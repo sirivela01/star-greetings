@@ -168,6 +168,30 @@ class AuthManager {
     }
   }
 
+  async updateCoins(coins) {
+    const localUser = this.getCurrentUser();
+    if (!localUser) return { error: "No logged in user" };
+
+    const accounts = this.getAccounts();
+    const normalizedUsername = localUser.username.trim().toLowerCase();
+    if (accounts[normalizedUsername]) {
+      accounts[normalizedUsername].coins = coins;
+      this.saveAccounts(accounts);
+    }
+
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && localUser.uid) {
+      try {
+        await firebase.database().ref(`users/${localUser.uid}`).update({
+          coins: coins
+        });
+      } catch (err) {
+        console.error("Firebase coins update failed:", err);
+        return { error: "Failed to update coins on Firebase: " + err.message };
+      }
+    }
+    return { success: true };
+  }
+
   getCurrentUser() {
     const username = localStorage.getItem(this.sessionKey);
     if (!username) return null;
