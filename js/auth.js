@@ -322,6 +322,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Password Visibility Toggles
+  document.querySelectorAll(".password-input-wrapper").forEach(wrapper => {
+    const input = wrapper.querySelector("input");
+    const btn = wrapper.querySelector(".toggle-password-btn");
+    if (input && btn) {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+        
+        const openIcon = btn.querySelector(".eye-icon-open");
+        const closedIcon = btn.querySelector(".eye-icon-closed");
+        if (openIcon && closedIcon) {
+          if (isPassword) {
+            openIcon.classList.add("hidden");
+            closedIcon.classList.remove("hidden");
+          } else {
+            openIcon.classList.remove("hidden");
+            closedIcon.classList.add("hidden");
+          }
+        }
+      });
+    }
+  });
+
   // Render profile dashboard data
   function showDashboard(user) {
     hideAllViews();
