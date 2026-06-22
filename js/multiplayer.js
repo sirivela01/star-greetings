@@ -22,7 +22,7 @@ class MultiplayerManager {
     let savedApiKey = localStorage.getItem("star_greetings_firebase_api_key");
     
     const activeUrl = savedUrl || "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
-    const activeApiKey = savedApiKey || "AIzaSyFakeKeyForAuthCompatibilityCheckOnly";
+    const activeApiKey = savedApiKey || "AIzaSyBE_YC0fC3p7JJrDA6BwfIdVVYRPacZtn0";
 
     // Default public Firebase Config for out-of-the-box operation
     this.firebaseConfig = {
@@ -224,7 +224,7 @@ class MultiplayerManager {
         inputUrl.value = localStorage.getItem("star_greetings_firebase_url") || this.firebaseConfig.databaseURL;
       }
       if (inputApiKey) {
-        inputApiKey.value = localStorage.getItem("star_greetings_firebase_api_key") || (this.firebaseConfig.apiKey !== "AIzaSyFakeKeyForAuthCompatibilityCheckOnly" ? this.firebaseConfig.apiKey : "");
+        inputApiKey.value = localStorage.getItem("star_greetings_firebase_api_key") || (this.firebaseConfig.apiKey !== "AIzaSyBE_YC0fC3p7JJrDA6BwfIdVVYRPacZtn0" ? this.firebaseConfig.apiKey : "");
       }
       modal.classList.remove("hidden");
       modal.style.display = "flex";
@@ -253,7 +253,7 @@ class MultiplayerManager {
       this.firebaseConfig.apiKey = cleanApiKey;
     } else {
       localStorage.removeItem("star_greetings_firebase_api_key");
-      this.firebaseConfig.apiKey = "AIzaSyFakeKeyForAuthCompatibilityCheckOnly";
+      this.firebaseConfig.apiKey = "AIzaSyBE_YC0fC3p7JJrDA6BwfIdVVYRPacZtn0";
     }
     
     this.firebaseConfig.databaseURL = cleanUrl;
@@ -279,7 +279,7 @@ class MultiplayerManager {
     localStorage.removeItem("star_greetings_firebase_url");
     localStorage.removeItem("star_greetings_firebase_api_key");
     const defaultUrl = "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
-    const defaultApiKey = "AIzaSyFakeKeyForAuthCompatibilityCheckOnly";
+    const defaultApiKey = "AIzaSyBE_YC0fC3p7JJrDA6BwfIdVVYRPacZtn0";
     
     this.firebaseConfig.databaseURL = defaultUrl;
     this.firebaseConfig.apiKey = defaultApiKey;
