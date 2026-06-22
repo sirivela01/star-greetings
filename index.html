@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1.31.0">
+  <link rel="stylesheet" href="styles.css?v=1.32.0">
 </head>
 <body>
 
@@ -160,7 +160,12 @@
         
         <div class="dashboard-profile-card">
           <div class="profile-info-main">
-            <div class="profile-avatar-placeholder">🤵</div>
+            <div class="profile-avatar-placeholder" id="dashboard-avatar-container" title="Click to change avatar">
+              <img id="dashboard-profile-avatar" src="" class="hidden" alt="Profile Avatar">
+              <span id="dashboard-avatar-emoji">🤵</span>
+              <div class="avatar-edit-overlay">✏️</div>
+              <input type="file" id="avatar-file-input" accept="image/*" style="display: none;">
+            </div>
             <div class="profile-meta">
               <h2 id="dashboard-profile-name" class="profile-name">Player Name</h2>
               <p class="profile-wallet">Coins: 🪙<span id="dashboard-profile-coins">300</span></p>
@@ -507,10 +512,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="js/config.js?v=1.31.0"></script>
-  <script src="js/auth.js?v=1.31.0"></script>
-  <script src="js/game-logic.js?v=1.31.0"></script>
-  <script src="js/ui-rendering.js?v=1.31.0"></script>
-  <script src="js/multiplayer.js?v=1.31.0"></script>
+  <script src="js/config.js?v=1.32.0"></script>
+  <script src="js/auth.js?v=1.32.0"></script>
+  <script src="js/game-logic.js?v=1.32.0"></script>
+  <script src="js/ui-rendering.js?v=1.32.0"></script>
+  <script src="js/multiplayer.js?v=1.32.0"></script>
 </body>
 </html>

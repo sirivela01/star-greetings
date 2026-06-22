@@ -1398,10 +1398,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Bind avatar URL and bot properties to the player objects dynamically
-    game.players.forEach((p, idx) => {
-      p.avatar = playerAvatarUrls[idx];
-      p.isBot = (playerTypes[idx + 1] === "bot");
-    });
+    if (window.auth) {
+      const user = window.auth.getCurrentUser();
+      game.players.forEach((p, idx) => {
+        if (idx === 0 && user && user.avatar) {
+          p.avatar = user.avatar;
+        } else {
+          p.avatar = playerAvatarUrls[idx];
+        }
+        p.isBot = (playerTypes[idx + 1] === "bot");
+      });
+    } else {
+      game.players.forEach((p, idx) => {
+        p.avatar = playerAvatarUrls[idx];
+        p.isBot = (playerTypes[idx + 1] === "bot");
+      });
+    }
 
     // UI transition
     setupScreen.classList.add("hidden");
@@ -1739,10 +1751,22 @@ document.addEventListener("DOMContentLoaded", () => {
         game.config.CARD_PLACEMENT_MODE = placementMode;
         
         // Bind avatar URL and bot properties
-        game.players.forEach((p, idx) => {
-          p.avatar = playerAvatarUrls[idx];
-          p.isBot = (idx === 1); // Second player is bot
-        });
+        if (window.auth) {
+          const user = window.auth.getCurrentUser();
+          game.players.forEach((p, idx) => {
+            if (idx === 0 && user && user.avatar) {
+              p.avatar = user.avatar;
+            } else {
+              p.avatar = playerAvatarUrls[idx];
+            }
+            p.isBot = (idx === 1); // Second player is bot
+          });
+        } else {
+          game.players.forEach((p, idx) => {
+            p.avatar = playerAvatarUrls[idx];
+            p.isBot = (idx === 1); // Second player is bot
+          });
+        }
         
         // UI transition
         const gameScreen = document.getElementById("game-screen");

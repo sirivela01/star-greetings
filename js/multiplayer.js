@@ -381,7 +381,7 @@ class MultiplayerManager {
         [myUid]: {
           name: this.currentUser.name || this.currentUser.username || "Player",
           username: this.currentUser.username,
-          avatar: "assets/avatars/avatar_1.png", // default Player 1 avatar
+          avatar: this.currentUser.avatar || "assets/avatars/avatar_1.png", // custom avatar or default Player 1 avatar
           coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
           betVote: 25,
           joinedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -493,7 +493,7 @@ class MultiplayerManager {
 
       // Assign avatar dynamically based on seat index
       const avatarIdx = playersCount % 6;
-      const avatarUrl = `assets/avatars/avatar_${avatarIdx + 1}.png`;
+      const avatarUrl = this.currentUser.avatar || `assets/avatars/avatar_${avatarIdx + 1}.png`;
 
       // Add current player to room
       const playerRef = this.roomRef.child(`players/${myUid}`);
@@ -604,7 +604,7 @@ class MultiplayerManager {
               p.uid === myUid ||
               (p.username && p.username.toLowerCase().trim() === (this.currentUser.username || "").toLowerCase().trim())
             );
-            const avatarUrl = matchMe ? matchMe.avatar : "assets/avatars/avatar_1.png";
+            const avatarUrl = matchMe ? matchMe.avatar : (this.currentUser.avatar || "assets/avatars/avatar_1.png");
             
             const playerRef = this.roomRef.child(`players/${myUid}`);
             const activeBetBtn = document.querySelector("#online-bet-selector .bet-opt-btn.active");
@@ -682,7 +682,7 @@ class MultiplayerManager {
             
             // Assign avatar index
             const playersCount = Object.keys(room.players || {}).length;
-            const avatarUrl = this.isHost ? "assets/avatars/avatar_1.png" : `assets/avatars/avatar_${(playersCount % 6) + 1}.png`;
+            const avatarUrl = this.currentUser.avatar || (this.isHost ? "assets/avatars/avatar_1.png" : `assets/avatars/avatar_${(playersCount % 6) + 1}.png`);
             
             const playerRef = this.roomRef.child(`players/${myUid}`);
             const activeBetBtn = document.querySelector("#online-bet-selector .bet-opt-btn.active");

@@ -1,5 +1,34 @@
 // Star Greetings - User Authentication & Dashboard Logic
 
+// Helper to compress and crop image client-side to a 128x128 JPEG Base64 data URL
+function compressImage(file, maxWidth, maxHeight, callback) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = (event) => {
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      // Crop to a square centered
+      const size = Math.min(width, height);
+      const xOffset = (width - size) / 2;
+      const yOffset = (height - size) / 2;
+
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, xOffset, yOffset, size, size, 0, 0, maxWidth, maxHeight);
+
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      callback(compressedDataUrl);
+    };
+  };
+}
+
 class AuthManager {
   constructor() {
     this.accountsKey = "star_greetings_accounts";
@@ -107,7 +136,8 @@ class AuthManager {
         password: password,
         coins: isNaN(parseInt(fbUser.coins, 10)) ? 300 : parseInt(fbUser.coins, 10),
         freeStackBuys: isNaN(parseInt(fbUser.freeStackBuys, 10)) ? 10 : parseInt(fbUser.freeStackBuys, 10),
-        uid: uid
+        uid: uid,
+        avatar: fbUser.avatar || ""
       };
       accounts[normalizedUsername] = userToUse;
       this.saveAccounts(accounts);
@@ -249,7 +279,8 @@ class AuthManager {
           username: baseUsername,
           coins: 300,
           freeStackBuys: 10,
-          uid: user.uid
+          uid: user.uid,
+          avatar: user.photoURL || ""
         };
         await firebase.database().ref(`users/${user.uid}`).set(dbUser);
       }
@@ -263,7 +294,8 @@ class AuthManager {
         coins: isNaN(parseInt(dbUser.coins, 10)) ? 300 : parseInt(dbUser.coins, 10),
         freeStackBuys: isNaN(parseInt(dbUser.freeStackBuys, 10)) ? 10 : parseInt(dbUser.freeStackBuys, 10),
         uid: user.uid,
-        social: providerName
+        social: providerName,
+        avatar: dbUser.avatar || user.photoURL || ""
       };
       
       this.saveAccounts(accounts);
@@ -280,6 +312,30 @@ class AuthManager {
       }
       return { error: err.message };
     }
+  }
+
+  async updateAvatar(avatarDataUrl) {
+    const localUser = this.getCurrentUser();
+    if (!localUser) return { error: "No logged in user" };
+
+    const accounts = this.getAccounts();
+    const normalizedUsername = localUser.username.trim().toLowerCase();
+    if (accounts[normalizedUsername]) {
+      accounts[normalizedUsername].avatar = avatarDataUrl;
+      this.saveAccounts(accounts);
+    }
+
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && localUser.uid) {
+      try {
+        await firebase.database().ref(`users/${localUser.uid}`).update({
+          avatar: avatarDataUrl
+        });
+      } catch (err) {
+        console.error("Firebase avatar update failed:", err);
+        return { error: "Failed to update avatar on Firebase: " + err.message };
+      }
+    }
+    return { success: true };
   }
 }
 
@@ -353,6 +409,20 @@ document.addEventListener("DOMContentLoaded", () => {
     dashboardView.classList.remove("hidden");
     profileNameLabel.textContent = user.name;
     profileCoinsLabel.textContent = user.coins;
+
+    const profileAvatar = document.getElementById("dashboard-profile-avatar");
+    const avatarEmoji = document.getElementById("dashboard-avatar-emoji");
+    if (profileAvatar && avatarEmoji) {
+      if (user.avatar) {
+        profileAvatar.src = user.avatar;
+        profileAvatar.classList.remove("hidden");
+        avatarEmoji.classList.add("hidden");
+      } else {
+        profileAvatar.src = "";
+        profileAvatar.classList.add("hidden");
+        avatarEmoji.classList.remove("hidden");
+      }
+    }
   }
 
   // Initialize login form defaults (remember me)
@@ -392,7 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (fbUser) {
           // Firebase user is authenticated
           if (currentUser) {
-            // Sync local storage coins if they mismatch
+            // Sync local storage coins and avatar if they mismatch
             firebase.database().ref(`users/${fbUser.uid}`).once("value").then(snapshot => {
               if (snapshot.exists()) {
                 const data = snapshot.val();
@@ -401,6 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   accounts[currentUser.username].coins = isNaN(parseInt(data.coins, 10)) ? 300 : parseInt(data.coins, 10);
                   accounts[currentUser.username].freeStackBuys = isNaN(parseInt(data.freeStackBuys, 10)) ? 10 : parseInt(data.freeStackBuys, 10);
                   accounts[currentUser.username].uid = fbUser.uid;
+                  accounts[currentUser.username].avatar = data.avatar || fbUser.photoURL || "";
                   auth.saveAccounts(accounts);
                   
                   // Refresh dashboard if visible
@@ -699,6 +770,41 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.textContent = originalText;
         submitBtn.removeAttribute("disabled");
       }
+    });
+  }
+
+  // Dashboard Avatar Change Event Listeners
+  const avatarContainer = document.getElementById("dashboard-avatar-container");
+  const avatarFileInput = document.getElementById("avatar-file-input");
+
+  if (avatarContainer && avatarFileInput) {
+    avatarContainer.addEventListener("click", () => {
+      avatarFileInput.click();
+    });
+
+    avatarFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        alert("Please select a valid image file.");
+        return;
+      }
+
+      avatarContainer.style.opacity = "0.5";
+
+      compressImage(file, 128, 128, async (compressedDataUrl) => {
+        const res = await auth.updateAvatar(compressedDataUrl);
+        avatarContainer.style.opacity = "1";
+        if (res.success) {
+          const currentUser = auth.getCurrentUser();
+          if (currentUser) {
+            showDashboard(currentUser);
+          }
+        } else {
+          alert(res.error || "Failed to update avatar");
+        }
+      });
     });
   }
 });
