@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1.26.0">
+  <link rel="stylesheet" href="styles.css?v=1.27.0">
 </head>
 <body>
 
@@ -53,6 +53,19 @@
             <a href="#" id="link-to-forgot" class="forgot-link">Forgot password?</a>
           </div>
           <button type="submit" class="btn primary-btn">Login</button>
+          <div class="social-login-separator">
+            <span>or login with</span>
+          </div>
+          <div class="social-login-group">
+            <button type="button" id="google-login-btn" class="btn social-btn google-btn">
+              <svg viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2a5.96 5.96 0 0 1-5.96-5.96c0-3.29 2.67-5.96 5.96-5.96 1.482 0 2.834.542 3.882 1.434l3.125-3.125A10.155 10.155 0 0 0 12.24 3c-5.635 0-10.2 4.565-10.2 10.2s4.565 10.2 10.2 10.2c5.96 0 9.878-4.2 9.878-10.03 0-.68-.068-1.314-.193-2.085H12.24Z"/></svg>
+              Google
+            </button>
+            <button type="button" id="facebook-login-btn" class="btn social-btn facebook-btn">
+              <svg viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073Z"/></svg>
+              Facebook
+            </button>
+          </div>
           <p class="auth-toggle-lbl">Don't have an account? <a href="#" id="link-to-signup">Sign Up</a></p>
         </form>
       </div>
@@ -466,10 +479,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="js/config.js?v=1.26.0"></script>
-  <script src="js/auth.js?v=1.26.0"></script>
-  <script src="js/game-logic.js?v=1.26.0"></script>
-  <script src="js/ui-rendering.js?v=1.26.0"></script>
-  <script src="js/multiplayer.js?v=1.26.0"></script>
+  <script src="js/config.js?v=1.27.0"></script>
+  <script src="js/auth.js?v=1.27.0"></script>
+  <script src="js/game-logic.js?v=1.27.0"></script>
+  <script src="js/ui-rendering.js?v=1.27.0"></script>
+  <script src="js/multiplayer.js?v=1.27.0"></script>
 </body>
 </html>

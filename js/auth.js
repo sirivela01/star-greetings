@@ -208,6 +208,79 @@ class AuthManager {
     const data = localStorage.getItem(this.rememberKey);
     return data ? JSON.parse(data) : null;
   }
+
+  async loginWithProvider(providerName) {
+    if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
+      return { error: "Firebase is not loaded or configured!" };
+    }
+
+    let provider;
+    if (providerName === 'google') {
+      provider = new firebase.auth.GoogleAuthProvider();
+    } else if (providerName === 'facebook') {
+      provider = new firebase.auth.FacebookAuthProvider();
+    } else {
+      return { error: "Unsupported social provider: " + providerName };
+    }
+
+    try {
+      const result = await firebase.auth().signInWithPopup(provider);
+      const user = result.user;
+      if (!user) {
+        return { error: "No user returned from popup login." };
+      }
+
+      let baseUsername = (user.email ? user.email.split('@')[0] : user.displayName || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+      
+      if (!baseUsername) {
+        baseUsername = 'user' + user.uid.substring(0, 5);
+      }
+      
+      const snapshot = await firebase.database().ref(`users/${user.uid}`).once("value");
+      let dbUser;
+      
+      if (snapshot.exists()) {
+        dbUser = snapshot.val();
+      } else {
+        dbUser = {
+          name: user.displayName || baseUsername,
+          username: baseUsername,
+          coins: 300,
+          freeStackBuys: 10,
+          uid: user.uid
+        };
+        await firebase.database().ref(`users/${user.uid}`).set(dbUser);
+      }
+
+      const accounts = this.getAccounts();
+      const finalUsername = dbUser.username || baseUsername;
+      
+      accounts[finalUsername] = {
+        name: dbUser.name,
+        password: "",
+        coins: isNaN(parseInt(dbUser.coins, 10)) ? 300 : parseInt(dbUser.coins, 10),
+        freeStackBuys: isNaN(parseInt(dbUser.freeStackBuys, 10)) ? 10 : parseInt(dbUser.freeStackBuys, 10),
+        uid: user.uid,
+        social: providerName
+      };
+      
+      this.saveAccounts(accounts);
+      localStorage.setItem(this.sessionKey, finalUsername);
+
+      return { success: true, user: accounts[finalUsername] };
+    } catch (err) {
+      console.error("Social login popup error:", err);
+      if (err.code === "auth/popup-closed-by-user") {
+        return { error: "Login popup was closed before completion." };
+      }
+      if (err.code === "auth/blocked-by-popup-killer") {
+        return { error: "Popups are blocked by your browser. Please allow popups for this site." };
+      }
+      return { error: err.message };
+    }
+  }
 }
 
 // Global Auth Manager Instance
@@ -364,6 +437,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- BUTTON CLICKS & TRIGGERS ---
+
+  // Social Login Button Clicks
+  const googleBtn = document.getElementById("google-login-btn");
+  const facebookBtn = document.getElementById("facebook-login-btn");
+
+  const handleSocialLogin = async (btn, provider) => {
+    const originalContent = btn.innerHTML;
+    btn.classList.add("loading");
+    btn.setAttribute("disabled", "true");
+    
+    try {
+      const res = await auth.loginWithProvider(provider);
+      if (res.success) {
+        showDashboard(res.user);
+      } else {
+        alert(res.error || "Login failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Login failed: " + err.message);
+    } finally {
+      btn.innerHTML = originalContent;
+      btn.classList.remove("loading");
+      btn.removeAttribute("disabled");
+    }
+  };
+
+  if (googleBtn) {
+    googleBtn.addEventListener("click", () => handleSocialLogin(googleBtn, "google"));
+  }
+  if (facebookBtn) {
+    facebookBtn.addEventListener("click", () => handleSocialLogin(facebookBtn, "facebook"));
+  }
 
   // Go to Sign Up
   if (toSignupBtn) {
