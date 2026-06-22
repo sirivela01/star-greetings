@@ -782,8 +782,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const avatarModalImg = document.getElementById("profile-avatar-modal-img");
   const avatarModalEmoji = document.getElementById("profile-avatar-modal-emoji");
   const avatarModalCloseX = document.getElementById("profile-avatar-close-x");
-  const avatarModalCloseBtn = document.getElementById("profile-avatar-close-btn");
+  const avatarModalViewBtn = document.getElementById("profile-avatar-view-btn");
   const avatarModalChangeBtn = document.getElementById("profile-avatar-change-btn");
+
+  // Lightbox Elements
+  const lightbox = document.getElementById("full-photo-lightbox");
+  const lightboxImg = document.getElementById("lightbox-img");
 
   function openAvatarModal() {
     if (!avatarModal) return;
@@ -828,8 +832,25 @@ document.addEventListener("DOMContentLoaded", () => {
   if (avatarModalCloseX) {
     avatarModalCloseX.addEventListener("click", closeAvatarModal);
   }
-  if (avatarModalCloseBtn) {
-    avatarModalCloseBtn.addEventListener("click", closeAvatarModal);
+  if (avatarModalViewBtn) {
+    avatarModalViewBtn.addEventListener("click", () => {
+      const currentUser = auth.getCurrentUser();
+      if (currentUser && currentUser.avatar && lightbox && lightboxImg) {
+        lightboxImg.src = currentUser.avatar;
+        lightbox.classList.remove("hidden");
+        lightbox.style.display = "flex";
+      } else {
+        alert("You do not have a custom profile picture set yet.");
+      }
+    });
+  }
+
+  // Dismiss lightbox on click
+  if (lightbox) {
+    lightbox.addEventListener("click", () => {
+      lightbox.classList.add("hidden");
+      lightbox.style.display = "none";
+    });
   }
 
   if (avatarModalChangeBtn && avatarFileInput) {
