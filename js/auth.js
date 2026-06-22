@@ -777,11 +777,68 @@ document.addEventListener("DOMContentLoaded", () => {
   const avatarContainer = document.getElementById("dashboard-avatar-container");
   const avatarFileInput = document.getElementById("avatar-file-input");
 
-  if (avatarContainer && avatarFileInput) {
+  // Profile Photo Modal Elements
+  const avatarModal = document.getElementById("profile-avatar-modal");
+  const avatarModalImg = document.getElementById("profile-avatar-modal-img");
+  const avatarModalEmoji = document.getElementById("profile-avatar-modal-emoji");
+  const avatarModalCloseX = document.getElementById("profile-avatar-close-x");
+  const avatarModalCloseBtn = document.getElementById("profile-avatar-close-btn");
+  const avatarModalChangeBtn = document.getElementById("profile-avatar-change-btn");
+
+  function openAvatarModal() {
+    if (!avatarModal) return;
+    const currentUser = auth.getCurrentUser();
+    if (!currentUser) return;
+
+    if (currentUser.avatar) {
+      if (avatarModalImg) {
+        avatarModalImg.src = currentUser.avatar;
+        avatarModalImg.style.display = "block";
+      }
+      if (avatarModalEmoji) {
+        avatarModalEmoji.style.display = "none";
+      }
+    } else {
+      if (avatarModalImg) {
+        avatarModalImg.src = "";
+        avatarModalImg.style.display = "none";
+      }
+      if (avatarModalEmoji) {
+        avatarModalEmoji.style.display = "block";
+      }
+    }
+
+    avatarModal.classList.remove("hidden");
+    avatarModal.style.display = "flex";
+  }
+
+  function closeAvatarModal() {
+    if (avatarModal) {
+      avatarModal.classList.add("hidden");
+      avatarModal.style.display = "none";
+    }
+  }
+
+  if (avatarContainer) {
     avatarContainer.addEventListener("click", () => {
+      openAvatarModal();
+    });
+  }
+
+  if (avatarModalCloseX) {
+    avatarModalCloseX.addEventListener("click", closeAvatarModal);
+  }
+  if (avatarModalCloseBtn) {
+    avatarModalCloseBtn.addEventListener("click", closeAvatarModal);
+  }
+
+  if (avatarModalChangeBtn && avatarFileInput) {
+    avatarModalChangeBtn.addEventListener("click", () => {
       avatarFileInput.click();
     });
+  }
 
+  if (avatarFileInput) {
     avatarFileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -791,15 +848,26 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      avatarContainer.style.opacity = "0.5";
+      if (avatarContainer) avatarContainer.style.opacity = "0.5";
+      if (avatarModal) avatarModal.style.opacity = "0.5";
 
       compressImage(file, 128, 128, async (compressedDataUrl) => {
         const res = await auth.updateAvatar(compressedDataUrl);
-        avatarContainer.style.opacity = "1";
+        if (avatarContainer) avatarContainer.style.opacity = "1";
+        if (avatarModal) avatarModal.style.opacity = "1";
+        
         if (res.success) {
           const currentUser = auth.getCurrentUser();
           if (currentUser) {
             showDashboard(currentUser);
+            // Also update the modal preview image instantly
+            if (avatarModalImg) {
+              avatarModalImg.src = compressedDataUrl;
+              avatarModalImg.style.display = "block";
+            }
+            if (avatarModalEmoji) {
+              avatarModalEmoji.style.display = "none";
+            }
           }
         } else {
           alert(res.error || "Failed to update avatar");
