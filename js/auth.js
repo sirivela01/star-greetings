@@ -851,7 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (avatarContainer) avatarContainer.style.opacity = "0.5";
       if (avatarModal) avatarModal.style.opacity = "0.5";
 
-      compressImage(file, 128, 128, async (compressedDataUrl) => {
+      compressImage(file, 512, 512, async (compressedDataUrl) => {
         const res = await auth.updateAvatar(compressedDataUrl);
         if (avatarContainer) avatarContainer.style.opacity = "1";
         if (avatarModal) avatarModal.style.opacity = "1";
