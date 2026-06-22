@@ -19,13 +19,32 @@ class MultiplayerManager {
       savedUrl = null;
     }
     
+    const activeUrl = savedUrl || "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+
     // Default public Firebase Config for out-of-the-box operation
     this.firebaseConfig = {
       apiKey: "AIzaSyFakeKeyForAuthCompatibilityCheckOnly",
-      databaseURL: savedUrl || "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app"
+      databaseURL: activeUrl,
+      authDomain: this.getAuthDomainFromDbUrl(activeUrl)
     };
 
     this.initFirebase();
+  }
+
+  getAuthDomainFromDbUrl(dbUrl) {
+    if (!dbUrl) return "";
+    try {
+      const host = dbUrl.replace("https://", "").split("/")[0];
+      const parts = host.split(".");
+      let firstPart = parts[0];
+      if (firstPart.endsWith("-default-rtdb")) {
+        firstPart = firstPart.substring(0, firstPart.length - "-default-rtdb".length);
+      }
+      return `${firstPart}.firebaseapp.com`;
+    } catch (e) {
+      console.error("Failed to parse authDomain from database URL:", e);
+      return "";
+    }
   }
 
   getMyUid() {
@@ -220,6 +239,7 @@ class MultiplayerManager {
     
     localStorage.setItem("star_greetings_firebase_url", cleanUrl);
     this.firebaseConfig.databaseURL = cleanUrl;
+    this.firebaseConfig.authDomain = this.getAuthDomainFromDbUrl(cleanUrl);
     
     try {
       if (firebase.apps.length > 0) {
@@ -241,6 +261,7 @@ class MultiplayerManager {
     localStorage.removeItem("star_greetings_firebase_url");
     const defaultUrl = "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
     this.firebaseConfig.databaseURL = defaultUrl;
+    this.firebaseConfig.authDomain = this.getAuthDomainFromDbUrl(defaultUrl);
     
     try {
       if (firebase.apps.length > 0) {
