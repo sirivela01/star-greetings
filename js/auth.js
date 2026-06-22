@@ -1,7 +1,7 @@
 // Star Greetings - User Authentication & Dashboard Logic
 
-// Helper to compress and crop image client-side to a 128x128 JPEG Base64 data URL
-function compressImage(file, maxWidth, maxHeight, callback) {
+// Helper to compress image client-side to a max 1024px size, keeping original aspect ratio and high quality
+function compressImage(file, maxDimension, quality, callback) {
   const reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onload = (event) => {
@@ -12,18 +12,27 @@ function compressImage(file, maxWidth, maxHeight, callback) {
       let width = img.width;
       let height = img.height;
 
-      // Crop to a square centered
-      const size = Math.min(width, height);
-      const xOffset = (width - size) / 2;
-      const yOffset = (height - size) / 2;
+      // Calculate new dimensions keeping aspect ratio
+      if (width > height) {
+        if (width > maxDimension) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        }
+      } else {
+        if (height > maxDimension) {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
 
-      canvas.width = maxWidth;
-      canvas.height = maxHeight;
+      canvas.width = width;
+      canvas.height = height;
 
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, xOffset, yOffset, size, size, 0, 0, maxWidth, maxHeight);
+      ctx.drawImage(img, 0, 0, width, height);
 
-      const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      // Convert to JPEG at high quality
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
       callback(compressedDataUrl);
     };
   };
@@ -872,7 +881,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (avatarContainer) avatarContainer.style.opacity = "0.5";
       if (avatarModal) avatarModal.style.opacity = "0.5";
 
-      compressImage(file, 512, 512, async (compressedDataUrl) => {
+      compressImage(file, 1024, 0.85, async (compressedDataUrl) => {
         const res = await auth.updateAvatar(compressedDataUrl);
         if (avatarContainer) avatarContainer.style.opacity = "1";
         if (avatarModal) avatarModal.style.opacity = "1";
