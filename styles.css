@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Star Greetings - Styles & Design System (Round-Table Overhaul)
    ========================================================================== */
 
@@ -3187,65 +3187,69 @@ select.form-select option {
 }
 
 
-
-
-
-
 /* ==========================================================================
-   Filmi Crimson — Arcade Dashboard Theme
+   Filmi Crimson — Arcade Dashboard Theme  (v2.0 — fully scoped)
    ========================================================================== */
 
-/* Scoped page bg for dashboard screen */
+/* Full page background when dashboard is active */
 #dashboard-screen {
-  background: var(--sg-bg);
+  background: var(--sg-bg) !important;
+  min-height: 100vh;
 }
 
-/* Outer shell — strip old glass look on dashboard */
-.db-shell {
+/* Shell — override glass-container on dashboard */
+#dashboard-screen .db-shell {
   background: var(--sg-bg) !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   max-width: 480px;
   width: 92%;
-  margin: 30px auto;
+  margin: 0 auto;
+  padding-bottom: 30px !important;
   animation: fadeIn 0.4s ease-out;
 }
 
-/* HEADER */
-.db-header {
-  background: var(--sg-hdr);
+/* ── HEADER ──────────────────────────────────────────────────── */
+#dashboard-screen .db-header {
+  background: var(--sg-hdr) !important;
   border-radius: 16px 16px 0 0;
   padding: 20px 16px 16px;
-  border-bottom: 1px solid rgba(192,16,42,0.18);
+  border-bottom: 1px solid rgba(192,16,42,0.25);
   text-align: center;
+  margin-bottom: 0;
 }
 
-.db-star-icon {
-  font-size: 30px;
-  color: var(--sg-crimson);
+#dashboard-screen .db-star-icon {
+  font-size: 30px !important;
+  color: var(--sg-crimson) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--sg-crimson) !important;
   display: block;
   margin-bottom: 6px;
-  filter: drop-shadow(0 0 8px rgba(192,16,42,0.6));
+  filter: drop-shadow(0 0 10px rgba(192,16,42,0.7));
+  animation: none !important;
 }
 
-.db-title {
-  font-size: 24px;
-  font-weight: 800;
+#dashboard-screen .db-title {
+  font-size: 24px !important;
+  font-weight: 800 !important;
   color: var(--sg-text) !important;
-  letter-spacing: 0.04em;
-  margin: 0;
   background: none !important;
+  -webkit-background-clip: unset !important;
   -webkit-text-fill-color: var(--sg-text) !important;
+  letter-spacing: 0.04em;
+  margin: 0 !important;
 }
 
-.db-tagline {
-  font-size: 12px;
-  color: var(--sg-muted);
-  margin-top: 4px;
+#dashboard-screen .db-tagline {
+  font-size: 12px !important;
+  color: var(--sg-muted) !important;
+  margin-top: 4px !important;
 }
 
-.royal-badge {
+#dashboard-screen .royal-badge {
   display: inline-block;
   margin-top: 8px;
   background: rgba(212,160,23,0.15);
@@ -3257,8 +3261,8 @@ select.form-select option {
   letter-spacing: 0.03em;
 }
 
-/* PROFILE CARD */
-.db-profile-card {
+/* ── PROFILE CARD ────────────────────────────────────────────── */
+#dashboard-screen .db-profile-card {
   background: var(--sg-card) !important;
   border: 1px solid rgba(212,160,23,0.22) !important;
   border-radius: 14px !important;
@@ -3271,61 +3275,62 @@ select.form-select option {
   box-shadow: none !important;
 }
 
-.db-player-info {
-  display: flex;
-  align-items: center;
+/* LEFT: player info */
+#dashboard-screen .db-player-info {
+  display: flex !important;
+  align-items: center !important;
   gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
-.db-avatar {
+#dashboard-screen .db-avatar {
   width: 44px !important;
   height: 44px !important;
-  min-width: 44px;
+  min-width: 44px !important;
   background: var(--sg-avatar-bg) !important;
   border: 2px solid rgba(212,160,23,0.55) !important;
   font-size: 14px !important;
   color: var(--sg-gold) !important;
 }
 
-.db-avatar:hover {
+#dashboard-screen .db-avatar:hover {
   border-color: var(--sg-gold) !important;
   box-shadow: 0 0 10px rgba(212,160,23,0.4) !important;
 }
 
-.db-player-meta {
+#dashboard-screen .db-player-meta {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.db-player-name {
+#dashboard-screen .db-player-name {
   font-size: 15px !important;
   font-weight: 700 !important;
   color: var(--sg-text) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--sg-text) !important;
   margin: 0 0 2px !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: none !important;
-  -webkit-text-fill-color: var(--sg-text) !important;
 }
 
-.db-coins {
+#dashboard-screen .db-coins {
   font-size: 12px !important;
   color: var(--sg-gold) !important;
   margin: 0 !important;
   font-weight: 600;
 }
 
-/* Greetings Stack widget */
-.db-greetings-widget {
-  background: var(--sg-bg);
-  border: 1px solid rgba(212,160,23,0.6);
-  border-radius: 12px;
-  padding: 9px 12px;
+/* CENTER: Greetings Stack widget */
+#dashboard-screen .db-greetings-widget {
+  background: var(--sg-bg) !important;
+  border: 1px solid rgba(212,160,23,0.6) !important;
+  border-radius: 12px !important;
+  padding: 9px 12px !important;
   text-align: center;
   min-width: 80px;
   flex-shrink: 0;
@@ -3333,42 +3338,45 @@ select.form-select option {
   position: relative;
 }
 
-.db-greetings-widget.low-greetings {
-  box-shadow: 0 0 0 2px rgba(192,16,42,0.7), 0 0 12px rgba(192,16,42,0.3);
+#dashboard-screen .db-greetings-widget.low-greetings {
+  box-shadow: 0 0 0 2px rgba(192,16,42,0.7), 0 0 14px rgba(192,16,42,0.35) !important;
   animation: dbLowWarningPulse 2s infinite alternate;
 }
 
 @keyframes dbLowWarningPulse {
   from { box-shadow: 0 0 0 2px rgba(192,16,42,0.5); }
-  to   { box-shadow: 0 0 0 3px rgba(192,16,42,0.9), 0 0 16px rgba(192,16,42,0.35); }
+  to   { box-shadow: 0 0 0 3px rgba(192,16,42,0.9), 0 0 18px rgba(192,16,42,0.4); }
 }
 
-.db-greetings-count {
+#dashboard-screen .db-greetings-count {
   font-size: 26px !important;
   font-weight: 900 !important;
   color: var(--sg-gold) !important;
   line-height: 1 !important;
   display: block !important;
-  text-shadow: 0 0 10px rgba(212,160,23,0.4) !important;
+  text-shadow: 0 0 10px rgba(212,160,23,0.45) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--sg-gold) !important;
 }
 
-.db-greetings-labels {
-  font-size: 11px;
-  color: var(--sg-muted);
+#dashboard-screen .db-greetings-labels {
+  font-size: 11px !important;
+  color: var(--sg-muted) !important;
   margin-top: 3px;
   line-height: 1.4;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.db-card-stack-visual {
+/* Decorative 3-card stack */
+#dashboard-screen .db-card-stack-visual {
   position: relative;
   width: 36px;
   height: 18px;
   margin: 6px auto 0;
 }
 
-.db-mini-card {
+#dashboard-screen .db-mini-card {
   position: absolute;
   width: 14px;
   height: 10px;
@@ -3378,12 +3386,12 @@ select.form-select option {
   top: 50%;
 }
 
-.db-mc1 { transform: translate(-50%,-50%) rotate(-8deg) translateY(3px); opacity: 0.4; }
-.db-mc2 { transform: translate(-50%,-50%) rotate(-3deg) translateY(1px); opacity: 0.7; }
-.db-mc3 { transform: translate(-50%,-50%) rotate(0deg);                  opacity: 1.0; }
+#dashboard-screen .db-mc1 { transform: translate(-50%,-50%) rotate(-8deg) translateY(3px); opacity: 0.4; }
+#dashboard-screen .db-mc2 { transform: translate(-50%,-50%) rotate(-3deg) translateY(1px); opacity: 0.7; }
+#dashboard-screen .db-mc3 { transform: translate(-50%,-50%) rotate(0deg);                  opacity: 1.0; }
 
-/* Log Out */
-.db-logout-btn {
+/* RIGHT: Logout button */
+#dashboard-screen .db-logout-btn {
   background: var(--sg-logout-bg) !important;
   color: var(--sg-logout-text) !important;
   border: none !important;
@@ -3395,22 +3403,25 @@ select.form-select option {
   align-self: flex-start !important;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: none !important;
   transition: background 0.2s ease, transform 0.1s ease;
 }
 
-.db-logout-btn:hover {
+#dashboard-screen .db-logout-btn:hover {
   background: #6A0A0A !important;
   transform: scale(1.03);
 }
 
-/* PLAY MODE BUTTONS */
-.db-actions {
+/* ── PLAY MODE BUTTONS ────────────────────────────────────────── */
+#dashboard-screen .db-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 4px;
 }
 
-.db-actions .play-mode-btn {
+/* Base override for ALL dashboard play buttons */
+#dashboard-screen .db-actions .play-mode-btn {
   width: 100% !important;
   border-radius: 13px !important;
   padding: 14px 16px !important;
@@ -3422,52 +3433,75 @@ select.form-select option {
   gap: 4px !important;
   transition: transform 0.12s ease !important;
   font-size: unset !important;
+  background-image: none !important;   /* kill gradient buttons */
+  transform: none;
 }
 
-.db-actions .play-mode-btn:active {
+#dashboard-screen .db-actions .play-mode-btn:active {
   transform: scale(0.98) !important;
 }
 
-.db-btn-title {
+#dashboard-screen .db-btn-title {
   font-size: 15px;
   font-weight: 700;
   display: block;
   margin: 0 0 3px;
 }
 
-.db-btn-sub {
+#dashboard-screen .db-btn-sub {
   font-size: 11px;
   display: block;
   margin: 0;
   opacity: 0.85;
 }
 
-/* AI BOT button */
-.db-btn-ai {
+/* AI BOT */
+#dashboard-screen .db-btn-ai {
   background: #2A0810 !important;
+  background-image: none !important;
   border: 1px solid rgba(255,112,144,0.35) !important;
   box-shadow: none !important;
+  color: #FF7090 !important;
 }
-.db-btn-ai .db-btn-title,
-.db-btn-ai .db-btn-sub { color: #FF7090 !important; }
-.db-btn-ai:hover { background: #3A0815 !important; }
+#dashboard-screen .db-btn-ai .db-btn-title,
+#dashboard-screen .db-btn-ai .db-btn-sub { color: #FF7090 !important; }
+#dashboard-screen .db-btn-ai:hover {
+  background: #3A0818 !important;
+  background-image: none !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(255,112,144,0.25) !important;
+}
 
-/* Offline button */
-.db-btn-offline {
+/* Offline */
+#dashboard-screen .db-btn-offline {
   background: #301A06 !important;
+  background-image: none !important;
   border: 1px solid rgba(255,188,80,0.35) !important;
   box-shadow: none !important;
+  color: #FFBC50 !important;
 }
-.db-btn-offline .db-btn-title,
-.db-btn-offline .db-btn-sub { color: #FFBC50 !important; }
-.db-btn-offline:hover { background: #3E2208 !important; }
+#dashboard-screen .db-btn-offline .db-btn-title,
+#dashboard-screen .db-btn-offline .db-btn-sub { color: #FFBC50 !important; }
+#dashboard-screen .db-btn-offline:hover {
+  background: #3E2208 !important;
+  background-image: none !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(255,188,80,0.25) !important;
+}
 
-/* Online button */
-.db-btn-online {
+/* Online */
+#dashboard-screen .db-btn-online {
   background: #250828 !important;
+  background-image: none !important;
   border: 1px solid rgba(232,136,232,0.35) !important;
   box-shadow: none !important;
+  color: #E888E8 !important;
 }
-.db-btn-online .db-btn-title,
-.db-btn-online .db-btn-sub { color: #E888E8 !important; }
-.db-btn-online:hover { background: #30083A !important; }
+#dashboard-screen .db-btn-online .db-btn-title,
+#dashboard-screen .db-btn-online .db-btn-sub { color: #E888E8 !important; }
+#dashboard-screen .db-btn-online:hover {
+  background: #30083A !important;
+  background-image: none !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(232,136,232,0.25) !important;
+}
