@@ -56,6 +56,7 @@
   let stopTimer      = null;   // clearTimeout handle
   let toastEl        = null;   // current toast DOM element
   let apiReady       = false;  // YT API loaded?
+  let playerReady    = false;  // YT player fully ready?
   let pendingStarId  = null;   // queued play request before API ready
 
   /* ─── 3. LOAD YOUTUBE IFRAME API (once) ──────────────────────────────── */
@@ -71,32 +72,45 @@
   window.onYouTubeIframeAPIReady = function () {
     apiReady = true;
 
-    // Create a tiny hidden player container
+    // Create a hidden player container of standard size, placed far off-screen
+    // to prevent background audio playback blocks on restricted/copyrighted music videos.
     const container = document.createElement('div');
     container.id = 'yt-victory-container';
     Object.assign(container.style, {
-      position: 'fixed', bottom: '-200px', left: '-200px',
-      width: '1px', height: '1px', opacity: '0',
-      pointerEvents: 'none', zIndex: '-1'
+      position: 'fixed',
+      top: '-9999px',
+      left: '-9999px',
+      width: '320px',
+      height: '180px',
+      pointerEvents: 'none',
+      zIndex: '-9999'
     });
     document.body.appendChild(container);
 
     ytPlayer = new YT.Player('yt-victory-container', {
-      height: '1', width: '1',
+      height: '180',
+      width: '320',
       playerVars: {
         autoplay: 0, controls: 0, disablekb: 1,
         fs: 0, modestbranding: 1, rel: 0, iv_load_policy: 3,
         playsinline: 1
       },
-      events: { onError: () => { stopSong(); } }
+      events: {
+        onReady: () => {
+          playerReady = true;
+          console.log('[VictoryMusic] YouTube Player is ready.');
+          if (pendingStarId) {
+            const id = pendingStarId;
+            pendingStarId = null;
+            playSong(id);
+          }
+        },
+        onError: (e) => {
+          console.warn('[VictoryMusic] YT player error event:', e.data);
+          stopSong();
+        }
+      }
     });
-
-    // Play any queued song
-    if (pendingStarId) {
-      const id = pendingStarId;
-      pendingStarId = null;
-      setTimeout(() => playSong(id), 500);
-    }
   };
 
   /* ─── 4. SHOW TOAST NOTIFICATION ────────────────────────────────────── */
@@ -147,8 +161,8 @@
     // Stop any currently playing song
     stopSong(/* silent= */ true);
 
-    if (!apiReady || !ytPlayer || typeof ytPlayer.loadVideoById !== 'function') {
-      // API not ready yet — queue and ensure API is loading
+    if (!apiReady || !ytPlayer || !playerReady || typeof ytPlayer.loadVideoById !== 'function') {
+      // API or player not ready yet — queue and ensure API is loading
       pendingStarId = starId;
       loadYouTubeAPI();
       return;
