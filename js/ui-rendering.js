@@ -1121,6 +1121,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (window.themeSelectMode === "ai_bot") {
           triggerNarratorCommentary("round_win", { player: outcome.playerName, card: outcome.playedCard.name });
         }
+        // 🎵 Victory Music: play the winning star's song for 20 s
+        if (window.VictoryMusic && outcome.playedCard && outcome.playedCard.id) {
+          window.VictoryMusic.play(outcome.playedCard.id);
+        }
         triggerWinFlash(outcome);
       } else {
         // Standard turn transition
@@ -1530,6 +1534,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Trigger final screen and results
   function triggerGameOver() {
+    // Stop any victory music still playing from the last round
+    if (window.VictoryMusic) window.VictoryMusic.stop(true);
     cleanupFloatingElements();
     const standings = game.endGame();
     renderFinalStandings(standings);
