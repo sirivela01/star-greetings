@@ -8,6 +8,18 @@
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
+  /* ── Filmi Crimson Dashboard Theme ── */
+  --sg-bg:          #100407;   /* page bg — deepest maroon-black */
+  --sg-hdr:         #1C0710;   /* header background */
+  --sg-card:        #220C14;   /* profile card background */
+  --sg-gold:        #D4A017;   /* primary gold — greetings, coins, avatar ring */
+  --sg-crimson:     #C0102A;   /* secondary crimson — star, borders, highlights */
+  --sg-text:        #F5DFC0;   /* primary cream text */
+  --sg-muted:       #A07060;   /* secondary muted text */
+  --sg-avatar-bg:   #380B14;   /* avatar circle background */
+  --sg-logout-bg:   #4A0A0A;   /* logout button background */
+  --sg-logout-text: #FFB0A0;   /* logout button text */
+
   /* Colors - Dark Theme Core */
   --bg-gradient: radial-gradient(circle at 50% 50%, #17153a 0%, #0b091f 60%, #03020d 100%);
   --bg-page: #04030a;
@@ -3178,3 +3190,284 @@ select.form-select option {
 
 
 
+
+/* ==========================================================================
+   Filmi Crimson — Arcade Dashboard Theme
+   ========================================================================== */
+
+/* Scoped page bg for dashboard screen */
+#dashboard-screen {
+  background: var(--sg-bg);
+}
+
+/* Outer shell — strip old glass look on dashboard */
+.db-shell {
+  background: var(--sg-bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: 480px;
+  width: 92%;
+  margin: 30px auto;
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* HEADER */
+.db-header {
+  background: var(--sg-hdr);
+  border-radius: 16px 16px 0 0;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid rgba(192,16,42,0.18);
+  text-align: center;
+}
+
+.db-star-icon {
+  font-size: 30px;
+  color: var(--sg-crimson);
+  display: block;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 8px rgba(192,16,42,0.6));
+}
+
+.db-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--sg-text) !important;
+  letter-spacing: 0.04em;
+  margin: 0;
+  background: none !important;
+  -webkit-text-fill-color: var(--sg-text) !important;
+}
+
+.db-tagline {
+  font-size: 12px;
+  color: var(--sg-muted);
+  margin-top: 4px;
+}
+
+.royal-badge {
+  display: inline-block;
+  margin-top: 8px;
+  background: rgba(212,160,23,0.15);
+  border: 1px solid rgba(212,160,23,0.5);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--sg-gold);
+  letter-spacing: 0.03em;
+}
+
+/* PROFILE CARD */
+.db-profile-card {
+  background: var(--sg-card) !important;
+  border: 1px solid rgba(212,160,23,0.22) !important;
+  border-radius: 14px !important;
+  padding: 12px !important;
+  margin: 14px 0 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: none !important;
+}
+
+.db-player-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.db-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px;
+  background: var(--sg-avatar-bg) !important;
+  border: 2px solid rgba(212,160,23,0.55) !important;
+  font-size: 14px !important;
+  color: var(--sg-gold) !important;
+}
+
+.db-avatar:hover {
+  border-color: var(--sg-gold) !important;
+  box-shadow: 0 0 10px rgba(212,160,23,0.4) !important;
+}
+
+.db-player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.db-player-name {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--sg-text) !important;
+  margin: 0 0 2px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: none !important;
+  -webkit-text-fill-color: var(--sg-text) !important;
+}
+
+.db-coins {
+  font-size: 12px !important;
+  color: var(--sg-gold) !important;
+  margin: 0 !important;
+  font-weight: 600;
+}
+
+/* Greetings Stack widget */
+.db-greetings-widget {
+  background: var(--sg-bg);
+  border: 1px solid rgba(212,160,23,0.6);
+  border-radius: 12px;
+  padding: 9px 12px;
+  text-align: center;
+  min-width: 80px;
+  flex-shrink: 0;
+  transition: box-shadow 0.3s ease;
+  position: relative;
+}
+
+.db-greetings-widget.low-greetings {
+  box-shadow: 0 0 0 2px rgba(192,16,42,0.7), 0 0 12px rgba(192,16,42,0.3);
+  animation: dbLowWarningPulse 2s infinite alternate;
+}
+
+@keyframes dbLowWarningPulse {
+  from { box-shadow: 0 0 0 2px rgba(192,16,42,0.5); }
+  to   { box-shadow: 0 0 0 3px rgba(192,16,42,0.9), 0 0 16px rgba(192,16,42,0.35); }
+}
+
+.db-greetings-count {
+  font-size: 26px !important;
+  font-weight: 900 !important;
+  color: var(--sg-gold) !important;
+  line-height: 1 !important;
+  display: block !important;
+  text-shadow: 0 0 10px rgba(212,160,23,0.4) !important;
+}
+
+.db-greetings-labels {
+  font-size: 11px;
+  color: var(--sg-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.db-card-stack-visual {
+  position: relative;
+  width: 36px;
+  height: 18px;
+  margin: 6px auto 0;
+}
+
+.db-mini-card {
+  position: absolute;
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--sg-gold);
+  left: 50%;
+  top: 50%;
+}
+
+.db-mc1 { transform: translate(-50%,-50%) rotate(-8deg) translateY(3px); opacity: 0.4; }
+.db-mc2 { transform: translate(-50%,-50%) rotate(-3deg) translateY(1px); opacity: 0.7; }
+.db-mc3 { transform: translate(-50%,-50%) rotate(0deg);                  opacity: 1.0; }
+
+/* Log Out */
+.db-logout-btn {
+  background: var(--sg-logout-bg) !important;
+  color: var(--sg-logout-text) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  align-self: flex-start !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.db-logout-btn:hover {
+  background: #6A0A0A !important;
+  transform: scale(1.03);
+}
+
+/* PLAY MODE BUTTONS */
+.db-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.db-actions .play-mode-btn {
+  width: 100% !important;
+  border-radius: 13px !important;
+  padding: 14px 16px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: transform 0.12s ease !important;
+  font-size: unset !important;
+}
+
+.db-actions .play-mode-btn:active {
+  transform: scale(0.98) !important;
+}
+
+.db-btn-title {
+  font-size: 15px;
+  font-weight: 700;
+  display: block;
+  margin: 0 0 3px;
+}
+
+.db-btn-sub {
+  font-size: 11px;
+  display: block;
+  margin: 0;
+  opacity: 0.85;
+}
+
+/* AI BOT button */
+.db-btn-ai {
+  background: #2A0810 !important;
+  border: 1px solid rgba(255,112,144,0.35) !important;
+  box-shadow: none !important;
+}
+.db-btn-ai .db-btn-title,
+.db-btn-ai .db-btn-sub { color: #FF7090 !important; }
+.db-btn-ai:hover { background: #3A0815 !important; }
+
+/* Offline button */
+.db-btn-offline {
+  background: #301A06 !important;
+  border: 1px solid rgba(255,188,80,0.35) !important;
+  box-shadow: none !important;
+}
+.db-btn-offline .db-btn-title,
+.db-btn-offline .db-btn-sub { color: #FFBC50 !important; }
+.db-btn-offline:hover { background: #3E2208 !important; }
+
+/* Online button */
+.db-btn-online {
+  background: #250828 !important;
+  border: 1px solid rgba(232,136,232,0.35) !important;
+  box-shadow: none !important;
+}
+.db-btn-online .db-btn-title,
+.db-btn-online .db-btn-sub { color: #E888E8 !important; }
+.db-btn-online:hover { background: #30083A !important; }

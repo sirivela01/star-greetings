@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -149,50 +149,64 @@
       </div>
     </section>
 
-    <!-- DASHBOARD SCREEN -->
+    <!-- DASHBOARD SCREEN — Filmi Crimson Theme -->
     <section id="dashboard-screen" class="screen-view hidden">
-      <div class="glass-container dashboard-box">
-        <header class="app-header">
-          <div class="logo-icon">★</div>
-          <h1 class="app-title">Star Greetings</h1>
-          <p class="app-tagline">Welcome to the Arcade!</p>
+      <div class="glass-container dashboard-box db-shell">
+
+        <!-- HEADER -->
+        <header class="db-header">
+          <div class="db-star-icon">★</div>
+          <h1 class="db-title">Star Greetings</h1>
+          <p class="db-tagline">Welcome to the Arcade!</p>
+          <span class="royal-badge">👑 Royal Bollywood</span>
         </header>
-        
-        <div class="dashboard-profile-card">
-          <div class="profile-info-main">
-            <div class="profile-avatar-placeholder" id="dashboard-avatar-container" title="Click to change avatar">
+
+        <!-- PROFILE CARD -->
+        <div class="db-profile-card">
+
+          <!-- LEFT: player info -->
+          <div class="db-player-info">
+            <div class="profile-avatar-placeholder db-avatar" id="dashboard-avatar-container" title="Click to change avatar">
               <img id="dashboard-profile-avatar" src="" class="hidden" alt="Profile Avatar">
               <span id="dashboard-avatar-emoji">🤵</span>
               <div class="avatar-edit-overlay">✏️</div>
               <input type="file" id="avatar-file-input" accept="image/*" style="display: none;">
             </div>
-            <div class="profile-meta">
-              <h2 id="dashboard-profile-name" class="profile-name">Player Name</h2>
-              <p class="profile-wallet">Coins: 🪙<span id="dashboard-profile-coins">300</span></p>
-            </div>
-          </div>
-          
-          <!-- GREETINGS STACK ECONOMY DISPLAY -->
-          <div class="greetings-stack-wrapper" id="dashboard-greetings-wrapper">
-            <div class="shiny-gold-stack" id="dashboard-greetings-stack">
-              <div class="stack-card card1"></div>
-              <div class="stack-card card2"></div>
-              <div class="stack-card card3"></div>
-              <div class="stack-card card4"></div>
-            </div>
-            <div class="stack-text">
-              <div class="stack-count-label"><span class="stack-count" id="dashboard-greetings-count">30</span> Greetings</div>
-              <div class="stack-label">Greetings Stack</div>
+            <div class="db-player-meta">
+              <h2 id="dashboard-profile-name" class="db-player-name">Player Name</h2>
+              <p class="db-coins">🪙 <span id="dashboard-profile-coins">300</span> Coins</p>
             </div>
           </div>
 
-          <button type="button" id="dashboard-logout-btn" class="btn danger-btn logout-small-btn">Log Out</button>
+          <!-- CENTER: Greetings Stack widget -->
+          <div class="db-greetings-widget" id="dashboard-greetings-wrapper">
+            <span class="db-greetings-count stack-count" id="dashboard-greetings-count">30</span>
+            <div class="db-greetings-labels">GREETINGS<br>STACK</div>
+            <div class="db-card-stack-visual" aria-hidden="true">
+              <div class="db-mini-card db-mc1"></div>
+              <div class="db-mini-card db-mc2"></div>
+              <div class="db-mini-card db-mc3"></div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Log Out -->
+          <button type="button" id="dashboard-logout-btn" class="db-logout-btn">Log Out</button>
         </div>
 
-        <div class="dashboard-actions">
-          <button type="button" id="play-ai-btn" class="btn play-mode-btn">Play with AI BOT<span class="btn-sub">Quick 1v1 match against Computer AI</span></button>
-          <button type="button" id="play-offline-btn" class="btn primary-btn play-mode-btn">Play Offline Game<span class="btn-sub">Local Pass-and-Play (2-6 Players)</span></button>
-          <button type="button" id="play-online-btn" class="btn secondary-btn play-mode-btn">Play Online Game<span class="btn-sub">Multiplayer Lobby (Real-time Rooms)</span></button>
+        <!-- PLAY MODE BUTTONS -->
+        <div class="dashboard-actions db-actions">
+          <button type="button" id="play-ai-btn" class="btn play-mode-btn db-btn-ai">
+            <span class="db-btn-title">Play with AI BOT</span>
+            <span class="db-btn-sub">Quick 1v1 match against Computer AI</span>
+          </button>
+          <button type="button" id="play-offline-btn" class="btn play-mode-btn db-btn-offline">
+            <span class="db-btn-title">Play Offline Game</span>
+            <span class="db-btn-sub">Local Pass-and-Play (2–6 Players)</span>
+          </button>
+          <button type="button" id="play-online-btn" class="btn play-mode-btn db-btn-online">
+            <span class="db-btn-title">Play Online Game</span>
+            <span class="db-btn-sub">Multiplayer Lobby (Real-time Rooms)</span>
+          </button>
         </div>
       </div>
     </section>
@@ -658,3 +672,4 @@
   <script src="js/multiplayer.js?v=1.36.2"></script>
 </body>
 </html>
+
