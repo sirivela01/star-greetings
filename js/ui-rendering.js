@@ -2581,7 +2581,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Initialize AI Difficulty and Strategic Mode config
         const diffEl = document.getElementById("ai-difficulty");
         game.config.AI_DIFFICULTY = diffEl ? diffEl.value : "normal";
-        game.config.FORCED_TOP_DRAW = false; // Enable strategic mode / manual card selection
+        game.config.FORCED_TOP_DRAW = true; // Forced top-card draw
         window.revealedCardsInMatch = [];
         window.matchTurnTelemetry = [];
         window.finalMatchRatings = null;
