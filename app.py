@@ -716,6 +716,10 @@ def get_player_greetings():
     db_url = request.args.get("dbUrl")
     if not userId:
         return jsonify({"error": "Missing userId"}), 400
+
+    # Offline mode — no Firebase URL, return default
+    if not db_url:
+        return jsonify({"greetingsStack": 30})
     
     path = f"players/{userId}/greetingsStack"
     greetings = get_firebase_data(path, db_url)
@@ -734,6 +738,10 @@ def start_match_deduction():
     db_url = body.get("dbUrl")
     if not userId:
         return jsonify({"error": "Missing userId"}), 400
+
+    # Offline mode — no Firebase URL, allow match without deduction
+    if not db_url:
+        return jsonify({"success": True, "greetingsStack": 30})
     
     path = f"players/{userId}/greetingsStack"
     current_greetings = get_firebase_data(path, db_url)

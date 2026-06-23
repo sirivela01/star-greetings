@@ -2043,6 +2043,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
       ? window.multiplayer.firebaseConfig.databaseURL 
       : "";
+
+    // Offline / local players (no Firebase uid and no dbUrl) — skip deduction entirely
+    if (!user.uid && !dbUrl) return true;
+
     const userId = user.uid || user.username;
     
     try {
@@ -2068,8 +2072,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (e) {
       console.error("Greetings deduction error:", e);
-      alert("Connection error: Failed to verify greetings stack.");
-      return false;
+      // Network error — allow the match rather than blocking the player
+      return true;
     }
   }
 
