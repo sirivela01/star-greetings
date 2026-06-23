@@ -659,32 +659,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (isCardSelectable) {
           // ACTIVE player sees top card face-up
-          // Clicking the card triggers standard play
+          // Clicking the card itself always plays it directly to the middle (top card of their stack)
           const topCard = p.stack[0];
-          const clickHandler = game.config.FORCED_TOP_DRAW ? handleCardSelection : openPrivateHandModal;
-          const cardEl = createCardElement(topCard, true, clickHandler, p.id);
+          const cardEl = createCardElement(topCard, true, handleCardSelection, p.id);
           pile.appendChild(cardEl);
           
-          // Add shuffle button if player has multiple cards
-          if (p.stackCount > 1) {
+          // Add shuffle button and/or Choose Card button if player has multiple cards or strategic mode is active
+          if (p.stackCount > 1 || !game.config.FORCED_TOP_DRAW) {
             const actionOverlay = document.createElement("div");
             actionOverlay.className = "stack-action-overlay";
-            actionOverlay.innerHTML = `<button type="button" class="btn secondary-btn" id="shuffle-btn-${p.id}">🔀 Shuffle</button>`;
+            actionOverlay.style.display = "flex";
+            actionOverlay.style.flexDirection = "column";
+            actionOverlay.style.gap = "4px";
+            
+            let buttonsHtml = "";
+            if (p.stackCount > 1) {
+              buttonsHtml += `<button type="button" class="btn secondary-btn" id="shuffle-btn-${p.id}" style="padding: 4px 8px; font-size: 0.75rem;">🔀 Shuffle</button>`;
+            }
+            if (!game.config.FORCED_TOP_DRAW) {
+              buttonsHtml += `<button type="button" class="btn secondary-btn" id="choose-card-btn-${p.id}" style="padding: 4px 8px; font-size: 0.75rem;">🃏 View Hand</button>`;
+            }
+            
+            actionOverlay.innerHTML = buttonsHtml;
             seat.appendChild(actionOverlay);
             
-            document.getElementById(`shuffle-btn-${p.id}`).addEventListener("click", (e) => {
-              e.stopPropagation();
-              if (!window.isOnlineGame) {
-                playShuffleSound();
-              }
-              if (window.isOnlineGame) {
-                window.multiplayer.shuffleStack();
-              } else {
-                game.shuffleStack(p.id);
-                renderSeats();
-                renderLogs();
-              }
-            });
+            if (p.stackCount > 1) {
+              document.getElementById(`shuffle-btn-${p.id}`).addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (!window.isOnlineGame) {
+                  playShuffleSound();
+                }
+                if (window.isOnlineGame) {
+                  window.multiplayer.shuffleStack();
+                } else {
+                  game.shuffleStack(p.id);
+                  renderSeats();
+                  renderLogs();
+                }
+              });
+            }
+            
+            if (!game.config.FORCED_TOP_DRAW) {
+              document.getElementById(`choose-card-btn-${p.id}`).addEventListener("click", (e) => {
+                e.stopPropagation();
+                playTouchSound();
+                openPrivateHandModal();
+              });
+            }
           }
         } else {
           // NON-ACTIVE players see card face-down
