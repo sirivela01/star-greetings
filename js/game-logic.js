@@ -218,6 +218,13 @@ class GameState {
       activePlayer.stack.push(...this.pot);
       activePlayer.stack.push(cardToPlay);
       
+      // Deduct 10 cards from all other players (round losers)
+      this.players.forEach(p => {
+        if (p.id !== this.currentPlayerIndex && p.stackCount > 0) {
+          p.stack.splice(0, 10);
+        }
+      });
+      
       // Calculate and award coin payout immediately
       const activePlayers = this.getActivePlayers();
       const totalOpponents = activePlayers.filter(p => p.id !== activePlayer.id).length;

@@ -1188,18 +1188,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (outcome.isGameOver) {
           triggerGameOver();
         } else {
-          // Winner starts the next round. Their turn continues; update HUD elements.
-          const nextPlayer = game.getCurrentPlayer();
-          hudActivePlayerName.textContent = nextPlayer.name;
-          hudRoundNum.textContent = game.roundNumber;
-          renderSeats();
+          // Check if human player lost the round and should see the continue/leave modal
+          const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+          // Round lost if outcome is a match AND winner was not human
+          const humanLostRound = (outcome.hasMatch && outcome.playerIndex !== game.players.indexOf(humanPlayer));
           
-          if (!nextPlayer.isBot) {
-            window.lastTurnStartTime = Date.now();
-          }
-          
-          if (nextPlayer.isBot) {
-            checkAndTriggerBotTurn();
+          if (humanLostRound && !humanPlayer.isBot) {
+            showRoundLossModal(humanPlayer.stackCount);
+          } else {
+            resumeAfterRoundLoss();
           }
         }
       }, 300);
@@ -1536,6 +1533,16 @@ document.addEventListener("DOMContentLoaded", () => {
     cleanupFloatingElements();
     const standings = game.endGame();
     renderFinalStandings(standings);
+    
+    // Natural match end return of greetings stack
+    if (window.auth) {
+      const user = window.auth.getCurrentUser();
+      if (user) {
+        const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+        const wonReward = (standings.length > 0 && standings[0].name === humanPlayer.name);
+        returnGreetings(humanPlayer.stackCount, wonReward);
+      }
+    }
     
     if (window.themeSelectMode === "ai_bot") {
       const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
@@ -2027,7 +2034,148 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1000);
   });
 
-  startGameBtn.addEventListener("click", (e) => {
+  // Greetings Stack Economy start match deduction helper
+  async function deductGreetingsForMatchStart() {
+    if (!window.auth) return true;
+    const user = window.auth.getCurrentUser();
+    if (!user) return true;
+    
+    const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+      ? window.multiplayer.firebaseConfig.databaseURL 
+      : "";
+    const userId = user.uid || user.username;
+    
+    try {
+      const response = await fetch("/api/player/greetings/start-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, dbUrl })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        // Sync local cache
+        const newCount = data.greetingsStack;
+        user.greetingsStack = newCount;
+        await window.auth.updateGreetingsStackLocal(newCount);
+        if (window.refreshGreetingsStack) {
+          window.refreshGreetingsStack(user);
+        }
+        return true;
+      } else {
+        const errorMsg = data.error || "Failed to start match due to greetings stack error.";
+        alert(errorMsg);
+        return false;
+      }
+    } catch (e) {
+      console.error("Greetings deduction error:", e);
+      alert("Connection error: Failed to verify greetings stack.");
+      return false;
+    }
+  }
+
+  // Greetings Stack Economy return greetings helper
+  async function returnGreetings(remainingDeck, wonReward) {
+    if (!window.auth) return;
+    const user = window.auth.getCurrentUser();
+    if (!user) return;
+    
+    const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+      ? window.multiplayer.firebaseConfig.databaseURL 
+      : "";
+    const userId = user.uid || user.username;
+    
+    try {
+      const response = await fetch("/api/player/greetings/return", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, remainingDeck, wonReward, dbUrl })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const newCount = data.greetingsStack;
+        user.greetingsStack = newCount;
+        await window.auth.updateGreetingsStackLocal(newCount);
+        if (window.refreshGreetingsStack) {
+          window.refreshGreetingsStack(user);
+        }
+        console.log("Returned greetings. New stack:", newCount);
+      }
+    } catch (e) {
+      console.error("Error returning greetings:", e);
+    }
+  }
+
+  function showRoundLossModal(remainingCards) {
+    const modal = document.getElementById("round-loss-modal");
+    const msgEl = document.getElementById("round-loss-remaining-msg");
+    if (msgEl) {
+      msgEl.innerHTML = `Remaining deck cards: <strong style="color: #fff;">${remainingCards}</strong>`;
+    }
+    if (modal) {
+      modal.style.display = "flex";
+      modal.classList.remove("hidden");
+    }
+  }
+
+  function resumeAfterRoundLoss() {
+    const modal = document.getElementById("round-loss-modal");
+    if (modal) {
+      modal.style.display = "none";
+      modal.classList.add("hidden");
+    }
+    
+    const nextPlayer = game.getCurrentPlayer();
+    if (nextPlayer) {
+      hudActivePlayerName.textContent = nextPlayer.name;
+      hudRoundNum.textContent = game.roundNumber;
+      renderSeats();
+      
+      if (!nextPlayer.isBot) {
+        window.lastTurnStartTime = Date.now();
+      }
+      
+      if (nextPlayer.isBot) {
+        checkAndTriggerBotTurn();
+      }
+    }
+  }
+
+  // Wire up the button event listeners for the round loss modal
+  const lossContinueBtn = document.getElementById("loss-continue-btn");
+  if (lossContinueBtn) {
+    lossContinueBtn.addEventListener("click", () => {
+      playTouchSound();
+      resumeAfterRoundLoss();
+    });
+  }
+
+  const lossLeaveBtn = document.getElementById("loss-leave-btn");
+  if (lossLeaveBtn) {
+    lossLeaveBtn.addEventListener("click", async () => {
+      playTouchSound();
+      const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+      await returnGreetings(humanPlayer.stackCount, false);
+      
+      const modal = document.getElementById("round-loss-modal");
+      if (modal) {
+        modal.style.display = "none";
+        modal.classList.add("hidden");
+      }
+      
+      cleanupFloatingElements();
+      gameScreen.classList.add("hidden");
+      const dashboardView = document.getElementById("dashboard-screen");
+      if (dashboardView) {
+        dashboardView.classList.remove("hidden");
+      }
+      const updatedUser = window.auth.getCurrentUser();
+      if (updatedUser && window.refreshGreetingsStack) {
+        window.refreshGreetingsStack(updatedUser);
+      }
+    });
+  }
+
+  startGameBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     cleanupFloatingElements();
     
@@ -2144,6 +2292,10 @@ document.addEventListener("DOMContentLoaded", () => {
     cleanupFloatingElements();
     endScreen.classList.add("hidden");
     
+    if (window.isOnlineGame && window.multiplayer) {
+      window.multiplayer.leaveRoom();
+    }
+    
     // Redirect to dashboard and sync coins won/lost during the match
     const dashboardView = document.getElementById("dashboard-screen");
     if (dashboardView && window.auth) {
@@ -2178,6 +2330,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (updatedUser) {
         document.getElementById("dashboard-profile-name").textContent = updatedUser.name;
         document.getElementById("dashboard-profile-coins").textContent = updatedUser.coins;
+        if (window.refreshGreetingsStack) {
+          window.refreshGreetingsStack(updatedUser);
+        }
       }
     } else {
       setupScreen.classList.remove("hidden");
@@ -2526,7 +2681,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Confirm Theme Button Click
   const confirmThemeBtn = document.getElementById("confirm-theme-btn");
   if (confirmThemeBtn) {
-    confirmThemeBtn.addEventListener("click", () => {
+    confirmThemeBtn.addEventListener("click", async () => {
       playTouchSound();
       const themeSelectionView = document.getElementById("theme-selection-screen");
       if (themeSelectionView) themeSelectionView.classList.add("hidden");
@@ -2536,6 +2691,12 @@ document.addEventListener("DOMContentLoaded", () => {
           window.multiplayer.createRoom(selectedTheme);
         }
       } else if (window.themeSelectMode === "ai_bot") {
+        const allowed = await deductGreetingsForMatchStart();
+        if (!allowed) {
+          if (themeSelectionView) themeSelectionView.classList.remove("hidden");
+          return;
+        }
+        
         cleanupFloatingElements();
         
         let p1Name = "Player 1";

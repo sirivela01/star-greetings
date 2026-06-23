@@ -709,6 +709,69 @@ def generate_custom_theme():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Greetings Stack Economy API
+@app.route('/api/player/greetings', methods=['GET'])
+def get_player_greetings():
+    userId = request.args.get("userId")
+    db_url = request.args.get("dbUrl")
+    if not userId:
+        return jsonify({"error": "Missing userId"}), 400
+    
+    path = f"players/{userId}/greetingsStack"
+    greetings = get_firebase_data(path, db_url)
+    
+    if greetings is None:
+        # Initialize to 30 if it does not exist
+        greetings = 30
+        update_firebase_data(f"players/{userId}", {"greetingsStack": 30}, db_url)
+        
+    return jsonify({"greetingsStack": greetings})
+
+@app.route('/api/player/greetings/start-match', methods=['POST'])
+def start_match_deduction():
+    body = request.json or {}
+    userId = body.get("userId")
+    db_url = body.get("dbUrl")
+    if not userId:
+        return jsonify({"error": "Missing userId"}), 400
+    
+    path = f"players/{userId}/greetingsStack"
+    current_greetings = get_firebase_data(path, db_url)
+    if current_greetings is None:
+        current_greetings = 30
+        
+    if current_greetings < 30:
+        return jsonify({"error": f"Insufficient greetings: you have {current_greetings}, but need 30 to play."}), 400
+        
+    new_greetings = current_greetings - 30
+    update_firebase_data(f"players/{userId}", {"greetingsStack": new_greetings}, db_url)
+    return jsonify({"success": True, "greetingsStack": new_greetings})
+
+@app.route('/api/player/greetings/return', methods=['POST'])
+def return_greetings():
+    body = request.json or {}
+    userId = body.get("userId")
+    remaining_deck = body.get("remainingDeck")
+    won_reward = body.get("wonReward", False)
+    db_url = body.get("dbUrl")
+    
+    if not userId:
+        return jsonify({"error": "Missing userId"}), 400
+    if remaining_deck is None:
+        return jsonify({"error": "Missing remainingDeck"}), 400
+        
+    path = f"players/{userId}/greetingsStack"
+    current_greetings = get_firebase_data(path, db_url)
+    if current_greetings is None:
+        current_greetings = 0
+        
+    new_greetings = current_greetings + int(remaining_deck)
+    if won_reward:
+        new_greetings += 10
+        
+    update_firebase_data(f"players/{userId}", {"greetingsStack": new_greetings}, db_url)
+    return jsonify({"success": True, "greetingsStack": new_greetings})
+
 # Static file serving
 @app.route('/')
 def serve_index():

@@ -83,6 +83,11 @@ class AuthManager {
           coins: 300,
           freeStackBuys: 10
         });
+
+        // Initialize Greetings Stack to 30 under players/{uid}
+        await firebase.database().ref(`players/${uid}`).set({
+          greetingsStack: 30
+        });
       } catch (err) {
         console.error("Firebase signup error:", err);
         return { error: "Firebase registration failed: " + err.message };
@@ -94,6 +99,7 @@ class AuthManager {
       password: password,
       coins: 300,
       freeStackBuys: 10,
+      greetingsStack: 30,
       uid: uid
     };
 
@@ -108,6 +114,7 @@ class AuthManager {
 
     let fbUser = null;
     let uid = null;
+    let greetingsStack = 30;
     if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
       const email = `${normalizedUsername}@stargreetings.com`;
       try {
@@ -127,6 +134,16 @@ class AuthManager {
           };
           await firebase.database().ref(`users/${uid}`).set(fbUser);
         }
+
+        // Fetch Greetings Stack from `/players/{uid}`
+        const playerSnapshot = await firebase.database().ref(`players/${uid}`).once("value");
+        if (playerSnapshot.exists()) {
+          const val = playerSnapshot.val();
+          greetingsStack = (val && val.greetingsStack !== undefined) ? val.greetingsStack : 30;
+        } else {
+          await firebase.database().ref(`players/${uid}`).set({ greetingsStack: 30 });
+          greetingsStack = 30;
+        }
       } catch (err) {
         console.error("Firebase login error:", err);
         if (err.code === "auth/wrong-password" || err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
@@ -145,6 +162,7 @@ class AuthManager {
         password: password,
         coins: isNaN(parseInt(fbUser.coins, 10)) ? 300 : parseInt(fbUser.coins, 10),
         freeStackBuys: isNaN(parseInt(fbUser.freeStackBuys, 10)) ? 10 : parseInt(fbUser.freeStackBuys, 10),
+        greetingsStack: greetingsStack,
         uid: uid,
         avatar: fbUser.avatar || ""
       };
@@ -153,6 +171,11 @@ class AuthManager {
     } else {
       if (!localUser || localUser.password !== password) {
         return { error: "Invalid username or password!" };
+      }
+      if (localUser.greetingsStack === undefined) {
+        localUser.greetingsStack = 30;
+        accounts[normalizedUsername] = localUser;
+        this.saveAccounts(accounts);
       }
     }
 
@@ -231,6 +254,19 @@ class AuthManager {
     return { success: true };
   }
 
+  async updateGreetingsStackLocal(count) {
+    const localUser = this.getCurrentUser();
+    if (!localUser) return { error: "No logged in user" };
+
+    const accounts = this.getAccounts();
+    const normalizedUsername = localUser.username.trim().toLowerCase();
+    if (accounts[normalizedUsername]) {
+      accounts[normalizedUsername].greetingsStack = count;
+      this.saveAccounts(accounts);
+    }
+    return { success: true };
+  }
+
   getCurrentUser() {
     const username = localStorage.getItem(this.sessionKey);
     if (!username) return null;
@@ -279,9 +315,18 @@ class AuthManager {
       
       const snapshot = await firebase.database().ref(`users/${user.uid}`).once("value");
       let dbUser;
+      let greetingsStack = 30;
       
       if (snapshot.exists()) {
         dbUser = snapshot.val();
+        const playerSnapshot = await firebase.database().ref(`players/${user.uid}`).once("value");
+        if (playerSnapshot.exists()) {
+          const val = playerSnapshot.val();
+          greetingsStack = (val && val.greetingsStack !== undefined) ? val.greetingsStack : 30;
+        } else {
+          await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 30 });
+          greetingsStack = 30;
+        }
       } else {
         dbUser = {
           name: user.displayName || baseUsername,
@@ -292,6 +337,8 @@ class AuthManager {
           avatar: user.photoURL || ""
         };
         await firebase.database().ref(`users/${user.uid}`).set(dbUser);
+        await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 30 });
+        greetingsStack = 30;
       }
 
       const accounts = this.getAccounts();
@@ -302,6 +349,7 @@ class AuthManager {
         password: "",
         coins: isNaN(parseInt(dbUser.coins, 10)) ? 300 : parseInt(dbUser.coins, 10),
         freeStackBuys: isNaN(parseInt(dbUser.freeStackBuys, 10)) ? 10 : parseInt(dbUser.freeStackBuys, 10),
+        greetingsStack: greetingsStack,
         uid: user.uid,
         social: providerName,
         avatar: dbUser.avatar || user.photoURL || ""
@@ -431,6 +479,11 @@ document.addEventListener("DOMContentLoaded", () => {
         profileAvatar.classList.add("hidden");
         avatarEmoji.classList.remove("hidden");
       }
+    }
+    
+    // Refresh greetings stack UI and local storage cache
+    if (window.refreshGreetingsStack) {
+      window.refreshGreetingsStack(user);
     }
   }
 
@@ -910,6 +963,48 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// Global helper to refresh the greetings stack UI count and warning state
+window.refreshGreetingsStack = async function(user) {
+  if (!user) return;
+  const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+    ? window.multiplayer.firebaseConfig.databaseURL 
+    : "";
+  const userId = user.uid || user.username;
+  const greetingsCountEl = document.getElementById("dashboard-greetings-count");
+  const greetingsWrapper = document.getElementById("dashboard-greetings-wrapper");
+  if (greetingsCountEl && userId) {
+    try {
+      const response = await fetch(`/api/player/greetings?userId=${encodeURIComponent(userId)}&dbUrl=${encodeURIComponent(dbUrl)}`);
+      const data = await response.json();
+      if (data && data.greetingsStack !== undefined) {
+        const currentCount = parseInt(greetingsCountEl.textContent, 10) || 0;
+        const newCount = data.greetingsStack;
+        greetingsCountEl.textContent = newCount;
+        
+        // Update auth manager's cached value
+        user.greetingsStack = newCount;
+        auth.updateGreetingsStackLocal(newCount);
+        
+        // Animate on change
+        if (currentCount !== newCount) {
+          greetingsCountEl.classList.remove("pulse-active");
+          void greetingsCountEl.offsetWidth; // trigger reflow
+          greetingsCountEl.classList.add("pulse-active");
+        }
+
+        // Apply warning class if less than 30
+        if (newCount < 30) {
+          greetingsWrapper.classList.add("low-greetings");
+        } else {
+          greetingsWrapper.classList.remove("low-greetings");
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch greetings stack:", e);
+    }
+  }
+};
 
 // Attach auth globally
 window.auth = auth;

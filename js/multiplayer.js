@@ -358,6 +358,8 @@ class MultiplayerManager {
     this.isHost = true;
     window.isOnlineGame = true;
     window.currentUserUsername = this.currentUser.username;
+    this.hasDeductedGreetingsForMatch = false;
+    this.hasReturnedGreetingsForMatch = false;
 
     const myUid = this.getMyUid();
     if (!myUid) {
@@ -385,7 +387,8 @@ class MultiplayerManager {
           coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
           betVote: 25,
           joinedAt: firebase.database.ServerValue.TIMESTAMP,
-          status: "connected"
+          status: "connected",
+          greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 30
         }
       }
     };
@@ -463,6 +466,8 @@ class MultiplayerManager {
     this.isHost = false;
     window.isOnlineGame = true;
     window.currentUserUsername = this.currentUser.username;
+    this.hasDeductedGreetingsForMatch = false;
+    this.hasReturnedGreetingsForMatch = false;
 
     const myUid = this.getMyUid();
     if (!myUid) {
@@ -504,7 +509,8 @@ class MultiplayerManager {
         coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
         betVote: 25,
         joinedAt: firebase.database.ServerValue.TIMESTAMP,
-        status: "connected"
+        status: "connected",
+        greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 30
       }));
       await this.registerPresence();
 
@@ -536,6 +542,11 @@ class MultiplayerManager {
       } else if (myUid) {
         // Remove player
         await this.roomRef.child(`players/${myUid}`).remove();
+      }
+      
+      // Return greetings if left in middle of play
+      if (window.game && !window.game.isGameOver) {
+        await this.returnGreetingsOnline(false);
       }
     } catch (e) {
       console.error(e);
@@ -705,6 +716,10 @@ class MultiplayerManager {
         }
         this.syncWaitingLobby(room);
       } else if (room.status === "playing") {
+        if (!this.hasDeductedGreetingsForMatch) {
+          this.hasDeductedGreetingsForMatch = true;
+          this.deductGreetingsOnMatchStart();
+        }
         this.syncActiveGame(room);
       } else if (room.status === "ended") {
         this.syncEndedGame(room);
@@ -779,6 +794,7 @@ class MultiplayerManager {
         const displayAvatar = p.avatar || "assets/avatars/avatar_1.png";
         const displayBetVote = p.betVote !== undefined ? p.betVote : 25;
         const isOffline = p.status === "disconnected";
+        const displayGreetings = p.greetingsStack !== undefined ? p.greetingsStack : 30;
         
         row.innerHTML = `
           <div class="lobby-player-info">
@@ -788,6 +804,7 @@ class MultiplayerManager {
           <div class="lobby-player-badges">
             ${isHost ? `<span class="lobby-badge host">Host</span>` : ""}
             ${isOffline ? `<span class="lobby-badge disconnected" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">Offline</span>` : ""}
+            <span class="lobby-badge greetings" style="background: linear-gradient(135deg, #d97706, #b45309); border-color: #f59e0b; color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">🎴 ${displayGreetings} Stack</span>
             <span class="lobby-badge bet">Vote: 🪙${displayBetVote}</span>
           </div>
         `;
@@ -808,24 +825,52 @@ class MultiplayerManager {
       tallyEl.textContent = `Tally: 25: ${tally[25]} votes | 50: ${tally[50]} votes | 75: ${tally[75]} votes | 100: ${tally[100]} votes`;
     }
 
-    // Handle Start button visibility
+    // Handle Start button visibility and greetings balance validation
     const startBtn = document.getElementById("online-start-match-btn");
     const waitingMsg = document.getElementById("online-host-msg");
     
+    // Check if any player has less than 30 greetings
+    const lowGreetingsPlayers = players.filter(p => (p.greetingsStack !== undefined ? p.greetingsStack : 30) < 30);
+    const hasLowGreetings = lowGreetingsPlayers.length > 0;
+    
     if (startBtn && waitingMsg) {
+      // Dynamic injection of warning banner
+      let warningBanner = document.getElementById("online-lobby-warning-banner");
+      if (hasLowGreetings) {
+        if (!warningBanner) {
+          warningBanner = document.createElement("div");
+          warningBanner.id = "online-lobby-warning-banner";
+          warningBanner.style = "background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 15px; text-align: center; line-height: 1.4;";
+          startBtn.parentNode.insertBefore(warningBanner, startBtn);
+        }
+        const playerNamesStr = lowGreetingsPlayers.map(p => p.name).join(", ");
+        warningBanner.innerHTML = `⚠️ Cannot start match: <strong>${playerNamesStr}</strong> has less than 30 greetings.`;
+      } else {
+        if (warningBanner) {
+          warningBanner.remove();
+        }
+      }
+
       if (this.isHost) {
         startBtn.style.display = "block";
         waitingMsg.style.display = "none";
         
-        // Enable Start button only if at least 2 players have joined
-        if (players.length >= 2) {
+        // Enable Start button only if at least 2 players have joined and nobody is low on greetings
+        if (players.length >= 2 && !hasLowGreetings) {
           startBtn.removeAttribute("disabled");
+          startBtn.classList.add("pulse-anim");
         } else {
           startBtn.setAttribute("disabled", "true");
+          startBtn.classList.remove("pulse-anim");
         }
       } else {
         startBtn.style.display = "none";
         waitingMsg.style.display = "block";
+        if (hasLowGreetings) {
+          waitingMsg.innerHTML = `<span style="color: #f87171;">⚠️ Some players have less than 30 greetings. Waiting for them to acquire more...</span>`;
+        } else {
+          waitingMsg.textContent = "Waiting for Host to start match...";
+        }
       }
     }
   }
@@ -1369,9 +1414,81 @@ class MultiplayerManager {
     }
   }
 
+  async returnGreetingsOnline(wonReward = false) {
+    if (this.hasReturnedGreetingsForMatch) return;
+    if (!window.auth || !this.currentUser) return;
+    if (!window.game || window.game.players.length === 0) return;
+    
+    const myUid = this.getMyUid();
+    const matchMe = window.game.players.find(p => 
+      p.uid === myUid ||
+      (p.username && p.username.toLowerCase().trim() === (this.currentUser.username || "").toLowerCase().trim())
+    );
+    if (!matchMe) return;
+    
+    this.hasReturnedGreetingsForMatch = true;
+    const dbUrl = this.firebaseConfig.databaseURL || "";
+    const userId = this.currentUser.uid || this.currentUser.username;
+    const remainingDeck = matchMe.stackCount;
+    
+    try {
+      const response = await fetch("/api/player/greetings/return", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, remainingDeck, wonReward, dbUrl })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const newCount = data.greetingsStack;
+        this.currentUser.greetingsStack = newCount;
+        window.auth.updateGreetingsStackLocal(newCount);
+        if (window.refreshGreetingsStack) {
+          window.refreshGreetingsStack(this.currentUser);
+        }
+        console.log("Returned online greetings. New stack:", newCount);
+      }
+    } catch (e) {
+      console.error("Error returning greetings online:", e);
+    }
+  }
+
+  async deductGreetingsOnMatchStart() {
+    if (!window.auth || !this.currentUser) return;
+    const dbUrl = this.firebaseConfig.databaseURL || "";
+    const userId = this.currentUser.uid || this.currentUser.username;
+    
+    try {
+      const response = await fetch("/api/player/greetings/start-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, dbUrl })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const newCount = data.greetingsStack;
+        this.currentUser.greetingsStack = newCount;
+        window.auth.updateGreetingsStackLocal(newCount);
+        if (window.refreshGreetingsStack) {
+          window.refreshGreetingsStack(this.currentUser);
+        }
+        console.log("Deducted greetings on online match start. New stack:", newCount);
+      }
+    } catch (e) {
+      console.error("Error deducting greetings online:", e);
+    }
+  }
+
   triggerGameOver() {
     const standings = window.game.getScoreboard();
     window.renderFinalStandings(standings);
+    
+    // Natural end match return of greetings stack online
+    const myUid = this.getMyUid();
+    const matchMe = window.game.players.find(p => p.uid === myUid);
+    if (matchMe) {
+      const wonReward = (standings.length > 0 && standings[0].name === matchMe.name);
+      this.returnGreetingsOnline(wonReward);
+    }
     
     if (window.playVictorySound) {
       window.playVictorySound();
@@ -1403,6 +1520,7 @@ class MultiplayerManager {
     );
     
     if (matchMe) {
+      const remainingDeck = matchMe.stackCount;
       // Award coins: get the total pot bet from all opponents
       const opponentsCount = window.game.players.length - 1;
       const winnings = opponentsCount * window.game.matchBet;
@@ -1413,6 +1531,30 @@ class MultiplayerManager {
       
       // Update coins locally and in Firebase database
       window.auth.updateCoins(matchMe.coins);
+      
+      // Return greetings with actual remaining count and wonReward = true
+      if (!this.hasReturnedGreetingsForMatch) {
+        this.hasReturnedGreetingsForMatch = true;
+        const dbUrl = this.firebaseConfig.databaseURL || "";
+        const userId = this.currentUser.uid || this.currentUser.username;
+        fetch("/api/player/greetings/return", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, remainingDeck, wonReward: true, dbUrl })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success) {
+            const newCount = data.greetingsStack;
+            this.currentUser.greetingsStack = newCount;
+            window.auth.updateGreetingsStackLocal(newCount);
+            if (window.refreshGreetingsStack) {
+              window.refreshGreetingsStack(this.currentUser);
+            }
+          }
+        })
+        .catch(err => console.error("Error returning greetings on player left win:", err));
+      }
       
       alert(`Your opponent left the match! You win by default and earn the pot of 🪙${winnings} coins!`);
     }

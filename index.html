@@ -171,6 +171,21 @@
               <p class="profile-wallet">Coins: 🪙<span id="dashboard-profile-coins">300</span></p>
             </div>
           </div>
+          
+          <!-- GREETINGS STACK ECONOMY DISPLAY -->
+          <div class="greetings-stack-wrapper" id="dashboard-greetings-wrapper">
+            <div class="shiny-gold-stack" id="dashboard-greetings-stack">
+              <div class="stack-card card1"></div>
+              <div class="stack-card card2"></div>
+              <div class="stack-card card3"></div>
+              <div class="stack-card card4"></div>
+            </div>
+            <div class="stack-text">
+              <div class="stack-count-label"><span class="stack-count" id="dashboard-greetings-count">30</span> Greetings</div>
+              <div class="stack-label">Greetings Stack</div>
+            </div>
+          </div>
+
           <button type="button" id="dashboard-logout-btn" class="btn danger-btn logout-small-btn">Log Out</button>
         </div>
 
@@ -540,6 +555,28 @@
         <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
           <button type="button" id="bluff-pass-btn" class="btn secondary-btn" style="flex: 1; padding: 12px 6px;">Let it Pass</button>
           <button type="button" id="bluff-call-btn" class="btn primary-btn" style="flex: 1; padding: 12px 6px; background: linear-gradient(135deg, #e11d48, #be123c);">Call Bluff!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUND LOSS GREETINGS DEDUCTION DECISION MODAL -->
+    <div id="round-loss-modal" class="modal-overlay hidden" style="display: none; z-index: 1015;">
+      <div class="modal-content-box glass-container animate-scale" style="max-width: 400px; text-align: center;">
+        <header class="modal-header">
+          <h2 style="color: #ef4444; font-size: 1.5rem; text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);">Round Lost!</h2>
+        </header>
+        <div class="modal-body" style="margin-top: 15px;">
+          <p style="font-size: 1rem; color: #fff; line-height: 1.5;">
+            You lost this round! <br>
+            <strong style="color: #fca5a5; font-size: 1.15rem;">-10 Greetings</strong> have been deducted from your active deck.
+          </p>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;" id="round-loss-remaining-msg">
+            Remaining deck cards: <strong style="color: #fff;">20</strong>
+          </p>
+        </div>
+        <div class="form-actions" style="margin-top: 25px; display: flex; gap: 12px; justify-content: center;">
+          <button type="button" id="loss-continue-btn" class="btn primary-btn" style="flex: 1; padding: 10px 16px;">Continue</button>
+          <button type="button" id="loss-leave-btn" class="btn secondary-btn" style="flex: 1; padding: 10px 16px; border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">Leave Match</button>
         </div>
       </div>
     </div>
