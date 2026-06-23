@@ -3267,3 +3267,5 @@ select.form-select option {
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+/* v4.0.0 — restored original dashboard */
