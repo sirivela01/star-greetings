@@ -1008,6 +1008,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (outcome.isGameOver) {
+      window.lastMatchWinningStarId = cardToAnimate.id;
+    }
+
     if (!activePlayer.isBot) {
       const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
       if (!window.matchTurnTelemetry) window.matchTurnTelemetry = [];
@@ -1534,8 +1538,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Trigger final screen and results
   function triggerGameOver() {
-    // Stop any victory music still playing from the last round
-    if (window.VictoryMusic) window.VictoryMusic.stop(true);
+    // Stop any victory music still playing from the last round and play match winner's song
+    if (window.VictoryMusic) {
+      window.VictoryMusic.stop(true);
+      if (window.lastMatchWinningStarId) {
+        setTimeout(() => {
+          if (window.VictoryMusic) window.VictoryMusic.play(window.lastMatchWinningStarId);
+        }, 300);
+      }
+    }
     cleanupFloatingElements();
     const standings = game.endGame();
     renderFinalStandings(standings);
@@ -2162,6 +2173,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const lossLeaveBtn = document.getElementById("loss-leave-btn");
   if (lossLeaveBtn) {
     lossLeaveBtn.addEventListener("click", async () => {
+      if (window.VictoryMusic) window.VictoryMusic.stop(true);
       playTouchSound();
       const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
       await returnGreetings(humanPlayer.stackCount, false);
@@ -2299,6 +2311,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Restart/Play Again clicked
   restartGameBtn.addEventListener("click", () => {
+    if (window.VictoryMusic) window.VictoryMusic.stop(true);
     cleanupFloatingElements();
     endScreen.classList.add("hidden");
     

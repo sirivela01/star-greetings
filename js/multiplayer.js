@@ -321,6 +321,9 @@ class MultiplayerManager {
     if (window.cleanupFloatingElements) {
       window.cleanupFloatingElements();
     }
+    if (screenId !== "game-screen" && screenId !== "end-screen") {
+      if (window.VictoryMusic) window.VictoryMusic.stop(true);
+    }
     const screens = [
       "login-screen", "signup-screen", "forgot-password-screen",
       "dashboard-screen", "online-lobby-screen", "online-waiting-screen",
@@ -1132,6 +1135,14 @@ class MultiplayerManager {
         floatCard.remove();
 
         if (hasMatch) {
+          // Play victory music online
+          if (window.VictoryMusic && cardPlayed && cardPlayed.id) {
+            window.VictoryMusic.play(cardPlayed.id);
+          }
+          if (gameState.isGameOver) {
+            window.lastMatchWinningStarId = cardPlayed ? cardPlayed.id : null;
+          }
+
           // Play win sequence
           const outcome = {
             playerIndex: playerIndex,
@@ -1156,6 +1167,7 @@ class MultiplayerManager {
           window.renderScoreboard();
           window.renderLogs();
           if (gameState.isGameOver) {
+            window.lastMatchWinningStarId = cardPlayed ? cardPlayed.id : null;
             this.triggerGameOver();
           }
         }
@@ -1492,6 +1504,15 @@ class MultiplayerManager {
     
     if (window.playVictorySound) {
       window.playVictorySound();
+    }
+
+    if (window.VictoryMusic) {
+      window.VictoryMusic.stop(true);
+      if (window.lastMatchWinningStarId) {
+        setTimeout(() => {
+          if (window.VictoryMusic) window.VictoryMusic.play(window.lastMatchWinningStarId);
+        }, 300);
+      }
     }
     
     this.showScreen("end-screen");
