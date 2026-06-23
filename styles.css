@@ -8,20 +8,6 @@
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* -- Cosmic Purple Dashboard Theme -- */
-  --sg-bg:          #07051A;   /* page bg — deepest galaxy black-purple */
-  --sg-hdr:         #0C0826;   /* header section background */
-  --sg-card:        #110D2E;   /* profile card background */
-  --sg-purple:      #8B5CF6;   /* primary amethyst accent */
-  --sg-amber:       #E8C84A;   /* secondary amber-gold accent */
-  --sg-gold:        #E8C84A;   /* alias for amber — for existing var(--sg-gold) refs */
-  --sg-crimson:     #8B5CF6;   /* alias for purple — for existing var(--sg-crimson) refs */
-  --sg-text:        #DDD8FF;   /* primary soft purple-white text */
-  --sg-muted:       #665890;   /* secondary muted purple text */
-  --sg-avatar-bg:   #251860;   /* avatar circle background */
-  --sg-avatar-text: #C4A0FF;   /* avatar initials color */
-  --sg-logout-bg:   #3A0A28;   /* logout button background */
-  --sg-logout-text: #FFB0E0;   /* logout button text */
 
   /* Colors - Dark Theme Core */
   --bg-gradient: radial-gradient(circle at 50% 50%, #17153a 0%, #0b091f 60%, #03020d 100%);
@@ -3190,321 +3176,94 @@ select.form-select option {
 }
 
 
+
 /* ==========================================================================
-   Cosmic Purple — Arcade Dashboard Theme  (v3.0 — #dashboard-screen scoped)
+   Dashboard — Greetings Stack Widget (pic-3 style, no theme override)
    ========================================================================== */
 
-/* Full page background */
-#dashboard-screen {
-  background: var(--sg-bg) !important;
-  min-height: 100vh;
-}
-
-/* Shell — override glass-container */
-#dashboard-screen .db-shell {
-  background: var(--sg-bg) !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 0 30px !important;
-  max-width: 480px;
-  width: 92%;
-  margin: 0 auto;
-  animation: fadeIn 0.4s ease-out;
-}
-
-/* ── HEADER ──────────────────────────────────────────── */
-#dashboard-screen .db-header {
-  background: var(--sg-hdr) !important;
-  border-radius: 16px 16px 0 0;
-  padding: 20px 16px 16px;
-  border-bottom: 1px solid rgba(139,92,246,0.18);
-  text-align: center;
-  margin-bottom: 0;
-}
-
-#dashboard-screen .db-star-icon {
-  font-size: 30px !important;
-  color: var(--sg-purple) !important;
-  background: none !important;
-  -webkit-background-clip: unset !important;
-  -webkit-text-fill-color: var(--sg-purple) !important;
-  display: block;
-  margin-bottom: 6px;
-  filter: drop-shadow(0 0 10px rgba(139,92,246,0.7));
-  animation: none !important;
-}
-
-#dashboard-screen .db-title {
-  font-size: 20px !important;
-  font-weight: 800 !important;
-  color: var(--sg-text) !important;
-  background: none !important;
-  -webkit-background-clip: unset !important;
-  -webkit-text-fill-color: var(--sg-text) !important;
-  letter-spacing: 0em;
-  margin: 0 !important;
-}
-
-#dashboard-screen .db-tagline {
-  font-size: 12px !important;
-  color: var(--sg-muted) !important;
-  margin-top: 4px !important;
-}
-
-#dashboard-screen .cosmic-badge {
-  display: inline-block;
-  margin-top: 8px;
-  background: rgba(139,92,246,0.15);
-  border: 1px solid rgba(139,92,246,0.45);
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 11px;
-  color: var(--sg-purple);
-  letter-spacing: 0.03em;
-}
-
-/* ── PROFILE CARD ─────────────────────────────────────── */
-#dashboard-screen .db-profile-card {
-  background: var(--sg-card) !important;
-  border: 1px solid rgba(139,92,246,0.22) !important;
-  border-radius: 14px !important;
-  padding: 12px !important;
-  margin: 14px 0 !important;
+/* 3-column profile card */
+.dashboard-profile-card {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   gap: 8px !important;
-  box-shadow: none !important;
+  flex-wrap: nowrap !important;
 }
 
-/* LEFT: player info */
-#dashboard-screen .db-player-info {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px;
+.dashboard-profile-card .profile-info-main {
   flex: 1;
   min-width: 0;
 }
 
-#dashboard-screen .db-avatar {
-  width: 44px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  background: var(--sg-avatar-bg) !important;
-  border: 2px solid rgba(139,92,246,0.55) !important;
-  font-size: 14px !important;
-  color: var(--sg-avatar-text) !important;
-  font-weight: 700 !important;
-}
-
-#dashboard-screen .db-avatar:hover {
-  border-color: var(--sg-purple) !important;
-  box-shadow: 0 0 10px rgba(139,92,246,0.45) !important;
-}
-
-#dashboard-screen .db-player-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-#dashboard-screen .db-player-name {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  color: var(--sg-text) !important;
-  background: none !important;
-  -webkit-text-fill-color: var(--sg-text) !important;
-  margin: 0 0 2px !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#dashboard-screen .db-coins {
-  font-size: 12px !important;
-  color: var(--sg-amber) !important;
-  margin: 0 !important;
-  font-weight: 600;
-}
-
-/* CENTER: Greetings Stack widget */
-#dashboard-screen .db-greetings-widget {
-  background: var(--sg-bg) !important;
-  border: 1px solid rgba(139,92,246,0.6) !important;
-  border-radius: 12px !important;
-  padding: 9px 12px !important;
+/* Greetings Stack widget box */
+.gs-widget {
+  background: rgba(10, 8, 30, 0.85);
+  border: 1px solid rgba(139, 92, 246, 0.55);
+  border-radius: 12px;
+  padding: 10px 14px;
   text-align: center;
-  min-width: 80px;
+  min-width: 88px;
   flex-shrink: 0;
   transition: box-shadow 0.3s ease;
-  position: relative;
 }
 
-#dashboard-screen .db-greetings-widget.low-greetings {
-  box-shadow: 0 0 0 2px rgba(232,75,75,0.7), 0 0 14px rgba(232,75,75,0.3) !important;
-  animation: cpLowWarningPulse 2s infinite alternate;
+.gs-widget.low-greetings {
+  box-shadow: 0 0 0 2px rgba(232, 75, 75, 0.7), 0 0 12px rgba(232, 75, 75, 0.3);
+  animation: gsLowPulse 2s infinite alternate;
 }
 
-@keyframes cpLowWarningPulse {
-  from { box-shadow: 0 0 0 2px rgba(232,75,75,0.5); }
-  to   { box-shadow: 0 0 0 3px rgba(232,75,75,0.9), 0 0 18px rgba(232,75,75,0.4); }
+@keyframes gsLowPulse {
+  from { box-shadow: 0 0 0 2px rgba(232, 75, 75, 0.5); }
+  to   { box-shadow: 0 0 0 3px rgba(232, 75, 75, 0.9), 0 0 16px rgba(232, 75, 75, 0.35); }
 }
 
-#dashboard-screen .db-greetings-count {
-  font-size: 26px !important;
+/* Count number — amber gold */
+.gs-widget .stack-count {
+  font-size: 28px !important;
   font-weight: 900 !important;
-  color: var(--sg-amber) !important;
+  color: #f59e0b !important;
   line-height: 1 !important;
   display: block !important;
-  text-shadow: 0 0 10px rgba(232,200,74,0.45) !important;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.4) !important;
   background: none !important;
-  -webkit-text-fill-color: var(--sg-amber) !important;
+  -webkit-text-fill-color: #f59e0b !important;
 }
 
-#dashboard-screen .db-greetings-labels {
-  font-size: 11px !important;
-  color: var(--sg-muted) !important;
+/* Labels */
+.gs-labels {
+  font-size: 10px;
+  color: #94a3b8;
   margin-top: 3px;
-  line-height: 1.4;
+  line-height: 1.35;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
-/* Decorative 3-card stack */
-#dashboard-screen .db-card-stack-visual {
+/* Decorative 3-card stack (pic 3 purple square) */
+.gs-mini-stack {
   position: relative;
   width: 36px;
   height: 18px;
   margin: 6px auto 0;
 }
 
-#dashboard-screen .db-mini-card {
+.gs-card {
   position: absolute;
   width: 14px;
   height: 10px;
   border-radius: 2px;
-  background: var(--sg-purple);
+  background: #8b5cf6;
   left: 50%;
   top: 50%;
 }
 
-#dashboard-screen .db-mc1 { transform: translate(-50%,-50%) rotate(-8deg) translateY(3px); opacity: 0.4; }
-#dashboard-screen .db-mc2 { transform: translate(-50%,-50%) rotate(-3deg) translateY(1px); opacity: 0.7; }
-#dashboard-screen .db-mc3 { transform: translate(-50%,-50%) rotate(0deg);                  opacity: 1.0; }
+.gs-c1 { transform: translate(-50%, -50%) rotate(-8deg) translateY(3px); opacity: 0.4; }
+.gs-c2 { transform: translate(-50%, -50%) rotate(-3deg) translateY(1px); opacity: 0.7; }
+.gs-c3 { transform: translate(-50%, -50%) rotate(0deg);                  opacity: 1.0; }
 
-/* RIGHT: Logout */
-#dashboard-screen .db-logout-btn {
-  background: var(--sg-logout-bg) !important;
-  color: var(--sg-logout-text) !important;
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 6px 10px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
+/* Logout button — keep right-aligned */
+.dashboard-profile-card .logout-small-btn {
   align-self: flex-start !important;
-  white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: none !important;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-
-#dashboard-screen .db-logout-btn:hover {
-  background: #520A38 !important;
-  transform: scale(1.03);
-}
-
-/* ── PLAY MODE BUTTONS ────────────────────────────────── */
-#dashboard-screen .db-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-/* Base reset for all dashboard play buttons */
-#dashboard-screen .db-actions .play-mode-btn {
-  width: 100% !important;
-  border-radius: 13px !important;
-  padding: 14px 16px !important;
-  text-align: center !important;
-  cursor: pointer !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 4px !important;
-  transition: transform 0.12s ease, box-shadow 0.15s ease !important;
-  font-size: unset !important;
-  background-image: none !important;
-  transform: none;
-}
-
-#dashboard-screen .db-actions .play-mode-btn:active {
-  transform: scale(0.98) !important;
-}
-
-#dashboard-screen .db-btn-title {
-  font-size: 15px;
-  font-weight: 700;
-  display: block;
-  margin: 0 0 3px;
-}
-
-#dashboard-screen .db-btn-sub {
-  font-size: 11px;
-  display: block;
-  margin: 0;
-  opacity: 0.8;
-}
-
-/* AI BOT — green */
-#dashboard-screen .db-btn-ai {
-  background: #0E2A14 !important;
-  background-image: none !important;
-  border: 1px solid rgba(112,255,144,0.35) !important;
-  box-shadow: none !important;
-  color: #70FF90 !important;
-}
-#dashboard-screen .db-btn-ai .db-btn-title,
-#dashboard-screen .db-btn-ai .db-btn-sub { color: #70FF90 !important; }
-#dashboard-screen .db-btn-ai:hover {
-  background: #163A1E !important;
-  background-image: none !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(112,255,144,0.2) !important;
-}
-
-/* Offline — blue */
-#dashboard-screen .db-btn-offline {
-  background: #101840 !important;
-  background-image: none !important;
-  border: 1px solid rgba(112,144,255,0.35) !important;
-  box-shadow: none !important;
-  color: #7090FF !important;
-}
-#dashboard-screen .db-btn-offline .db-btn-title,
-#dashboard-screen .db-btn-offline .db-btn-sub { color: #7090FF !important; }
-#dashboard-screen .db-btn-offline:hover {
-  background: #182050 !important;
-  background-image: none !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(112,144,255,0.2) !important;
-}
-
-/* Online — purple */
-#dashboard-screen .db-btn-online {
-  background: #28104A !important;
-  background-image: none !important;
-  border: 1px solid rgba(200,128,255,0.35) !important;
-  box-shadow: none !important;
-  color: #C880FF !important;
-}
-#dashboard-screen .db-btn-online .db-btn-title,
-#dashboard-screen .db-btn-online .db-btn-sub { color: #C880FF !important; }
-#dashboard-screen .db-btn-online:hover {
-  background: #34185E !important;
-  background-image: none !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(200,128,255,0.2) !important;
+  white-space: nowrap;
 }
