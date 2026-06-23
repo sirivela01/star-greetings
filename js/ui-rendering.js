@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sideDrawer = document.getElementById("side-drawer");
   const drawerToggleBtn = document.getElementById("drawer-toggle-btn");
   const fullscreenBtn = document.getElementById("fullscreen-btn");
+  const narratorToggleBtn = document.getElementById("narrator-toggle-btn");
   const drawerCloseBtn = document.getElementById("drawer-close-btn");
 
   // Private Hand Modal elements
@@ -660,7 +661,8 @@ document.addEventListener("DOMContentLoaded", () => {
           // ACTIVE player sees top card face-up
           // Clicking the card triggers standard play
           const topCard = p.stack[0];
-          const cardEl = createCardElement(topCard, true, handleCardSelection, p.id);
+          const clickHandler = game.config.FORCED_TOP_DRAW ? handleCardSelection : openPrivateHandModal;
+          const cardEl = createCardElement(topCard, true, clickHandler, p.id);
           pile.appendChild(cardEl);
           
           // Add shuffle button if player has multiple cards
@@ -893,6 +895,9 @@ document.addEventListener("DOMContentLoaded", () => {
     shieldOverlay.classList.add("hidden");
     shieldOverlay.style.display = "none";
     
+    // Start tracking turn time when Turn Shield is hidden
+    window.lastTurnStartTime = Date.now();
+    
     // Update active player's HUD
     const activePlayer = game.getCurrentPlayer();
     hudActivePlayerName.textContent = activePlayer.name;
@@ -948,6 +953,21 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       playTouchSound();
+
+      // Strategic AI Bot mode bluffing check
+      if (window.themeSelectMode === "ai_bot" && !game.config.FORCED_TOP_DRAW) {
+        const cardToPlay = activePlayer.stack.find(c => c.instanceId === cardInstanceId);
+        const topCardPot = game.pot[game.pot.length - 1];
+        if (topCardPot && cardToPlay && cardToPlay.id !== topCardPot.id) {
+          window.pendingCardInstanceId = cardInstanceId;
+          const bluffChoiceModal = document.getElementById("bluff-choice-modal");
+          if (bluffChoiceModal) {
+            bluffChoiceModal.classList.remove("hidden");
+            bluffChoiceModal.style.display = "flex";
+          }
+          return;
+        }
+      }
     }
     if (window.isOnlineGame) {
       window.multiplayer.playCard(cardInstanceId);
@@ -972,12 +992,29 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (!window.revealedCardsInMatch) {
+      window.revealedCardsInMatch = [];
+    }
+    window.revealedCardsInMatch.push(cardToAnimate.id);
+
     // Call game engine
     const outcome = game.playCard(cardInstanceId);
 
     if (outcome.error) {
       alert(outcome.error);
       return;
+    }
+
+    if (!activePlayer.isBot) {
+      const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
+      if (!window.matchTurnTelemetry) window.matchTurnTelemetry = [];
+      window.matchTurnTelemetry.push({
+        timeMs: elapsed,
+        bet: game.matchBet,
+        isBluff: false,
+        caught: false,
+        win: outcome.hasMatch
+      });
     }
 
     // --- ANIMATION: FLY CARD TO POT ---
@@ -1078,6 +1115,9 @@ document.addEventListener("DOMContentLoaded", () => {
         potCardsContainer.appendChild(tempCardEl);
 
         // Match win sequence: animate first, then update counts after flight
+        if (window.themeSelectMode === "ai_bot") {
+          triggerNarratorCommentary("round_win", { player: outcome.playerName, card: outcome.playedCard.name });
+        }
         triggerWinFlash(outcome);
       } else {
         // Standard turn transition
@@ -1085,6 +1125,9 @@ document.addEventListener("DOMContentLoaded", () => {
         renderSeats();
         renderScoreboard();
         renderLogs();
+        if (window.themeSelectMode === "ai_bot" && game.pot.length === 1) {
+          triggerNarratorCommentary("round_start", { player: outcome.playerName });
+        }
         proceedToNextTurn(outcome);
       }
     }, 500);
@@ -1148,12 +1191,239 @@ document.addEventListener("DOMContentLoaded", () => {
           hudRoundNum.textContent = game.roundNumber;
           renderSeats();
           
+          if (!nextPlayer.isBot) {
+            window.lastTurnStartTime = Date.now();
+          }
+          
           if (nextPlayer.isBot) {
             checkAndTriggerBotTurn();
           }
         }
       }, 300);
     }, 1800);
+  }
+
+  // Bluff success animation and transition
+  function triggerBluffWinFlash(playerIndex, playerName, cardName, wonCount) {
+    if (window.themeSelectMode === "ai_bot") {
+      triggerNarratorCommentary("bluff_success", { player: playerName });
+    }
+    if (window.playVictorySound) window.playVictorySound();
+    const winOverlay = document.createElement("div");
+    winOverlay.className = "win-flash-overlay";
+    winOverlay.innerHTML = `
+      <div class="win-flash-content">
+        <h2 class="win-flash-title" style="background: linear-gradient(135deg, #ec4899, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Bluff Successful!</h2>
+        <p class="win-flash-sub"><strong>${playerName}</strong> successfully bluffed match on <strong>${cardName}</strong></p>
+        <p class="win-flash-cards">+${wonCount} cards added to stack</p>
+      </div>
+    `;
+    document.body.appendChild(winOverlay);
+
+    const winnerSeatDom = document.querySelector(`.player-seat[data-player-id="${playerIndex}"]`);
+    const winnerPileDom = winnerSeatDom ? winnerSeatDom.querySelector(".player-seat-stack") : null;
+    const targetRect = winnerPileDom ? winnerPileDom.getBoundingClientRect() : document.body.getBoundingClientRect();
+
+    const potCards = potCardsContainer.querySelectorAll(".star-card");
+    potCards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      card.style.position = "fixed";
+      card.style.top = `${rect.top}px`;
+      card.style.left = `${rect.left}px`;
+      card.style.transition = "all 0.8s cubic-bezier(0.7, 0, 0.3, 1), opacity 0.5s";
+      card.getBoundingClientRect();
+      card.style.top = `${targetRect.top}px`;
+      card.style.left = `${targetRect.left}px`;
+      card.style.transform = "scale(0.3) rotate(0deg)";
+      card.style.opacity = "0.2";
+    });
+
+    setTimeout(() => {
+      winOverlay.classList.add("fade-out");
+      setTimeout(() => {
+        winOverlay.remove();
+        renderPot();
+        renderSeats();
+        renderScoreboard();
+        renderLogs();
+        
+        if (game.isGameOver) {
+          triggerGameOver();
+        } else {
+          const nextPlayer = game.getCurrentPlayer();
+          hudActivePlayerName.textContent = nextPlayer.name;
+          hudRoundNum.textContent = game.roundNumber;
+          renderSeats();
+          
+          if (!nextPlayer.isBot) {
+            window.lastTurnStartTime = Date.now();
+          }
+          
+          if (nextPlayer.isBot) {
+            checkAndTriggerBotTurn();
+          }
+        }
+      }, 300);
+    }, 1800);
+  }
+
+  // Bluff caught animation and transition
+  function triggerBluffCaughtFlash(caughtPlayerIndex, caughtPlayerName, callerName, cardName, wonCount) {
+    if (window.themeSelectMode === "ai_bot") {
+      triggerNarratorCommentary("bluff_caught", { player: caughtPlayerName, caller: callerName });
+    }
+    if (window.playReadySound) window.playReadySound();
+    const winOverlay = document.createElement("div");
+    winOverlay.className = "win-flash-overlay";
+    winOverlay.innerHTML = `
+      <div class="win-flash-content">
+        <h2 class="win-flash-title" style="background: linear-gradient(135deg, #e11d48, #be123c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Bluff Caught!</h2>
+        <p class="win-flash-sub"><strong>${callerName}</strong> caught <strong>${caughtPlayerName}</strong> bluffing!</p>
+        <p class="win-flash-cards">+${wonCount} cards added to ${caughtPlayerName}'s stack</p>
+      </div>
+    `;
+    document.body.appendChild(winOverlay);
+
+    const seatDom = document.querySelector(`.player-seat[data-player-id="${caughtPlayerIndex}"]`);
+    const pileDom = seatDom ? seatDom.querySelector(".player-seat-stack") : null;
+    const targetRect = pileDom ? pileDom.getBoundingClientRect() : document.body.getBoundingClientRect();
+
+    const potCards = potCardsContainer.querySelectorAll(".star-card");
+    potCards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      card.style.position = "fixed";
+      card.style.top = `${rect.top}px`;
+      card.style.left = `${rect.left}px`;
+      card.style.transition = "all 0.8s cubic-bezier(0.7, 0, 0.3, 1), opacity 0.5s";
+      card.getBoundingClientRect();
+      card.style.top = `${targetRect.top}px`;
+      card.style.left = `${targetRect.left}px`;
+      card.style.transform = "scale(0.3) rotate(0deg)";
+      card.style.opacity = "0.2";
+    });
+
+    setTimeout(() => {
+      winOverlay.classList.add("fade-out");
+      setTimeout(() => {
+        winOverlay.remove();
+        renderPot();
+        renderSeats();
+        renderScoreboard();
+        renderLogs();
+        
+        if (game.isGameOver) {
+          triggerGameOver();
+        } else {
+          const nextIndex = game.findNextPlayerIndex(caughtPlayerIndex);
+          game.currentPlayerIndex = nextIndex;
+          
+          const nextPlayer = game.getCurrentPlayer();
+          hudActivePlayerName.textContent = nextPlayer.name;
+          hudRoundNum.textContent = game.roundNumber;
+          renderSeats();
+          
+          if (!nextPlayer.isBot) {
+            window.lastTurnStartTime = Date.now();
+          }
+          
+          if (nextPlayer.isBot) {
+            checkAndTriggerBotTurn();
+          }
+        }
+      }, 300);
+    }, 1800);
+  }
+
+  // Call Flask Server Bluff Stats endpoint
+  async function callPlayerStatsBluffApi(playerId, type) {
+    try {
+      const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+        ? window.multiplayer.firebaseConfig.databaseURL 
+        : "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+      await fetch("/api/player/stats/bluff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId, type, dbUrl })
+      });
+    } catch (e) {
+      console.error("Failed to update player bluff stats:", e);
+    }
+  }
+
+  // Show premium cinematic toast for narrator commentary
+  function showNarratorCommentary(message) {
+    const toggleBtn = document.getElementById("narrator-toggle-btn");
+    if (toggleBtn && toggleBtn.classList.contains("disabled")) {
+      return; // Narrator turned off by user
+    }
+
+    let container = document.querySelector(".narrator-toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "narrator-toast-container";
+      document.body.appendChild(container);
+    }
+
+    // Remove any existing active commentary
+    container.innerHTML = "";
+
+    const toast = document.createElement("div");
+    toast.className = "narrator-toast-element";
+    toast.innerHTML = `
+      <div class="narrator-toast-header">🎙️ Movie Narrator</div>
+      <div class="narrator-toast-body">"${message}"</div>
+    `;
+    container.appendChild(toast);
+
+    // Force reflow
+    toast.getBoundingClientRect();
+
+    // Fade in
+    toast.classList.add("show");
+
+    // Fade out and remove after 5 seconds
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => {
+        toast.remove();
+      }, 400);
+    }, 5000);
+  }
+
+  // Request cinematic narration from Flask server
+  async function triggerNarratorCommentary(event, extraParams = {}) {
+    const toggleBtn = document.getElementById("narrator-toggle-btn");
+    if (toggleBtn && toggleBtn.classList.contains("disabled")) {
+      return; // Do not call API if narrator is disabled
+    }
+
+    try {
+      const activePlayer = game.getCurrentPlayer();
+      const theme = game.selectedCategory || "tollywood";
+      
+      const payload = {
+        event: event,
+        player: extraParams.player || (activePlayer ? activePlayer.name : "Player"),
+        round: game.roundNumber,
+        bet: game.matchBet,
+        theme: theme,
+        ...extraParams
+      };
+
+      const response = await fetch("/api/narrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error("Narrator API failed");
+      const result = await response.json();
+      if (result.commentary) {
+        showNarratorCommentary(result.commentary);
+      }
+    } catch (e) {
+      console.error("Failed to fetch game narration:", e);
+    }
   }
 
   function checkAndTriggerBotTurn() {
@@ -1163,9 +1433,70 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log(`Bot ${activePlayer.name} is taking its turn...`);
       hudActivePlayerName.textContent = `${activePlayer.name} (Bot)...`;
       
-      setTimeout(() => {
-        executePlay();
-      }, 1200);
+      if (game.config.FORCED_TOP_DRAW) {
+        setTimeout(() => {
+          executePlay();
+        }, 1200);
+      } else {
+        // Strategic bot play calling the Flask Heuristic API
+        setTimeout(async () => {
+          try {
+            const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+              ? window.multiplayer.firebaseConfig.databaseURL 
+              : "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+            
+            const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+            
+            const response = await fetch("/api/bot/decision/play", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                hand: activePlayer.stack,
+                pot: game.pot,
+                revealed_cards: window.revealedCardsInMatch || [],
+                playerId: humanPlayer.name,
+                currentBet: game.matchBet,
+                difficulty: game.config.AI_DIFFICULTY || "normal",
+                dbUrl: dbUrl
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error("Server response not OK");
+            }
+            
+            const decision = await response.json();
+            console.log("Bot decision outcome:", decision);
+            
+            if (decision.action === "real_match_claim" || decision.action === "bluff_claim") {
+              window.pendingBotCard = decision.card;
+              window.pendingBotAction = decision.action;
+              
+              const topCardPot = game.pot[game.pot.length - 1];
+              const declaredName = topCardPot ? topCardPot.name : "Top Card";
+              
+              const titleEl = document.getElementById("bluff-challenge-title");
+              const msgEl = document.getElementById("bluff-challenge-msg");
+              if (titleEl) titleEl.textContent = "Match Claimed!";
+              if (msgEl) {
+                msgEl.innerHTML = `Bot <strong>${activePlayer.name}</strong> played a card and claimed a match on <strong>${declaredName}</strong>!<br>Do you suspect a bluff?`;
+              }
+              
+              const challengeModal = document.getElementById("bluff-challenge-modal");
+              if (challengeModal) {
+                challengeModal.classList.remove("hidden");
+                challengeModal.style.display = "flex";
+              }
+            } else {
+              // Play normal card without claiming a match
+              executePlay(decision.card ? decision.card.instanceId : null);
+            }
+          } catch (err) {
+            console.error("Bot API call failed, falling back to standard draw:", err);
+            executePlay();
+          }
+        }, 1200);
+      }
     }
   }
 
@@ -1180,6 +1511,11 @@ document.addEventListener("DOMContentLoaded", () => {
       renderPot();
       renderScoreboard();
       renderLogs();
+      
+      // Update turn start time for human player
+      if (!nextPlayer.isBot) {
+        window.lastTurnStartTime = Date.now();
+      }
       
       if (nextPlayer.isBot) {
         checkAndTriggerBotTurn();
@@ -1197,6 +1533,69 @@ document.addEventListener("DOMContentLoaded", () => {
     cleanupFloatingElements();
     const standings = game.endGame();
     renderFinalStandings(standings);
+    
+    if (window.themeSelectMode === "ai_bot") {
+      const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+        ? window.multiplayer.firebaseConfig.databaseURL 
+        : "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+        
+      const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+      const botPlayer = game.players.find(p => p.isBot) || { name: "Bot Ranbir", stackCount: 30 };
+      
+      let outcome = "draw";
+      if (humanPlayer.stackCount < botPlayer.stackCount) {
+        outcome = "win";
+      } else if (humanPlayer.stackCount > botPlayer.stackCount) {
+        outcome = "loss";
+      }
+
+      // POST to match_end stats endpoint for Elo update
+      fetch("/api/player/stats/match_end", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerId: humanPlayer.name,
+          opponentId: botPlayer.name,
+          outcome: outcome,
+          theme: (game.selectedCategory || "tollywood").toLowerCase(),
+          dbUrl: dbUrl
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) {
+          window.finalMatchRatings = data;
+          renderFinalStandings(standings);
+        }
+      })
+      .catch(err => console.error("Error posting match end stats:", err));
+
+      // POST to anomaly detection endpoint
+      fetch("/api/analytics/anomaly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerId: humanPlayer.name,
+          turns: window.matchTurnTelemetry || [],
+          dbUrl: dbUrl
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.isAnomaly) {
+          console.warn("🚨 [Anomaly Detected] 🚨", data);
+          game.addLog(`⚠️ Anomaly detected: ${data.flags.join(", ")} (Confidence: ${data.confidence * 100}%)`);
+          renderLogs();
+        } else {
+          console.log("No gameplay anomaly detected.", data);
+        }
+      })
+      .catch(err => console.error("Error performing anomaly detection:", err));
+    }
+    
+    if (window.themeSelectMode === "ai_bot" && standings.length > 0) {
+      triggerNarratorCommentary("game_over", { player: standings[0].name });
+    }
     
     playVictorySound();
     
@@ -1224,9 +1623,24 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (idx === 1) medal = "🥈 Silver";
       else if (idx === 2) medal = "🥉 Bronze";
 
+      let ratingStr = "";
+      if (window.themeSelectMode === "ai_bot" && window.finalMatchRatings) {
+        const humanPlayer = game.players.find(pl => !pl.isBot) || game.players[0];
+        const botPlayer = game.players.find(pl => pl.isBot) || { name: "Bot Ranbir" };
+        if (p.name === humanPlayer.name) {
+          const change = window.finalMatchRatings.changePlayer;
+          const changeSign = change >= 0 ? "+" : "";
+          ratingStr = ` <span class="elo-badge" style="color: #6ee7b7; font-size: 0.85rem; margin-left: 8px;">(Elo: ${window.finalMatchRatings.playerRating} [${changeSign}${change}])</span>`;
+        } else if (p.name === botPlayer.name) {
+          const change = window.finalMatchRatings.changeOpponent;
+          const changeSign = change >= 0 ? "+" : "";
+          ratingStr = ` <span class="elo-badge" style="color: #fca5a5; font-size: 0.85rem; margin-left: 8px;">(Elo: ${window.finalMatchRatings.opponentRating} [${changeSign}${change}])</span>`;
+        }
+      }
+
       item.innerHTML = `
         <div class="standing-rank">${idx + 1}</div>
-        <div class="standing-name">${p.name}</div>
+        <div class="standing-name">${p.name}${ratingStr}</div>
         <div class="standing-medal">${medal}</div>
         <div class="standing-count">${p.stackCount} cards</div>
       `;
@@ -1242,6 +1656,30 @@ document.addEventListener("DOMContentLoaded", () => {
   drawerCloseBtn.addEventListener("click", () => {
     sideDrawer.classList.add("hidden-drawer");
   });
+
+  // AI Narrator Toggle
+  if (narratorToggleBtn) {
+    narratorToggleBtn.addEventListener("click", () => {
+      playReadySound();
+      if (narratorToggleBtn.classList.contains("disabled")) {
+        narratorToggleBtn.classList.remove("disabled");
+        narratorToggleBtn.textContent = "🎙️ Narrator: ON";
+        narratorToggleBtn.style.opacity = "1";
+        narratorToggleBtn.style.background = "";
+        narratorToggleBtn.style.borderColor = "";
+        showNarratorCommentary("AI Narrator is back online! Let the show begin!");
+      } else {
+        narratorToggleBtn.classList.add("disabled");
+        narratorToggleBtn.textContent = "🎙️ Narrator: OFF";
+        narratorToggleBtn.style.opacity = "0.5";
+        narratorToggleBtn.style.background = "rgba(239, 68, 68, 0.1)";
+        narratorToggleBtn.style.borderColor = "rgba(239, 68, 68, 0.2)";
+        
+        const activeToast = document.querySelector(".narrator-toast-element");
+        if (activeToast) activeToast.remove();
+      }
+    });
+  }
 
   // Fullscreen Toggle
   if (fullscreenBtn) {
@@ -1271,6 +1709,253 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Close hand modal clicks
   modalCloseBtn.addEventListener("click", closePrivateHandModal);
+
+  // --- BLUFF MODALS EVENT LISTENERS ---
+  const bluffChoiceModal = document.getElementById("bluff-choice-modal");
+  const bluffPlayNormalBtn = document.getElementById("bluff-play-normal-btn");
+  const bluffClaimBtn = document.getElementById("bluff-claim-btn");
+
+  const bluffChallengeModal = document.getElementById("bluff-challenge-modal");
+  const bluffPassBtn = document.getElementById("bluff-pass-btn");
+  const bluffCallBtn = document.getElementById("bluff-call-btn");
+
+  if (bluffPlayNormalBtn) {
+    bluffPlayNormalBtn.addEventListener("click", () => {
+      playTouchSound();
+      if (bluffChoiceModal) {
+        bluffChoiceModal.classList.add("hidden");
+        bluffChoiceModal.style.display = "none";
+      }
+      if (window.pendingCardInstanceId) {
+        executePlay(window.pendingCardInstanceId);
+        window.pendingCardInstanceId = null;
+      }
+    });
+  }
+
+  if (bluffClaimBtn) {
+    bluffClaimBtn.addEventListener("click", async () => {
+      playTouchSound();
+      if (bluffChoiceModal) {
+        bluffChoiceModal.classList.add("hidden");
+        bluffChoiceModal.style.display = "none";
+      }
+      
+      const cardInstanceId = window.pendingCardInstanceId;
+      window.pendingCardInstanceId = null;
+      if (!cardInstanceId) return;
+
+      const activePlayer = game.getCurrentPlayer();
+      const cardToPlay = activePlayer.stack.find(c => c.instanceId === cardInstanceId);
+      const topCardPot = game.pot[game.pot.length - 1];
+      const bot = game.players.find(p => p.isBot);
+      const botHand = bot ? bot.stack : [];
+      const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+        ? window.multiplayer.firebaseConfig.databaseURL 
+        : "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+      
+      if (!window.revealedCardsInMatch) window.revealedCardsInMatch = [];
+      window.revealedCardsInMatch.push(cardToPlay.id);
+
+      try {
+        const response = await fetch("/api/bot/decision/call_bluff", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            handSize: activePlayer.stackCount,
+            pot: game.pot,
+            revealed_cards: window.revealedCardsInMatch,
+            playerId: activePlayer.name,
+            difficulty: game.config.AI_DIFFICULTY || "normal",
+            declaredStarId: topCardPot ? topCardPot.id : "",
+            botHand: botHand,
+            dbUrl: dbUrl
+          })
+        });
+
+        if (!response.ok) throw new Error("Call bluff response failed");
+        const result = await response.json();
+        console.log("Bot call_bluff response:", result);
+
+        if (result.call_bluff) {
+          // Bot called bluff! Player caught!
+          const wonCardsCount = game.pot.length;
+          activePlayer.stack.push(...game.pot);
+          game.pot = [];
+          game.isBetDeductedForCurrentPot = false;
+          game.addLog(`Round ${game.roundNumber}: Bot ${bot ? bot.name : "Ranbir"} called ${activePlayer.name}'s bluff and CAUGHT them! ${activePlayer.name} took the pot.`);
+          
+          const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
+          if (!window.matchTurnTelemetry) window.matchTurnTelemetry = [];
+          window.matchTurnTelemetry.push({
+            timeMs: elapsed,
+            bet: game.matchBet,
+            isBluff: true,
+            caught: true,
+            win: false
+          });
+
+          const activePlayersAfter = game.getActivePlayers();
+          if (activePlayersAfter.length <= 1) {
+            game.isGameOver = true;
+          }
+
+          triggerBluffCaughtFlash(activePlayer.id, activePlayer.name, bot ? bot.name : "Ranbir", topCardPot.name, wonCardsCount);
+          callPlayerStatsBluffApi(activePlayer.name, "caught");
+        } else {
+          // Bot let bluff pass! Player wins!
+          const wonCardsCount = game.pot.length;
+          const cardIndex = activePlayer.stack.findIndex(c => c.instanceId === cardInstanceId);
+          activePlayer.stack.splice(cardIndex, 1);
+          activePlayer.stack.push(...game.pot);
+          activePlayer.stack.push(cardToPlay);
+          
+          const activePlayers = game.getActivePlayers();
+          const totalOpponents = activePlayers.filter(p => p.id !== activePlayer.id).length;
+          const winnings = totalOpponents * game.matchBet;
+          activePlayer.coins += (winnings + game.matchBet);
+
+          game.pot = [];
+          game.isBetDeductedForCurrentPot = false;
+          game.addLog(`Round ${game.roundNumber}: Bot ${bot ? bot.name : "Ranbir"} let ${activePlayer.name}'s bluff pass! ${activePlayer.name} won the pot.`);
+          
+          const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
+          if (!window.matchTurnTelemetry) window.matchTurnTelemetry = [];
+          window.matchTurnTelemetry.push({
+            timeMs: elapsed,
+            bet: game.matchBet,
+            isBluff: true,
+            caught: false,
+            win: true
+          });
+
+          const activePlayersAfter = game.getActivePlayers();
+          if (activePlayersAfter.length <= 1) {
+            game.isGameOver = true;
+          }
+
+          triggerBluffWinFlash(activePlayer.id, activePlayer.name, topCardPot.name, wonCardsCount);
+          callPlayerStatsBluffApi(activePlayer.name, "attempt");
+        }
+      } catch (err) {
+        console.error("Failed to fetch bot call bluff decision, falling back to let it pass:", err);
+        const wonCardsCount = game.pot.length;
+        const cardIndex = activePlayer.stack.findIndex(c => c.instanceId === cardInstanceId);
+        activePlayer.stack.splice(cardIndex, 1);
+        activePlayer.stack.push(...game.pot);
+        activePlayer.stack.push(cardToPlay);
+        const activePlayers = game.getActivePlayers();
+        const totalOpponents = activePlayers.filter(p => p.id !== activePlayer.id).length;
+        const winnings = totalOpponents * game.matchBet;
+        activePlayer.coins += (winnings + game.matchBet);
+        game.pot = [];
+        game.isBetDeductedForCurrentPot = false;
+        game.addLog(`Round ${game.roundNumber}: ${activePlayer.name}'s bluff was let pass (fallback).`);
+        
+        const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
+        if (!window.matchTurnTelemetry) window.matchTurnTelemetry = [];
+        window.matchTurnTelemetry.push({
+          timeMs: elapsed,
+          bet: game.matchBet,
+          isBluff: true,
+          caught: false,
+          win: true
+        });
+
+        triggerBluffWinFlash(activePlayer.id, activePlayer.name, topCardPot.name, wonCardsCount);
+      }
+    });
+  }
+
+  if (bluffPassBtn) {
+    bluffPassBtn.addEventListener("click", () => {
+      playTouchSound();
+      if (bluffChallengeModal) {
+        bluffChallengeModal.classList.add("hidden");
+        bluffChallengeModal.style.display = "none";
+      }
+      
+      const action = window.pendingBotAction;
+      const card = window.pendingBotCard;
+      window.pendingBotAction = null;
+      window.pendingBotCard = null;
+      
+      if (!card) return;
+      const bot = game.players.find(p => p.isBot);
+      if (!bot) return;
+
+      const topCardPot = game.pot[game.pot.length - 1];
+      const declaredName = topCardPot ? topCardPot.name : "Top Card";
+
+      if (action === "real_match_claim") {
+        executePlay(card.instanceId);
+      } else {
+        const wonCardsCount = game.pot.length;
+        const cardIndex = bot.stack.findIndex(c => c.instanceId === card.instanceId);
+        if (cardIndex !== -1) bot.stack.splice(cardIndex, 1);
+        
+        bot.stack.push(...game.pot);
+        bot.stack.push(card);
+        
+        const activePlayers = game.getActivePlayers();
+        const totalOpponents = activePlayers.filter(p => p.id !== bot.id).length;
+        const winnings = totalOpponents * game.matchBet;
+        bot.coins += (winnings + game.matchBet);
+
+        game.pot = [];
+        game.isBetDeductedForCurrentPot = false;
+        game.addLog(`Round ${game.roundNumber}: Bot ${bot.name} successfully bluffed match and won the pot of ${wonCardsCount} cards!`);
+        
+        const activePlayersAfter = game.getActivePlayers();
+        if (activePlayersAfter.length <= 1) {
+          game.isGameOver = true;
+        }
+
+        triggerBluffWinFlash(bot.id, bot.name, declaredName, wonCardsCount);
+      }
+    });
+  }
+
+  if (bluffCallBtn) {
+    bluffCallBtn.addEventListener("click", () => {
+      playTouchSound();
+      if (bluffChallengeModal) {
+        bluffChallengeModal.classList.add("hidden");
+        bluffChallengeModal.style.display = "none";
+      }
+
+      const action = window.pendingBotAction;
+      const card = window.pendingBotCard;
+      window.pendingBotAction = null;
+      window.pendingBotCard = null;
+
+      if (!card) return;
+      const bot = game.players.find(p => p.isBot);
+      if (!bot) return;
+
+      const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+      const topCardPot = game.pot[game.pot.length - 1];
+      const declaredName = topCardPot ? topCardPot.name : "Top Card";
+
+      if (action === "real_match_claim") {
+        executePlay(card.instanceId);
+        game.addLog(`Round ${game.roundNumber}: ${humanPlayer.name} incorrectly challenged Bot ${bot.name}'s legitimate match.`);
+      } else {
+        const wonCardsCount = game.pot.length;
+        bot.stack.push(...game.pot);
+        game.pot = [];
+        game.isBetDeductedForCurrentPot = false;
+        game.addLog(`Round ${game.roundNumber}: ${humanPlayer.name} caught Bot ${bot.name} bluffing! Bot collected the pot.`);
+
+        const activePlayersAfter = game.getActivePlayers();
+        if (activePlayersAfter.length <= 1) {
+          game.isGameOver = true;
+        }
+
+        triggerBluffCaughtFlash(bot.id, bot.name, humanPlayer.name, declaredName, wonCardsCount);
+      }
+    });
+  }
 
   // --- BUTTON CLICKS ---
 
@@ -1690,16 +2375,138 @@ document.addEventListener("DOMContentLoaded", () => {
   // Selected theme tracking
   let selectedTheme = "tollywood";
 
+  // Custom Theme Modal handling
+  const customThemeModal = document.getElementById("custom-theme-modal");
+  const customThemePrompt = document.getElementById("custom-theme-prompt");
+  const customThemeLoading = document.getElementById("custom-theme-loading");
+  const generateThemeBtn = document.getElementById("generate-theme-btn");
+  const cancelThemeBtn = document.getElementById("cancel-theme-btn");
+  const customThemeCard = document.getElementById("custom-theme-card");
+
+  function openCustomThemeModal() {
+    if (customThemeModal) {
+      customThemeModal.classList.remove("hidden");
+      customThemeModal.style.display = "flex";
+      if (customThemePrompt) {
+        customThemePrompt.value = "";
+        customThemePrompt.focus();
+      }
+      if (customThemeLoading) {
+        customThemeLoading.classList.add("hidden");
+        customThemeLoading.style.display = "none";
+      }
+      if (generateThemeBtn) {
+        generateThemeBtn.style.display = "block";
+      }
+      if (cancelThemeBtn) {
+        cancelThemeBtn.style.display = "block";
+      }
+    }
+  }
+
+  function closeCustomThemeModal() {
+    if (customThemeModal) {
+      customThemeModal.classList.add("hidden");
+      customThemeModal.style.display = "none";
+    }
+  }
+
+  if (cancelThemeBtn) {
+    cancelThemeBtn.addEventListener("click", () => {
+      playTouchSound();
+      closeCustomThemeModal();
+    });
+  }
+
   // Bind click event on theme cards
   const themeCards = document.querySelectorAll(".theme-card");
   themeCards.forEach(card => {
     card.addEventListener("click", () => {
       playTouchSound();
-      themeCards.forEach(c => c.classList.remove("active"));
-      card.classList.add("active");
-      selectedTheme = card.dataset.theme || "tollywood";
+      const themeVal = card.dataset.theme || "tollywood";
+      if (themeVal === "custom") {
+        openCustomThemeModal();
+      } else {
+        themeCards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        selectedTheme = themeVal;
+      }
     });
   });
+
+  if (generateThemeBtn) {
+    generateThemeBtn.addEventListener("click", async () => {
+      playTouchSound();
+      const promptVal = customThemePrompt.value.trim();
+      if (!promptVal) {
+        alert("Please enter a theme prompt.");
+        return;
+      }
+
+      // Show loading spinner, hide action buttons
+      customThemeLoading.classList.remove("hidden");
+      customThemeLoading.style.display = "block";
+      generateThemeBtn.style.display = "none";
+      cancelThemeBtn.style.display = "none";
+
+      const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+        ? window.multiplayer.firebaseConfig.databaseURL 
+        : "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+      try {
+        const response = await fetch("/api/generate-theme", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: promptVal, dbUrl })
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          const deckId = data.deckId;
+          const themeName = data.themeName;
+          const cards = data.cards;
+
+          // Merge custom cards into game config roster
+          if (window.STAR_CONFIG) {
+            window.STAR_CONFIG.roster = window.STAR_CONFIG.roster.filter(c => c.industry.toLowerCase() !== themeName.toLowerCase() && c.industry.toLowerCase() !== deckId.toLowerCase());
+            window.STAR_CONFIG.roster.push(...cards);
+          }
+          if (game && game.config && game.config.roster) {
+            game.config.roster = game.config.roster.filter(c => c.industry.toLowerCase() !== themeName.toLowerCase() && c.industry.toLowerCase() !== deckId.toLowerCase());
+            game.config.roster.push(...cards);
+          }
+
+          // Update Custom Theme Card DOM visually to indicate the custom deck generated
+          if (customThemeCard) {
+            const descEl = customThemeCard.querySelector(".theme-desc");
+            if (descEl) {
+              descEl.innerHTML = `🎨 AI Custom — <strong>${themeName}</strong>`;
+            }
+            customThemeCard.dataset.theme = deckId;
+            
+            themeCards.forEach(c => c.classList.remove("active"));
+            customThemeCard.classList.add("active");
+            selectedTheme = deckId;
+          }
+
+          closeCustomThemeModal();
+        } else {
+          alert("Error generating custom deck: " + (data.error || "Unknown error"));
+          customThemeLoading.classList.add("hidden");
+          customThemeLoading.style.display = "none";
+          generateThemeBtn.style.display = "block";
+          cancelThemeBtn.style.display = "block";
+        }
+      } catch (err) {
+        console.error("Custom theme generation failed:", err);
+        alert("Custom theme generation failed. Please try again.");
+        customThemeLoading.classList.add("hidden");
+        customThemeLoading.style.display = "none";
+        generateThemeBtn.style.display = "block";
+        cancelThemeBtn.style.display = "block";
+      }
+    });
+  }
 
   const onlineCreateRoomBtn = document.getElementById("online-create-room-btn");
   if (onlineCreateRoomBtn) {
@@ -1749,6 +2556,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const placementEl = document.getElementById("placement-mode");
         const placementMode = placementEl ? placementEl.value : "middle";
         game.config.CARD_PLACEMENT_MODE = placementMode;
+
+        // Initialize AI Difficulty and Strategic Mode config
+        const diffEl = document.getElementById("ai-difficulty");
+        game.config.AI_DIFFICULTY = diffEl ? diffEl.value : "normal";
+        game.config.FORCED_TOP_DRAW = false; // Enable strategic mode / manual card selection
+        window.revealedCardsInMatch = [];
+        window.matchTurnTelemetry = [];
+        window.finalMatchRatings = null;
+        triggerNarratorCommentary("match_start", { player: p1Name });
         
         // Bind avatar URL and bot properties
         if (window.auth) {
@@ -1939,7 +2755,93 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- Theme Recommendation Badge ---
+  async function fetchThemeRecommendation() {
+    // Clear any existing badges first
+    document.querySelectorAll(".recommendation-badge").forEach(el => el.remove());
+    
+    try {
+      let pName = "";
+      if (window.auth) {
+        const user = window.auth.getCurrentUser();
+        if (user) {
+          pName = user.name;
+        }
+      }
+      if (!pName) pName = "Player";
 
+      const dbUrl = (window.multiplayer && window.multiplayer.firebaseConfig) 
+        ? window.multiplayer.firebaseConfig.databaseURL 
+        : "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+      const res = await fetch("/api/analytics/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId: pName, dbUrl })
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && data.recommendedTheme) {
+        const recommendedTheme = data.recommendedTheme.toLowerCase();
+        const card = document.querySelector(`.theme-card[data-theme="${recommendedTheme}"]`);
+        if (card) {
+          card.style.position = "relative";
+          
+          const badge = document.createElement("div");
+          badge.className = "recommendation-badge";
+          badge.style.position = "absolute";
+          badge.style.top = "-12px";
+          badge.style.right = "-12px";
+          badge.style.background = "linear-gradient(135deg, #fbbf24, #f59e0b)";
+          badge.style.color = "#000";
+          badge.style.fontWeight = "bold";
+          badge.style.fontSize = "0.75rem";
+          badge.style.padding = "4px 10px";
+          badge.style.borderRadius = "20px";
+          badge.style.boxShadow = "0 0 12px rgba(251, 191, 36, 0.6)";
+          badge.style.zIndex = "10";
+          badge.style.pointerEvents = "none";
+          badge.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+          
+          badge.animate([
+            { transform: 'scale(1)', boxShadow: '0 0 12px rgba(251, 191, 36, 0.6)' },
+            { transform: 'scale(1.05)', boxShadow: '0 0 20px rgba(251, 191, 36, 0.9)' }
+          ], {
+            duration: 1000,
+            iterations: Infinity,
+            direction: 'alternate',
+            easing: 'ease-in-out'
+          });
+          
+          badge.innerHTML = `🔥 Recommended for You!`;
+          card.appendChild(badge);
+          
+          if (data.reason) {
+            badge.title = data.reason;
+            card.title = data.reason;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch theme recommendation:", e);
+    }
+  }
+
+  // Mutation observer for theme selection screen to fetch recommendation
+  const themeSelectionScreen = document.getElementById("theme-selection-screen");
+  if (themeSelectionScreen) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class") {
+          const isHidden = themeSelectionScreen.classList.contains("hidden");
+          if (!isHidden) {
+            fetchThemeRecommendation();
+          }
+        }
+      });
+    });
+    observer.observe(themeSelectionScreen, { attributes: true });
+  }
 
   // Initialize view
   renderPlayerSetupFields();

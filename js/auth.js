@@ -635,6 +635,8 @@ document.addEventListener("DOMContentLoaded", () => {
         themeSelectionView.classList.remove("hidden");
       }
       window.themeSelectMode = "offline";
+      const diffContainer = document.getElementById("ai-difficulty-container");
+      if (diffContainer) diffContainer.style.display = "none";
     });
   }
 
@@ -647,6 +649,8 @@ document.addEventListener("DOMContentLoaded", () => {
         themeSelectionView.classList.remove("hidden");
       }
       window.themeSelectMode = "ai_bot";
+      const diffContainer = document.getElementById("ai-difficulty-container");
+      if (diffContainer) diffContainer.style.display = "block";
     });
   }
 

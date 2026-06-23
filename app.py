@@ -1,0 +1,724 @@
+import os
+import json
+import random
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+import requests
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
+
+# Load environment variables
+load_dotenv()
+
+app = Flask(__name__, static_folder='.', static_url_path='')
+CORS(app)
+
+# Helper to query Firebase REST API
+def get_firebase_data(path, db_url=None):
+    if not db_url:
+        db_url = os.environ.get("FIREBASE_DATABASE_URL")
+    if not db_url:
+        return None
+    db_url = db_url.rstrip('/')
+    try:
+        response = requests.get(f"{db_url}/{path}.json")
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        print(f"Firebase read error: {e}")
+    return None
+
+def update_firebase_data(path, data, db_url=None):
+    if not db_url:
+        db_url = os.environ.get("FIREBASE_DATABASE_URL")
+    if not db_url:
+        return False
+    db_url = db_url.rstrip('/')
+    try:
+        response = requests.patch(f"{db_url}/{path}.json", json=data)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Firebase write error: {e}")
+    return False
+
+# Server-side Heuristic Bot logic endpoints
+@app.route('/api/bot/decision/play', methods=['POST'])
+def bot_decision_play():
+    """
+    Decides bot's turn: which card to play and whether to bluff/claim match.
+    """
+    try:
+        body = request.json or {}
+        hand = body.get("hand", [])  # list of card objects: [{id: "prabhas", name: "Prabhas", instanceId: "..."}]
+        pot = body.get("pot", [])    # cards in pot
+        revealed_cards = body.get("revealed_cards", []) # cards played/revealed this round
+        player_id = body.get("playerId")
+        current_bet = body.get("currentBet", 25)
+        difficulty = body.get("difficulty", "normal").lower()
+        db_url = body.get("dbUrl") # optional fallback from client config
+        
+        if not hand:
+            return jsonify({"error": "Empty hand"}), 400
+
+        # Retrieve player bluff history
+        player_bluff_rate = 0.3
+        if player_id:
+            stats = get_firebase_data(f"playerStats/{player_id}/bluffHistory", db_url)
+            if stats:
+                attempts = stats.get("bluffAttempts", 0)
+                caught = stats.get("bluffCaught", 0)
+                if attempts > 0:
+                    player_bluff_rate = (caught + 1) / (attempts + 2) # Laplasian smoothing
+        
+        # Check if bot has a legitimate match
+        top_card_pot = pot[-1] if pot else None
+        matching_cards = [c for c in hand if top_card_pot and c["id"] == top_card_pot["id"]]
+        
+        # Determine bluffing probability P_bluff
+        # Easy: low bluff rate (0.1)
+        # Normal: standard heuristic (0.25)
+        # Hard: strategic calculation (0.4)
+        if difficulty == "easy":
+            P_bluff = 0.1
+        elif difficulty == "hard":
+            P_bluff = 0.35
+        else:
+            P_bluff = 0.22
+
+        # Desperation factor: fewer cards in hand -> more likely to bluff
+        hand_size = len(hand)
+        desperation = max(0, (30 - hand_size) * 0.01) # up to +0.25
+        P_bluff += desperation
+
+        # Pot size factor: larger pot -> higher incentive to bluff
+        pot_size = len(pot)
+        pot_incentive = min(0.2, pot_size * 0.02)
+        P_bluff += pot_incentive
+
+        # Player's historical bluff-catching tendency
+        P_bluff -= (player_bluff_rate * 0.2)
+        P_bluff = max(0.05, min(0.85, P_bluff))
+
+        # Decide action
+        rand_val = random.random()
+        
+        # If we have a matching card, we almost always play it (90% of the time, 100% on hard)
+        if matching_cards:
+            should_play_match = True
+            if difficulty != "hard" and rand_val < 0.1:
+                should_play_match = False
+            
+            if should_play_match:
+                chosen_card = random.choice(matching_cards)
+                return jsonify({
+                    "action": "real_match_claim",
+                    "card": chosen_card,
+                    "reason": "Played matching card legitimately"
+                })
+
+        # No match played, or decided to save/bluff instead
+        if rand_val < P_bluff:
+            # Decide to bluff! Play a non-matching card but claim it matches
+            non_matching = [c for c in hand if not top_card_pot or c["id"] != top_card_pot["id"]]
+            if non_matching and top_card_pot:
+                # Choose the card that is least revealed to avoid suspicion
+                chosen_card = min(non_matching, key=lambda c: revealed_cards.count(c["id"]))
+                return jsonify({
+                    "action": "bluff_claim",
+                    "card": chosen_card,
+                    "declared_id": top_card_pot["id"],
+                    "reason": f"Bluffed claiming matching {top_card_pot['name']}"
+                })
+
+        # Default action: Play card normally (no claim, goes to pot)
+        chosen_card = hand[0] # Play top card by default
+        return jsonify({
+            "action": "play_normal",
+            "card": chosen_card,
+            "reason": "Played normally without match claim"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/bot/decision/call_bluff', methods=['POST'])
+def bot_decision_call_bluff():
+    """
+    Decides whether the bot should call "Bluff!" on the human player's claim.
+    """
+    try:
+        body = request.json or {}
+        hand_size = body.get("handSize", 30)
+        pot = body.get("pot", [])
+        revealed_cards = body.get("revealed_cards", [])
+        player_id = body.get("playerId")
+        difficulty = body.get("difficulty", "normal").lower()
+        declared_star_id = body.get("declaredStarId")
+        bot_hand_cards = body.get("botHand", []) # list of bot's card IDs or objects
+        db_url = body.get("dbUrl")
+        
+        if not declared_star_id:
+            return jsonify({"call_bluff": False, "reason": "No card declared"}), 200
+
+        # Retrieve player bluff history
+        player_bluff_rate = 0.3
+        if player_id:
+            stats = get_firebase_data(f"playerStats/{player_id}/bluffHistory", db_url)
+            if stats:
+                attempts = stats.get("bluffAttempts", 0)
+                caught = stats.get("bluffCaught", 0)
+                if attempts > 0:
+                    player_bluff_rate = (caught + 1) / (attempts + 2)
+
+        # Base call probability
+        P_call = player_bluff_rate
+
+        # Desperation adjustment (fewer cards in player hand -> more likely they are bluffing)
+        P_call += max(0, (30 - hand_size) * 0.01)
+
+        # Bot's hand analysis: if bot holds copies of the declared card, the player is less likely to have it.
+        # There are only 4 copies of each card in the deck.
+        bot_copies = sum(1 for c in bot_hand_cards if (c if isinstance(c, str) else c.get("id")) == declared_star_id)
+        if bot_copies == 1:
+            P_call += 0.15
+        elif bot_copies == 2:
+            P_call += 0.35
+        elif bot_copies >= 3:
+            P_call += 0.75 # Extremely likely to be a bluff
+
+        # Discard/Revealed pile analysis: if copies are already revealed, player is less likely to have it.
+        revealed_copies = sum(1 for c in revealed_cards if (c if isinstance(c, str) else c.get("id")) == declared_star_id)
+        P_call += (revealed_copies * 0.20)
+
+        # Apply difficulty adjustments
+        if difficulty == "easy":
+            # Easy bot rarely calls bluffs (static low probability)
+            call_bluff = random.random() < 0.12
+        elif difficulty == "hard":
+            # Hard bot makes the optimal threshold decision
+            call_bluff = (P_call >= 0.45)
+        else:
+            # Normal bot has standard randomized decision based on P_call
+            call_bluff = random.random() < P_call
+
+        return jsonify({
+            "call_bluff": bool(call_bluff),
+            "reason": f"Calculated call probability: {P_call:.2f} (difficulty: {difficulty})"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/player/stats/bluff', methods=['POST'])
+def update_player_bluff_stats():
+    """
+    Increments a player's bluff attempt or caught stat.
+    """
+    try:
+        body = request.json or {}
+        player_id = body.get("playerId")
+        stat_type = body.get("type") # "attempt", "caught"
+        db_url = body.get("dbUrl")
+        
+        if not player_id or not stat_type:
+            return jsonify({"error": "Missing playerId or type"}), 400
+            
+        stats_path = f"playerStats/{player_id}/bluffHistory"
+        current_stats = get_firebase_data(stats_path, db_url) or {}
+        
+        if stat_type == "attempt":
+            current_stats["bluffAttempts"] = current_stats.get("bluffAttempts", 0) + 1
+        elif stat_type == "caught":
+            current_stats["bluffCaught"] = current_stats.get("bluffCaught", 0) + 1
+            current_stats["bluffAttempts"] = current_stats.get("bluffAttempts", 0) + 1 # Caught is also an attempt
+            
+        update_firebase_data(stats_path, current_stats, db_url)
+        return jsonify({"success": True, "stats": current_stats})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Initialize Gemini Client
+gemini_client = None
+try:
+    if os.environ.get("GEMINI_API_KEY"):
+        gemini_client = genai.Client()
+except Exception as e:
+    print(f"Failed to initialize Gemini Client at startup: {e}")
+
+FALLBACK_DIALOGUES = {
+    "match_start": {
+        "tollywood": [
+            "Welcome to the high-voltage arena of Telugu Cinema! The stars are aligned, and the battle of blockbusters begins!",
+            "Box office records are about to shatter! Get ready for punch dialogues and ultimate heroism!"
+        ],
+        "bollywood": [
+            "Welcome to the grand musical stage of Hindi Cinema! Romance, drama, and magic are in the air!",
+            "Picture abhi baaki hai, mere dost! Let the cinematic journey of Bollywood begin!"
+        ]
+    },
+    "round_start": {
+        "tollywood": [
+            "A new hero enters the scene! The crowd goes wild, and the bet is placed!",
+            "The screen is on fire! A new matchup begins at the box office!"
+        ],
+        "bollywood": [
+            "The lights dim and a new melody begins. The actors take their places!",
+            "The drama unfolds as another bet enters the pot. Who will steal the spotlight?"
+        ]
+    },
+    "bluff_caught": {
+        "tollywood": [
+            "Caught red-handed! {caller} stands like an ultimate hero and exposes {player}'s duplicate claim!",
+            "Sensational twist! {caller} shattered {player}'s box office lie like a true mass hero!"
+        ],
+        "bollywood": [
+            "The disguise has fallen! {caller} caught {player} in a dramatic web of lies!",
+            "Cheating in romance never works! {caller} called {player}'s bluff in pure melodramatic style!"
+        ]
+    },
+    "bluff_success": {
+        "tollywood": [
+            "Gravity-defying bluff! {player} tricked the opponents and walked away with the pot like a superstar!",
+            "Absolute mass response! {player}'s bluff was so powerful that everyone believed it!"
+        ],
+        "bollywood": [
+            "A masterclass in acting! {player} fooled everyone and claimed the spotlight silently!",
+            "What a performance! {player}'s lies were as sweet as a romantic duet, winning the entire pot!"
+        ]
+    },
+    "round_win": {
+        "tollywood": [
+            "BOOM! {player} matched {card}! Absolute block-buster match wins the entire pot!",
+            "Records broken! {player} landed a matching greeting and swept the board like a boss!"
+        ],
+        "bollywood": [
+            "Wah! {player} found the perfect match for {card}! A standing ovation for winning the pot!",
+            "A match made in heaven! {player} matches the card and claims the limelight!"
+        ]
+    },
+    "game_over": {
+        "tollywood": [
+            "The blockbuster concludes! {player} is the ultimate Box Office Emperor of the match!",
+            "End credits roll! {player} stood tallest and finished the game as a legendary hero!"
+        ],
+        "bollywood": [
+            "The grand finale has arrived! {player} wins the heart of the audience and the game!",
+            "And that's a wrap! {player} takes the final trophy with a superstar bow!"
+        ]
+    }
+}
+
+@app.route('/api/narrate', methods=['POST'])
+def narrate_game():
+    """
+    Returns a dramatic cinematic commentary for in-game events using Gemini.
+    """
+    try:
+        body = request.json or {}
+        event = body.get("event", "round_start")
+        player = body.get("player", "A player")
+        round_num = body.get("round", 1)
+        bet = body.get("bet", 25)
+        theme = body.get("theme", "tollywood").lower()
+        caller = body.get("caller", "Opponent")
+        card = body.get("card", "")
+        
+        # Check if theme is valid
+        if theme not in ["tollywood", "bollywood"]:
+            theme = "tollywood"
+
+        # Check if gemini client is available
+        global gemini_client
+        
+        # Try to initialize if not done yet
+        if not gemini_client and os.environ.get("GEMINI_API_KEY"):
+            try:
+                gemini_client = genai.Client()
+            except Exception as e:
+                print(f"Lazy init of Gemini client failed: {e}")
+
+        if gemini_client:
+            # Build system instruction based on theme
+            if theme == "tollywood":
+                sys_instruction = (
+                    "You are a high-energy cinematic commentator for a card game. "
+                    "Theme is Tollywood (Telugu cinema). Speak with high-voltage commercial movie flair, "
+                    "using punch dialogues, mass hero references, box office hits, and dramatic energy. "
+                    "Keep your commentary to exactly one or two short sentences. Be extremely punchy and dramatic."
+                )
+            else:
+                sys_instruction = (
+                    "You are a high-energy cinematic commentator for a card game. "
+                    "Theme is Bollywood (Hindi cinema). Speak with romantic melodrama, musical grandeur, "
+                    "dramatic emotional dialogues, and Bollywood superstar energy. "
+                    "Keep your commentary to exactly one or two short sentences. Be extremely punchy and dramatic."
+                )
+
+            # Build prompt
+            prompt = (
+                f"Generate a 1-2 sentence dramatic commentary for the following event in the game:\n"
+                f"- Event type: {event}\n"
+                f"- Player active: {player}\n"
+                f"- Current Round: {round_num}\n"
+                f"- Pot consensus bet: {bet} coins\n"
+            )
+            if card:
+                prompt += f"- Card played/matched: {card}\n"
+            if caller and event == "bluff_caught":
+                prompt += f"- Challenger who caught the bluff: {caller}\n"
+
+            try:
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=sys_instruction,
+                        max_output_tokens=150,
+                    )
+                )
+                commentary_text = response.text.strip().replace('"', '')
+                return jsonify({"commentary": commentary_text})
+            except Exception as gemini_err:
+                print(f"Gemini generation error, falling back: {gemini_err}")
+
+        # Fallback heuristic dialogues
+        dialogue_options = FALLBACK_DIALOGUES.get(event, FALLBACK_DIALOGUES["round_start"]).get(theme, [])
+        commentary_text = random.choice(dialogue_options)
+        
+        # Interpolate variables
+        commentary_text = commentary_text.format(
+            player=player,
+            caller=caller,
+            card=card,
+            round=round_num,
+            bet=bet
+        )
+        return jsonify({"commentary": commentary_text})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+import datetime
+
+@app.route('/api/player/stats/match_end', methods=['POST'])
+def match_end_stats():
+    """
+    Computes and updates Elo ratings in Firebase at game end.
+    """
+    try:
+        body = request.json or {}
+        player_id = body.get("playerId")
+        opponent_id = body.get("opponentId", "Bot Ranbir")
+        outcome = body.get("outcome") # "win", "loss", "draw"
+        db_url = body.get("dbUrl")
+
+        if not player_id:
+            return jsonify({"error": "Missing playerId"}), 400
+
+        # Retrieve current ratings
+        p_rating_path = f"playerStats/{player_id}"
+        o_rating_path = f"playerStats/{opponent_id}"
+
+        p_data = get_firebase_data(p_rating_path, db_url) or {}
+        o_data = get_firebase_data(o_rating_path, db_url) or {}
+
+        r_p = p_data.get("rating", 1000)
+        r_o = o_data.get("rating", 1000)
+
+        games_p = p_data.get("gamesPlayed", 0)
+        games_o = o_data.get("gamesPlayed", 0)
+
+        # Elo computation
+        e_p = 1.0 / (1.0 + 10.0 ** ((r_o - r_p) / 400.0))
+        e_o = 1.0 / (1.0 + 10.0 ** ((r_p - r_o) / 400.0))
+
+        if outcome == "win":
+            s_p, s_o = 1.0, 0.0
+        elif outcome == "loss":
+            s_p, s_o = 0.0, 1.0
+        else:
+            s_p, s_o = 0.5, 0.5
+
+        k = 32
+        new_r_p = int(r_p + k * (s_p - e_p))
+        new_r_o = int(r_o + k * (s_o - e_o))
+
+        change_p = new_r_p - r_p
+        change_o = new_r_o - r_o
+
+        # Update Firebase
+        update_firebase_data(p_rating_path, {
+            "rating": new_r_p,
+            "gamesPlayed": games_p + 1
+        }, db_url)
+        update_firebase_data(o_rating_path, {
+            "rating": new_r_o,
+            "gamesPlayed": games_o + 1
+        }, db_url)
+
+        # Track theme play count
+        theme = body.get("theme")
+        if theme:
+            theme_plays_path = f"playerStats/{player_id}/themePlays"
+            current_theme_plays = get_firebase_data(theme_plays_path, db_url) or {}
+            current_theme_plays[theme] = current_theme_plays.get(theme, 0) + 1
+            update_firebase_data(theme_plays_path, current_theme_plays, db_url)
+
+        return jsonify({
+            "playerRating": new_r_p,
+            "opponentRating": new_r_o,
+            "changePlayer": change_p,
+            "changeOpponent": change_o
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/analytics/anomaly', methods=['POST'])
+def detect_anomaly():
+    """
+    Checks turn history logs for rapid clicks, cheat win rates, or abnormal betting.
+    """
+    try:
+        body = request.json or {}
+        player_id = body.get("playerId")
+        turns = body.get("turns", [])
+        db_url = body.get("dbUrl")
+
+        if not player_id:
+            return jsonify({"error": "Missing playerId"}), 400
+
+        if not turns:
+            return jsonify({"isAnomaly": False, "confidence": 0.0, "flags": []})
+
+        flags = []
+        confidence = 0.0
+
+        # Heuristic 1: Rapid turn times (bot scripts)
+        times = [t.get("timeMs", 0) for t in turns if "timeMs" in t]
+        if times:
+            avg_time = sum(times) / len(times)
+            if avg_time < 350:
+                flags.append(f"Rapid turn times (Average: {avg_time:.0f}ms)")
+                confidence += 0.45
+
+        # Heuristic 2: Abnormal bluff success rate
+        bluff_attempts = [t for t in turns if t.get("isBluff") == True]
+        if len(bluff_attempts) >= 4:
+            caught_count = sum(1 for t in bluff_attempts if t.get("caught") == True)
+            success_rate = (len(bluff_attempts) - caught_count) / len(bluff_attempts)
+            if success_rate > 0.90:
+                flags.append(f"Suspicious bluff success rate ({success_rate * 100:.0f}%)")
+                confidence += 0.40
+
+        # Heuristic 3: Perfect large bet winning correlation
+        large_bets = [t for t in turns if t.get("bet", 25) >= 75]
+        if len(large_bets) >= 4:
+            won_large_bets = sum(1 for t in large_bets if t.get("win") == True)
+            if won_large_bets / len(large_bets) == 1.0:
+                flags.append("Abnormal 100% win rate on high-bet turns")
+                confidence += 0.35
+
+        is_anomaly = confidence >= 0.45
+        confidence = min(1.0, confidence)
+
+        if is_anomaly:
+            # Log anomaly to Firebase
+            timestamp = datetime.datetime.now().isoformat().replace('.', '_')
+            anomaly_log_path = f"anomalies/{player_id}/{timestamp}"
+            anomaly_data = {
+                "flags": flags,
+                "confidence": confidence,
+                "turnsCount": len(turns),
+                "avgTurnTimeMs": sum(times) / len(times) if times else 0
+            }
+            update_firebase_data(anomaly_log_path, anomaly_data, db_url)
+
+        return jsonify({
+            "isAnomaly": bool(is_anomaly),
+            "confidence": round(confidence, 2),
+            "flags": flags
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/analytics/recommend', methods=['POST'])
+def recommend_theme():
+    """
+    Suggests the next game theme card using play preference co-occurrence.
+    """
+    try:
+        body = request.json or {}
+        player_id = body.get("playerId")
+        db_url = body.get("dbUrl")
+
+        if not player_id:
+            return jsonify({"recommendedTheme": "tollywood", "reason": "Default Tollywood recommendation (no player profile)"})
+
+        theme_plays_path = f"playerStats/{player_id}/themePlays"
+        plays = get_firebase_data(theme_plays_path, db_url) or {}
+
+        # Suggest opposite theme (co-occurrence preference)
+        t_count = plays.get("tollywood", 0)
+        b_count = plays.get("bollywood", 0)
+
+        if t_count > b_count:
+            rec = "bollywood"
+            reason = f"Based on your {t_count} games in Tollywood, try Bollywood for Hindi cinema blockbusters!"
+        elif b_count > t_count:
+            rec = "tollywood"
+            reason = f"Based on your {b_count} games in Bollywood, try Tollywood for high-voltage action punch-lines!"
+        else:
+            # Default recommendation alternating randomly or to Tollywood
+            rec = "tollywood" if random.random() < 0.5 else "bollywood"
+            reason = "Recommended cinema deck to kickstart your next card battle!"
+
+        return jsonify({
+            "recommendedTheme": rec,
+            "reason": reason
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/generate-theme', methods=['POST'])
+def generate_custom_theme():
+    """
+    Generates a custom deck of card names and image URLs based on a prompt.
+    Caches custom decks in Firebase under customDecks/{deckId}.
+    """
+    try:
+        body = request.json or {}
+        prompt_text = body.get("prompt", "").strip()
+        db_url = body.get("dbUrl")
+
+        if not prompt_text:
+            return jsonify({"error": "Prompt is required"}), 400
+
+        # Slugify prompt to get a unique deckId
+        import re
+        deck_id = re.sub(r'[^a-z0-9]+', '_', prompt_text.lower()).strip('_')
+        if not deck_id:
+            deck_id = "custom_deck"
+
+        # Check cache in Firebase
+        cache_path = f"customDecks/{deck_id}"
+        cached_deck = get_firebase_data(cache_path, db_url)
+        if cached_deck:
+            print(f"Returning cached custom deck: {deck_id}")
+            return jsonify({
+                "success": True,
+                "deckId": deck_id,
+                "themeName": cached_deck.get("themeName", prompt_text),
+                "cards": cached_deck.get("cards", [])
+            })
+
+        # List of default fallback cards if Gemini fails or is not configured
+        fallback_cards = [
+            {"id": f"{deck_id}_1", "name": f"{prompt_text} Card 1", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=1"},
+            {"id": f"{deck_id}_2", "name": f"{prompt_text} Card 2", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=2"},
+            {"id": f"{deck_id}_3", "name": f"{prompt_text} Card 3", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=3"},
+            {"id": f"{deck_id}_4", "name": f"{prompt_text} Card 4", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=4"},
+            {"id": f"{deck_id}_5", "name": f"{prompt_text} Card 5", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=5"},
+            {"id": f"{deck_id}_6", "name": f"{prompt_text} Card 6", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=6"},
+            {"id": f"{deck_id}_7", "name": f"{prompt_text} Card 7", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=7"},
+            {"id": f"{deck_id}_8", "name": f"{prompt_text} Card 8", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=8"},
+            {"id": f"{deck_id}_9", "name": f"{prompt_text} Card 9", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=9"},
+            {"id": f"{deck_id}_10", "name": f"{prompt_text} Card 10", "industry": prompt_text, "imagePath": f"https://image.pollinations.ai/p/movie_poster_of_{prompt_text}_character_epic_lighting?width=512&height=512&seed=10"}
+        ]
+
+        # Call Gemini client to generate characters list
+        global gemini_client
+        if not gemini_client and os.environ.get("GEMINI_API_KEY"):
+            try:
+                gemini_client = genai.Client()
+            except Exception as e:
+                print(f"Failed lazy init of Gemini client in generate-theme: {e}")
+
+        cards_list = None
+        if gemini_client:
+            sys_instruction = (
+                "You are an expert card game custom theme creator. "
+                "Output ONLY a raw valid JSON array of character cards. Do not wrap in markdown or backticks."
+            )
+            prompt = (
+                f"Generate a list of exactly 10 unique, famous characters/celebrities/icons matching the theme '{prompt_text}'. "
+                f"For each character, return a JSON object with fields:\n"
+                f"- 'name': Full name of the character/celebrity.\n"
+                f"- 'id': Unique slug (e.g. 'iron_man', 'voldemort').\n"
+                f"- 'imagePrompt': A detailed visual generation description (English) to create this character as a premium card portrait with theatrical lighting, epic background, movie poster style. Do not include quotes or backslashes.\n"
+                f"\nEnsure the response is a single JSON array, e.g.:\n"
+                f"[{{\"id\": \"char_id\", \"name\": \"Character Name\", \"imagePrompt\": \"description...\"}}]"
+            )
+            try:
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=sys_instruction,
+                        max_output_tokens=1000,
+                        response_mime_type="application/json"
+                    )
+                )
+                text = response.text.strip()
+                # Clean markdown codeblocks if model didn't follow instruction
+                if text.startswith("```"):
+                    text = re.sub(r'^```(?:json)?\n|```$', '', text, flags=re.MULTILINE).strip()
+                
+                parsed_data = json.loads(text)
+                if isinstance(parsed_data, list) and len(parsed_data) > 0:
+                    cards_list = []
+                    for idx, item in enumerate(parsed_data):
+                        char_id = item.get("id", f"char_{idx}")
+                        unique_id = f"{deck_id}_{char_id}"
+                        name = item.get("name", f"Character {idx+1}")
+                        img_prompt = item.get("imagePrompt", f"movie poster of {name} from {prompt_text}")
+                        import urllib.parse
+                        encoded_prompt = urllib.parse.quote(img_prompt)
+                        image_path = f"https://image.pollinations.ai/p/{encoded_prompt}?width=512&height=512&seed={random.randint(1, 100000)}"
+                        cards_list.append({
+                            "id": unique_id,
+                            "name": name,
+                            "industry": prompt_text,
+                            "imagePath": image_path
+                        })
+            except Exception as gemini_err:
+                print(f"Gemini theme generation failed, falling back: {gemini_err}")
+
+        if not cards_list:
+            cards_list = fallback_cards
+
+        # Content moderation check
+        moderation_keywords = ["nsfw", "naked", "porn", "gore", "kill", "suicide", "murder"]
+        if any(w in prompt_text.lower() for w in moderation_keywords):
+            return jsonify({"error": "Prompt contains moderated keywords"}), 400
+
+        # Save to Firebase database cache
+        new_deck_data = {
+            "deckId": deck_id,
+            "themeName": prompt_text,
+            "cards": cards_list
+        }
+        update_firebase_data(cache_path, new_deck_data, db_url)
+
+        return jsonify({
+            "success": True,
+            "deckId": deck_id,
+            "themeName": prompt_text,
+            "cards": cards_list
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Static file serving
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port, debug=True)
+

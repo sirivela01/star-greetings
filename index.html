@@ -205,6 +205,23 @@
             <h3 class="theme-name">Bollywood</h3>
             <p class="theme-desc">🎥 Bollywood — Hindi cinema icons</p>
           </div>
+
+          <!-- Custom Theme Card -->
+          <div class="theme-card" data-theme="custom" id="custom-theme-card">
+            <span class="theme-icon">🎨</span>
+            <h3 class="theme-name">Custom Theme</h3>
+            <p class="theme-desc">🎨 AI Custom — Generate own custom stars</p>
+          </div>
+        </div>
+
+        <!-- AI Difficulty Selector (Visible only when playing against AI) -->
+        <div id="ai-difficulty-container" class="form-group mt-3" style="display: none; margin-top: 20px; text-align: left;">
+          <label for="ai-difficulty" style="font-weight: 600; color: #fff; margin-bottom: 8px; display: block;">AI Bot Difficulty:</label>
+          <select id="ai-difficulty" class="form-select" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; color: #fff;">
+            <option value="easy">Easy</option>
+            <option value="normal" selected>Normal</option>
+            <option value="hard">Hard</option>
+          </select>
         </div>
 
         <div class="form-actions" style="margin-top: 30px; display: flex; gap: 15px;">
@@ -363,6 +380,7 @@
             <span class="hud-turn-indicator">Turn: <strong id="hud-active-player-name">Player</strong></span>
           </div>
           <div class="hud-actions" style="display: flex; gap: 8px;">
+            <button type="button" id="narrator-toggle-btn" class="btn secondary-btn hud-drawer-btn" title="Toggle AI Narrator">🎙️ Narrator: ON</button>
             <button type="button" id="fullscreen-btn" class="btn secondary-btn hud-drawer-btn" title="Toggle Fullscreen">📺 Fullscreen</button>
             <button type="button" id="drawer-toggle-btn" class="btn secondary-btn hud-drawer-btn">📜 Logs & Standings</button>
           </div>
@@ -492,6 +510,40 @@
       <img id="lightbox-img" src="" style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 12px; box-shadow: 0 0 30px rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.15);" alt="Full Profile Photo">
     </div>
 
+    <!-- BLUFF CHOICE MODAL -->
+    <div id="bluff-choice-modal" class="modal-overlay hidden" style="display: none; z-index: 1015;">
+      <div class="modal-content-box glass-container animate-scale" style="max-width: 400px; text-align: center;">
+        <header class="modal-header">
+          <h2>Select Action</h2>
+        </header>
+        <div class="modal-body" style="padding: 20px 0;">
+          <p style="color: #fff; font-size: 1.05rem; margin-bottom: 15px;">This card does not match the top card of the pot.</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.4;">You can either play it normally (it joins the pot and your turn ends), or bluff by claiming it matches to win the pot!</p>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+          <button type="button" id="bluff-play-normal-btn" class="btn secondary-btn" style="flex: 1; padding: 12px 6px;">Play Normally</button>
+          <button type="button" id="bluff-claim-btn" class="btn primary-btn" style="flex: 1; padding: 12px 6px; background: linear-gradient(135deg, #ec4899, #f43f5e);">Bluff & Claim</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BLUFF CHALLENGE MODAL -->
+    <div id="bluff-challenge-modal" class="modal-overlay hidden" style="display: none; z-index: 1015;">
+      <div class="modal-content-box glass-container animate-scale" style="max-width: 400px; text-align: center;">
+        <header class="modal-header">
+          <h2 id="bluff-challenge-title">Match Claimed!</h2>
+        </header>
+        <div class="modal-body" style="padding: 20px 0;">
+          <p id="bluff-challenge-msg" style="color: #fff; font-size: 1.05rem; margin-bottom: 15px;">Bot Ranbir played a card and claimed a match!</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.4;">Do you suspect a bluff? If you call "Bluff" and they are bluffing, you win. If they are telling the truth, they win the pot.</p>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+          <button type="button" id="bluff-pass-btn" class="btn secondary-btn" style="flex: 1; padding: 12px 6px;">Let it Pass</button>
+          <button type="button" id="bluff-call-btn" class="btn primary-btn" style="flex: 1; padding: 12px 6px; background: linear-gradient(135deg, #e11d48, #be123c);">Call Bluff!</button>
+        </div>
+      </div>
+    </div>
+
     <!-- DATABASE CONFIGURATION MODAL -->
     <div id="db-config-modal" class="modal-overlay hidden" style="display: none;">
       <div class="modal-content-box glass-container animate-scale" style="max-width: 440px;">
@@ -530,6 +582,30 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Custom Theme Prompt Modal -->
+  <div id="custom-theme-modal" class="modal-overlay hidden" style="display: none; z-index: 10000;">
+    <div class="glass-container modal-content-box" style="max-width: 450px; padding: 25px; text-align: center;">
+      <h2 style="color: #fbbf24; margin-bottom: 15px; font-size: 1.5rem; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);">Create Custom Theme</h2>
+      <p style="color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4;">Enter any theme (e.g. Marvel Superheroes, Tollywood Villains, Anime Characters) and let the AI generate unique card greetings with custom artwork!</p>
+      
+      <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+         <label for="custom-theme-prompt" style="color: #fff; font-weight: 600; display: block; margin-bottom: 8px;">Theme Prompt:</label>
+         <input type="text" id="custom-theme-prompt" placeholder="e.g. Avengers Superheroes" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.4); color: #fff; font-size: 1rem;">
+      </div>
+      
+      <!-- Generation Loading Indicator -->
+      <div id="custom-theme-loading" class="hidden" style="margin-bottom: 20px; display: none;">
+         <div class="splash-spinner" style="margin: 0 auto 10px auto;"></div>
+         <p style="color: #fbbf24; font-size: 0.9rem; font-weight: 500;" id="custom-theme-status">Generating deck characters...</p>
+      </div>
+      
+      <div style="display: flex; gap: 15px; margin-top: 10px;">
+         <button type="button" id="generate-theme-btn" class="btn primary-btn" style="flex: 1; padding: 10px;">Generate Deck</button>
+         <button type="button" id="cancel-theme-btn" class="btn secondary-btn" style="flex: 1; padding: 10px; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #f87171;">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- Firebase Compat Libraries -->
