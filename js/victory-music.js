@@ -191,7 +191,12 @@
   }
 
   /* ─── 6. PUBLIC API ─────────────────────────────────────────────────── */
-  window.VictoryMusic = { play: playSong, stop: stopSong };
+  window.VictoryMusic = {
+    play: playSong,
+    stop: stopSong,
+    songs: VICTORY_SONGS,
+    isPlaying: () => !!stopTimer
+  };
 
   /* ─── 7. INJECT TOAST CSS ───────────────────────────────────────────── */
   const style = document.createElement('style');

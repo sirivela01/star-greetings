@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -489,6 +489,16 @@
 
         <div id="final-standings-list" class="standings-table">
           <!-- Standings loaded here -->
+        </div>
+
+        <!-- Victory Song Player Card -->
+        <div id="victory-song-player" class="victory-song-card hidden" style="display: none; margin: 20px 0; padding: 15px; border-radius: 12px; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.2); text-align: center; box-shadow: 0 0 15px rgba(251, 191, 36, 0.05);">
+          <div style="font-size: 0.9rem; color: #fbbf24; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.05em; text-transform: uppercase;">🏆 Winner's Victory Theme 🏆</div>
+          <div id="victory-song-name" style="font-size: 1.15rem; font-weight: 700; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.2);">Song Name</div>
+          <div id="victory-song-meta" style="font-size: 0.85rem; color: #9c89cc; margin-top: 4px; margin-bottom: 12px;">Movie · Star Name</div>
+          <button type="button" id="victory-song-play-btn" class="btn primary-btn" style="background: linear-gradient(135deg, #fbbf24, #d97706); border: none; color: #000; font-weight: 700; padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3); transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+            <span>🔊 Play Victory Song</span>
+          </button>
         </div>
 
         <div class="form-actions">

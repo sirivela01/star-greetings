@@ -1099,6 +1099,8 @@ class MultiplayerManager {
       const hasMatch = lastAction.hasMatch;
       const potBeforePlay = lastAction.potBeforePlay || [];
 
+      window.lastMatchWinningStarId = cardPlayed ? cardPlayed.id : null;
+
       // Run floating card animation
       const originSeatDom = document.querySelector(`.player-seat[data-player-id="${playerIndex}"]`);
       const pileDom = originSeatDom ? originSeatDom.querySelector(".player-seat-stack") : null;

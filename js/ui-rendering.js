@@ -1008,9 +1008,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (outcome.isGameOver) {
-      window.lastMatchWinningStarId = cardToAnimate.id;
-    }
+    window.lastMatchWinningStarId = cardToAnimate.id;
 
     if (!activePlayer.isBot) {
       const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
@@ -1673,6 +1671,70 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       finalStandingsList.appendChild(item);
     });
+
+    // Setup Victory Song Player Card
+    const songPlayerEl = document.getElementById("victory-song-player");
+    const songPlayBtn = document.getElementById("victory-song-play-btn");
+    
+    if (songPlayerEl && songPlayBtn) {
+      const starId = window.lastMatchWinningStarId;
+      const songs = window.VictoryMusic ? window.VictoryMusic.songs : null;
+      const entry = (songs && starId) ? songs[starId] : null;
+      
+      if (entry) {
+        // Resolve star display name
+        const starCfg = (window.STAR_CONFIG && window.STAR_CONFIG.roster)
+          ? window.STAR_CONFIG.roster.find(s => s.id === starId)
+          : null;
+        const starName = starCfg ? starCfg.name : starId.replace(/_/g, ' ');
+        
+        document.getElementById("victory-song-name").textContent = entry.song;
+        document.getElementById("victory-song-meta").textContent = `${entry.movie} · ${starName}`;
+        
+        // Show player card
+        songPlayerEl.style.display = "block";
+        songPlayerEl.classList.remove("hidden");
+        
+        // Update play button text/state
+        const updatePlayBtn = () => {
+          const isPlaying = window.VictoryMusic && window.VictoryMusic.isPlaying && window.VictoryMusic.isPlaying();
+          const btnSpan = songPlayBtn.querySelector("span");
+          if (btnSpan) {
+            btnSpan.textContent = isPlaying ? "⏹️ Stop Victory Song" : "🔊 Play Victory Song";
+          }
+        };
+        
+        updatePlayBtn();
+        
+        // Remove existing listener to prevent double listeners
+        const newBtn = songPlayBtn.cloneNode(true);
+        songPlayBtn.parentNode.replaceChild(newBtn, songPlayBtn);
+        
+        newBtn.addEventListener("click", () => {
+          if (window.VictoryMusic) {
+            const isPlaying = window.VictoryMusic.isPlaying && window.VictoryMusic.isPlaying();
+            if (isPlaying) {
+              window.VictoryMusic.stop();
+            } else {
+              window.VictoryMusic.play(starId);
+            }
+            updatePlayBtn();
+          }
+        });
+        
+        // Poll briefly or listen to changes to reset button when song ends naturally
+        let checkTimer = setInterval(() => {
+          if (!document.getElementById("victory-song-player")) {
+            clearInterval(checkTimer);
+            return;
+          }
+          updatePlayBtn();
+        }, 1000);
+      } else {
+        songPlayerEl.style.display = "none";
+        songPlayerEl.classList.add("hidden");
+      }
+    }
   }
 
   // --- DRAWER TOGGLE CLICKS ---
