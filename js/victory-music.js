@@ -1,20 +1,25 @@
 /**
  * victory-music.js
  * Plays a star's famous movie song (20 sec) via YouTube IFrame API
- * when that star's greeting card wins a round.
+ * when that star's greeting card wins a round or the match.
+ *
+ * FIX: YouTube hidden off-screen players (-9999px) are treated as
+ * background audio by Chrome and are silently blocked.
+ * Solution: player is placed on-screen but fully transparent (opacity:0)
+ * at 1x1px so the browser considers it a foreground player.
  */
 
 (function () {
   'use strict';
 
-  /* ─── 1. STAR → SONG MAP ──────────────────────────────────────────────
-     videoId  : YouTube video ID
+  /* ─── 1. STAR → SONG MAP ─────────────────────────────────────────────
+     videoId  : YouTube video ID (official channel uploads only)
      start    : seconds to seek to (chorus / best part)
-     song     : display name
+     song     : display name shown in the toast
      movie    : movie name
-  ─────────────────────────────────────────────────────────────────────── */
+  ──────────────────────────────────────────────────────────────────────── */
   const VICTORY_SONGS = {
-    // ── TOLLYWOOD ──────────────────────────────────────────────────────
+    // ── TOLLYWOOD ────────────────────────────────────────────────────────
     allu_arjun:         { videoId: 'pnzdyfCKCT0', start: 10,  song: 'Srivalli',            movie: 'Pushpa' },
     prabhas:            { videoId: '4DfuGTfubsI', start: 0,   song: 'Saahore Baahubali',   movie: 'Baahubali 2' },
     mahesh_babu:        { videoId: 'kYJmG2cT9lQ', start: 8,   song: 'Bad Boy',             movie: 'Businessman' },
@@ -31,7 +36,7 @@
     anushka_shetty:     { videoId: 'H_LUgXByY5Q', start: 0,   song: 'Baahubali Theme',     movie: 'Baahubali' },
     shruti_haasan:      { videoId: 'aasrh2GBsmU', start: 0,   song: 'Oh Baby',             movie: 'Oh! Baby' },
 
-    // ── BOLLYWOOD ──────────────────────────────────────────────────────
+    // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'j20Cm2uIUwk', start: 0,   song: 'Chaiyya Chaiyya',     movie: 'Dil Se' },
     ranbir_kapoor:      { videoId: 'yFn2_m4oHOM', start: 0,   song: 'Channa Mereya',       movie: 'Ae Dil Hai Mushkil' },
     ranveer_singh:      { videoId: 'O-AfrHSLVPU', start: 0,   song: 'Malhari',             movie: 'Bajirao Mastani' },
@@ -51,15 +56,16 @@
 
   const PLAY_DURATION_MS = 20000; // 20 seconds
 
-  /* ─── 2. STATE ───────────────────────────────────────────────────────── */
-  let ytPlayer       = null;   // YouTube IFrame player instance
-  let stopTimer      = null;   // clearTimeout handle
-  let toastEl        = null;   // current toast DOM element
-  let apiReady       = false;  // YT API loaded?
-  let playerReady    = false;  // YT player fully ready?
-  let pendingStarId  = null;   // queued play request before API ready
+  /* ─── 2. STATE ──────────────────────────────────────────────────────── */
+  let ytPlayer      = null;   // YouTube IFrame player instance
+  let stopTimer     = null;   // auto-stop handle
+  let toastEl       = null;   // current toast element
+  let apiReady      = false;  // YouTube API script loaded?
+  let playerReady   = false;  // YT.Player onReady fired?
+  let pendingStarId = null;   // queued play request (API not yet ready)
+  let currentStarId = null;   // currently loaded/playing star
 
-  /* ─── 3. LOAD YOUTUBE IFRAME API (once) ──────────────────────────────── */
+  /* ─── 3. LOAD YOUTUBE IFRAME API (once) ─────────────────────────────── */
   function loadYouTubeAPI() {
     if (document.getElementById('yt-iframe-api-script')) return;
     const tag = document.createElement('script');
@@ -68,54 +74,102 @@
     document.head.appendChild(tag);
   }
 
-  // YouTube calls this when API is ready
+  /* YouTube calls this globally when the API script is ready */
   window.onYouTubeIframeAPIReady = function () {
     apiReady = true;
 
-    // Create a hidden player container of standard size, placed far off-screen
-    // to prevent background audio playback blocks on restricted/copyrighted music videos.
-    const container = document.createElement('div');
-    container.id = 'yt-victory-container';
-    Object.assign(container.style, {
-      position: 'fixed',
-      top: '-9999px',
-      left: '-9999px',
-      width: '320px',
-      height: '180px',
+    /*
+     * KEY FIX: The player div must be VISIBLE (in the viewport) even if
+     * invisible to the user. Chrome/Edge block audio from players that are
+     * positioned far off-screen (e.g., top:-9999px). We use opacity:0 and
+     * pointer-events:none on a 1×1px element in the bottom-right corner.
+     */
+    const wrap = document.createElement('div');
+    wrap.id = 'yt-victory-wrap';
+    Object.assign(wrap.style, {
+      position:      'fixed',
+      bottom:        '0',
+      right:         '0',
+      width:         '1px',
+      height:        '1px',
+      opacity:       '0',
       pointerEvents: 'none',
-      zIndex: '-9999'
+      zIndex:        '-1',
+      overflow:      'hidden',
     });
-    document.body.appendChild(container);
 
-    ytPlayer = new YT.Player('yt-victory-container', {
+    const playerDiv = document.createElement('div');
+    playerDiv.id = 'yt-victory-player';
+    wrap.appendChild(playerDiv);
+    document.body.appendChild(wrap);
+
+    ytPlayer = new YT.Player('yt-victory-player', {
       height: '180',
-      width: '320',
+      width:  '320',
       playerVars: {
-        autoplay: 0, controls: 0, disablekb: 1,
-        fs: 0, modestbranding: 1, rel: 0, iv_load_policy: 3,
-        playsinline: 1
+        autoplay:       0,
+        controls:       0,
+        disablekb:      1,
+        fs:             0,
+        modestbranding: 1,
+        rel:            0,
+        iv_load_policy: 3,
+        playsinline:    1,
+        origin:         window.location.origin,
       },
       events: {
-        onReady: () => {
-          playerReady = true;
-          console.log('[VictoryMusic] YouTube Player is ready.');
-          if (pendingStarId) {
-            const id = pendingStarId;
-            pendingStarId = null;
-            playSong(id);
-          }
-        },
-        onError: (e) => {
-          console.warn('[VictoryMusic] YT player error event:', e.data);
-          stopSong();
-        }
-      }
+        onReady: onPlayerReady,
+        onStateChange: onPlayerStateChange,
+        onError: onPlayerError,
+      },
     });
   };
 
-  /* ─── 4. SHOW TOAST NOTIFICATION ────────────────────────────────────── */
-  function showToast(starName, song, movie) {
+  function onPlayerReady() {
+    playerReady = true;
+    console.log('[VictoryMusic] YouTube player ready.');
+    if (pendingStarId) {
+      const id = pendingStarId;
+      pendingStarId = null;
+      playSong(id);
+    }
+  }
+
+  function onPlayerStateChange(event) {
+    /*
+     * YT.PlayerState: UNSTARTED=-1, ENDED=0, PLAYING=1,
+     *                 PAUSED=2, BUFFERING=3, CUED=5
+     *
+     * After loadVideoById() the player transitions to BUFFERING(3) then
+     * PLAYING(1). We call playVideo() on BUFFERING to kick off playback
+     * in case the initial playVideo() call was ignored while loading.
+     */
+    if (event.data === 3 /* BUFFERING */ || event.data === 5 /* CUED */) {
+      try { ytPlayer.playVideo(); } catch (_) {}
+    }
+    if (event.data === 0 /* ENDED */) {
+      stopSong();
+    }
+  }
+
+  function onPlayerError(event) {
+    console.warn('[VictoryMusic] YT error code:', event.data);
+    // Error codes: 2=bad param, 5=HTML5 error, 100=not found,
+    //              101/150=embedding not allowed
+    stopSong(true);
+  }
+
+  /* ─── 4. TOAST NOTIFICATION ─────────────────────────────────────────── */
+  function getStarName(starId) {
+    const cfg = (window.STAR_CONFIG && window.STAR_CONFIG.roster)
+      ? window.STAR_CONFIG.roster.find(s => s.id === starId)
+      : null;
+    return cfg ? cfg.name : starId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  function showToast(starId, song, movie) {
     removeToast();
+    const starName = getStarName(starId);
     toastEl = document.createElement('div');
     toastEl.id = 'victory-music-toast';
     toastEl.innerHTML = `
@@ -131,52 +185,57 @@
     `;
     document.body.appendChild(toastEl);
 
-    // Animate progress bar over 20 s
     requestAnimationFrame(() => {
       const bar = document.getElementById('vmt-progress');
-      if (bar) { bar.style.transition = `width ${PLAY_DURATION_MS}ms linear`; bar.style.width = '100%'; }
+      if (bar) {
+        bar.style.transition = `width ${PLAY_DURATION_MS}ms linear`;
+        bar.style.width = '100%';
+      }
     });
 
-    document.getElementById('vmt-stop-btn').addEventListener('click', stopSong);
+    const stopBtn = document.getElementById('vmt-stop-btn');
+    if (stopBtn) stopBtn.addEventListener('click', () => stopSong());
 
-    // Fade in
     setTimeout(() => toastEl && toastEl.classList.add('vmt-visible'), 50);
   }
 
   function removeToast() {
     if (toastEl) { toastEl.remove(); toastEl = null; }
+    const old = document.getElementById('victory-music-toast');
+    if (old) old.remove();
   }
 
-  /* ─── 5. PLAY / STOP ─────────────────────────────────────────────────── */
+  /* ─── 5. PLAY / STOP ────────────────────────────────────────────────── */
   function playSong(starId) {
     const entry = VICTORY_SONGS[starId];
-    if (!entry) return; // star not in map — silent skip
+    if (!entry) {
+      console.warn('[VictoryMusic] No song mapped for star:', starId);
+      return;
+    }
 
-    // Find star display name from STAR_CONFIG if available
-    const starCfg = (window.STAR_CONFIG && window.STAR_CONFIG.stars)
-      ? window.STAR_CONFIG.stars.find(s => s.id === starId)
-      : null;
-    const starName = starCfg ? starCfg.name : starId.replace(/_/g, ' ');
-
-    // Stop any currently playing song
-    stopSong(/* silent= */ true);
-
-    if (!apiReady || !ytPlayer || !playerReady || typeof ytPlayer.loadVideoById !== 'function') {
-      // API or player not ready yet — queue and ensure API is loading
+    // If API / player not ready yet, queue and ensure API is loading
+    if (!apiReady || !playerReady || !ytPlayer || typeof ytPlayer.loadVideoById !== 'function') {
       pendingStarId = starId;
       loadYouTubeAPI();
       return;
     }
 
+    // Stop whatever is playing
+    stopSong(true /* silent */);
+
+    currentStarId = starId;
+
     try {
-      ytPlayer.loadVideoById({ videoId: entry.videoId, startSeconds: entry.start });
+      // loadVideoById starts buffering; onStateChange will call playVideo()
+      ytPlayer.loadVideoById({ videoId: entry.videoId, startSeconds: entry.start || 0 });
+      // Also call playVideo() immediately — it may work right away
       ytPlayer.playVideo();
     } catch (e) {
-      console.warn('[VictoryMusic] YT player error:', e);
+      console.warn('[VictoryMusic] playback error:', e);
       return;
     }
 
-    showToast(starName, entry.song, entry.movie);
+    showToast(starId, entry.song, entry.movie);
 
     // Auto-stop after 20 s
     stopTimer = setTimeout(() => stopSong(), PLAY_DURATION_MS);
@@ -185,6 +244,7 @@
   function stopSong(silent) {
     if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
     if (!silent) removeToast();
+    currentStarId = null;
     try {
       if (ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
     } catch (_) {}
@@ -192,13 +252,13 @@
 
   /* ─── 6. PUBLIC API ─────────────────────────────────────────────────── */
   window.VictoryMusic = {
-    play: playSong,
-    stop: stopSong,
-    songs: VICTORY_SONGS,
-    isPlaying: () => !!stopTimer
+    play:      playSong,
+    stop:      stopSong,
+    songs:     VICTORY_SONGS,
+    isPlaying: () => !!stopTimer,
   };
 
-  /* ─── 7. INJECT TOAST CSS ───────────────────────────────────────────── */
+  /* ─── 7. TOAST CSS ──────────────────────────────────────────────────── */
   const style = document.createElement('style');
   style.textContent = `
     #victory-music-toast {
@@ -232,7 +292,10 @@
       flex-shrink: 0;
       animation: vmtBounce 0.6s ease infinite alternate;
     }
-    @keyframes vmtBounce { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+    @keyframes vmtBounce {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-4px); }
+    }
     .vmt-text { flex: 1; min-width: 0; }
     .vmt-song {
       font-size: 14px;
@@ -282,7 +345,7 @@
   `;
   document.head.appendChild(style);
 
-  /* ─── 8. INIT ──────────────────────────────────────────────────────── */
+  /* ─── 8. INIT — pre-load the API on page load ───────────────────────── */
   loadYouTubeAPI();
 
 })();
