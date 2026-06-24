@@ -1008,7 +1008,15 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    window.lastMatchWinningStarId = cardToAnimate.id;
+    // 🎵 START VICTORY MUSIC IMMEDIATELY (synchronous — still inside user gesture)
+    // Must be called HERE, not inside setTimeout, or Chrome will block autoplay.
+    if (outcome.hasMatch && outcome.playedCard && outcome.playedCard.id) {
+      if (window.VictoryMusic) {
+        window.VictoryMusic.play(outcome.playedCard.id);
+      }
+      window.lastRoundWinnerStarId = outcome.playedCard.id;
+      window.lastRoundWinnerPlayerIndex = outcome.playerIndex;
+    }
 
     if (!activePlayer.isBot) {
       const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
@@ -1123,13 +1131,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (window.themeSelectMode === "ai_bot") {
           triggerNarratorCommentary("round_win", { player: outcome.playerName, card: outcome.playedCard.name });
         }
-        // 🎵 Victory Music: play the winning star's song for 20 s on round win
-        if (window.VictoryMusic && outcome.playedCard && outcome.playedCard.id) {
-          window.VictoryMusic.play(outcome.playedCard.id);
-          // Track the round winner's last matched star — used for match-end victory song
-          window.lastRoundWinnerStarId = outcome.playedCard.id;
-          window.lastRoundWinnerPlayerIndex = outcome.playerIndex;
-        }
+        // 🎵 Victory Music was already started synchronously above (in user gesture).
+        // No need to call again here — just trigger the win animation.
         triggerWinFlash(outcome);
       } else {
         // Standard turn transition
