@@ -128,6 +128,11 @@
   function onPlayerReady() {
     playerReady = true;
     console.log('[VictoryMusic] YouTube player ready.');
+    // Ensure unmuted at full volume from the start
+    try {
+      ytPlayer.unMute();
+      ytPlayer.setVolume(100);
+    } catch (_) {}
     if (pendingStarId) {
       const id = pendingStarId;
       pendingStarId = null;
@@ -140,12 +145,23 @@
      * YT.PlayerState: UNSTARTED=-1, ENDED=0, PLAYING=1,
      *                 PAUSED=2, BUFFERING=3, CUED=5
      *
-     * After loadVideoById() the player transitions to BUFFERING(3) then
-     * PLAYING(1). We call playVideo() on BUFFERING to kick off playback
-     * in case the initial playVideo() call was ignored while loading.
+     * Chrome allows muted autoplay but blocks unmuted autoplay.
+     * Strategy: let it start muted if needed, then immediately unmute
+     * when it transitions to PLAYING (1) or BUFFERING (3).
      */
     if (event.data === 3 /* BUFFERING */ || event.data === 5 /* CUED */) {
-      try { ytPlayer.playVideo(); } catch (_) {}
+      try {
+        ytPlayer.unMute();
+        ytPlayer.setVolume(100);
+        ytPlayer.playVideo();
+      } catch (_) {}
+    }
+    if (event.data === 1 /* PLAYING */) {
+      // Force unmute the moment playback actually starts
+      try {
+        ytPlayer.unMute();
+        ytPlayer.setVolume(100);
+      } catch (_) {}
     }
     if (event.data === 0 /* ENDED */) {
       stopSong();
@@ -180,6 +196,7 @@
           <div class="vmt-meta">${movie} · ${starName}</div>
           <div class="vmt-bar-wrap"><div class="vmt-bar" id="vmt-progress"></div></div>
         </div>
+        <button class="vmt-unmute hidden" id="vmt-unmute-btn" title="Tap to hear">🔊</button>
         <button class="vmt-stop" id="vmt-stop-btn" title="Stop music">✕</button>
       </div>
     `;
@@ -193,8 +210,43 @@
       }
     });
 
+    // Stop button
     const stopBtn = document.getElementById('vmt-stop-btn');
     if (stopBtn) stopBtn.addEventListener('click', () => stopSong());
+
+    // Unmute button — shown if browser is playing silently
+    const unmuteBtn = document.getElementById('vmt-unmute-btn');
+    if (unmuteBtn) {
+      unmuteBtn.addEventListener('click', () => {
+        try {
+          ytPlayer.unMute();
+          ytPlayer.setVolume(100);
+          // If player was paused/stopped due to mute policy, restart
+          const state = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : -1;
+          if (state !== 1) ytPlayer.playVideo();
+        } catch (_) {}
+        unmuteBtn.classList.add('hidden');
+      });
+    }
+
+    // After 800ms check if the player is muted (browser forced it) — show unmute button
+    setTimeout(() => {
+      try {
+        if (ytPlayer && ytPlayer.isMuted && ytPlayer.isMuted()) {
+          ytPlayer.unMute();
+          ytPlayer.setVolume(100);
+          // If still muted after attempt, show the tap-to-hear button
+          setTimeout(() => {
+            try {
+              if (ytPlayer.isMuted && ytPlayer.isMuted()) {
+                const btn = document.getElementById('vmt-unmute-btn');
+                if (btn) btn.classList.remove('hidden');
+              }
+            } catch (_) {}
+          }, 300);
+        }
+      } catch (_) {}
+    }, 800);
 
     setTimeout(() => toastEl && toastEl.classList.add('vmt-visible'), 50);
   }
@@ -226,9 +278,14 @@
     currentStarId = starId;
 
     try {
-      // loadVideoById starts buffering; onStateChange will call playVideo()
+      // Unmute and set full volume BEFORE loading — browser may have muted it
+      ytPlayer.unMute();
+      ytPlayer.setVolume(100);
+      // loadVideoById starts buffering; onStateChange will call playVideo() + unMute again
       ytPlayer.loadVideoById({ videoId: entry.videoId, startSeconds: entry.start || 0 });
       // Also call playVideo() immediately — it may work right away
+      ytPlayer.unMute();
+      ytPlayer.setVolume(100);
       ytPlayer.playVideo();
     } catch (e) {
       console.warn('[VictoryMusic] playback error:', e);
@@ -342,6 +399,29 @@
       transition: background 0.15s, color 0.15s;
     }
     .vmt-stop:hover { background: rgba(255,80,80,0.25); color: #ff8080; }
+    .vmt-unmute {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      border: none;
+      color: #1a1a2e;
+      padding: 4px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(251,191,36,0.4);
+      animation: vmtPulse 1s ease infinite alternate;
+    }
+    @keyframes vmtPulse {
+      from { box-shadow: 0 2px 8px rgba(251,191,36,0.4); }
+      to   { box-shadow: 0 2px 16px rgba(251,191,36,0.8); }
+    }
+    .vmt-unmute:hover { background: linear-gradient(135deg, #fbbf24, #fcd34d); }
+    .hidden { display: none !important; }
   `;
   document.head.appendChild(style);
 
