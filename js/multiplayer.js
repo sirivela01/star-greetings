@@ -1099,8 +1099,6 @@ class MultiplayerManager {
       const hasMatch = lastAction.hasMatch;
       const potBeforePlay = lastAction.potBeforePlay || [];
 
-      window.lastMatchWinningStarId = cardPlayed ? cardPlayed.id : null;
-
       // Run floating card animation
       const originSeatDom = document.querySelector(`.player-seat[data-player-id="${playerIndex}"]`);
       const pileDom = originSeatDom ? originSeatDom.querySelector(".player-seat-stack") : null;
@@ -1137,15 +1135,15 @@ class MultiplayerManager {
         floatCard.remove();
 
         if (hasMatch) {
-          // Play victory music online
+          // Play victory music for this round win
           if (window.VictoryMusic && cardPlayed && cardPlayed.id) {
             window.VictoryMusic.play(cardPlayed.id);
-          }
-          if (gameState.isGameOver) {
-            window.lastMatchWinningStarId = cardPlayed ? cardPlayed.id : null;
+            // Track the round winner's last matched star for match-end song
+            window.lastRoundWinnerStarId = cardPlayed.id;
+            window.lastRoundWinnerPlayerIndex = playerIndex;
           }
 
-          // Play win sequence
+          // Win sequence outcome
           const outcome = {
             playerIndex: playerIndex,
             playerName: lastAction.playerName,
@@ -1169,7 +1167,6 @@ class MultiplayerManager {
           window.renderScoreboard();
           window.renderLogs();
           if (gameState.isGameOver) {
-            window.lastMatchWinningStarId = cardPlayed ? cardPlayed.id : null;
             this.triggerGameOver();
           }
         }
@@ -1510,12 +1507,9 @@ class MultiplayerManager {
 
     if (window.VictoryMusic) {
       window.VictoryMusic.stop(true);
-      if (window.lastMatchWinningStarId) {
-        setTimeout(() => {
-          if (window.VictoryMusic) window.VictoryMusic.play(window.lastMatchWinningStarId);
-        }, 300);
-      }
     }
+    // Set pending victory star from last round winner for the end screen
+    window._pendingVictoryStar = window.lastRoundWinnerStarId || null;
     
     this.showScreen("end-screen");
   }

@@ -261,19 +261,29 @@ class GameState {
         this.isGameOver = true;
         outcome.gameEnded = true;
         
-        // Find winner (player with 0 greetings)
-        let winner = this.players.find(p => p.stackCount === 0) || this.players[0];
+        // Player with 0 greetings is the LOSER. Winner is the player with the MOST cards.
+        let winner = this.players[0];
+        let maxCards = -1;
+        this.players.forEach(p => {
+          if (p.stackCount > maxCards) {
+            maxCards = p.stackCount;
+            winner = p;
+          }
+        });
+        
+        const loser = this.players.find(p => p.stackCount === 0);
         
         // Award the remaining pot coins to the winner of the match
         if (this.isBetDeductedForCurrentPot) {
-          const activePlayersCount = this.players.filter(p => p.stackCount > 0 || p.id === winner.id).length;
+          const activePlayersCount = this.players.filter(p => p.stackCount > 0).length;
           const winnings = activePlayersCount * this.matchBet;
           winner.coins += winnings;
           this.addLog(`${winner.name} won the final pot of 🪙${winnings} coins!`);
           this.isBetDeductedForCurrentPot = false;
         }
         
-        this.addLog(`Game Over! ${winner.name} has reached 0 greetings and wins the match!`);
+        const loserName = loser ? loser.name : "A player";
+        this.addLog(`Game Over! ${loserName} ran out of greetings. ${winner.name} wins the match!`);
       } else {
         // Turn rotates to next player with cards
         const nextIndex = this.findNextPlayerIndex(this.currentPlayerIndex);
@@ -296,7 +306,7 @@ class GameState {
     return outcome;
   }
 
-  // Get current scoreboard rankings
+  // Get current scoreboard rankings — most cards = highest rank (winner first)
   getScoreboard() {
     return this.players.map(p => ({
       id: p.id,
@@ -304,24 +314,24 @@ class GameState {
       stackCount: p.stackCount,
       coins: p.coins,
       freeStackBuys: p.freeStackBuys
-    })).sort((a, b) => a.stackCount - b.stackCount);
+    })).sort((a, b) => b.stackCount - a.stackCount); // DESCENDING: most cards = winner
   }
 
   // Force end the game and get final standings
   endGame() {
     this.isGameOver = true;
     
-    // Find winner (player with fewest card stackCount)
+    // Find winner — player with the MOST cards wins
     let winner = this.players[0];
-    let minCards = 9999;
+    let maxCards = -1;
     this.players.forEach(p => {
-      if (p.stackCount < minCards) {
-        minCards = p.stackCount;
+      if (p.stackCount > maxCards) {
+        maxCards = p.stackCount;
         winner = p;
       }
     });
     
-    this.addLog(`Game ended by host. ${winner.name} had the fewest cards.`);
+    this.addLog(`Match over! ${winner.name} wins with the most greetings (${maxCards}).`);
     return this.getScoreboard();
   }
 

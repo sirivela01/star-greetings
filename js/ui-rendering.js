@@ -1123,9 +1123,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (window.themeSelectMode === "ai_bot") {
           triggerNarratorCommentary("round_win", { player: outcome.playerName, card: outcome.playedCard.name });
         }
-        // 🎵 Victory Music: play the winning star's song for 20 s
+        // 🎵 Victory Music: play the winning star's song for 20 s on round win
         if (window.VictoryMusic && outcome.playedCard && outcome.playedCard.id) {
           window.VictoryMusic.play(outcome.playedCard.id);
+          // Track the round winner's last matched star — used for match-end victory song
+          window.lastRoundWinnerStarId = outcome.playedCard.id;
+          window.lastRoundWinnerPlayerIndex = outcome.playerIndex;
         }
         triggerWinFlash(outcome);
       } else {
@@ -1536,15 +1539,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Trigger final screen and results
   function triggerGameOver() {
-    // Stop any victory music still playing from the last round and play match winner's song
+    // Stop any round music, then play the MATCH WINNER's last star song
     if (window.VictoryMusic) {
       window.VictoryMusic.stop(true);
-      if (window.lastMatchWinningStarId) {
-        setTimeout(() => {
-          if (window.VictoryMusic) window.VictoryMusic.play(window.lastMatchWinningStarId);
-        }, 300);
-      }
     }
+    // Determine the match winner's last matched star for the victory song
+    // standings[0] = winner (most cards) after our sort fix
+    // We use lastRoundWinnerStarId only if the round winner matches the match winner
+    window._pendingVictoryStar = window.lastRoundWinnerStarId || null;
     cleanupFloatingElements();
     const standings = game.endGame();
     renderFinalStandings(standings);
@@ -1568,9 +1570,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const botPlayer = game.players.find(p => p.isBot) || { name: "Bot Ranbir", stackCount: 30 };
       
       let outcome = "draw";
-      if (humanPlayer.stackCount < botPlayer.stackCount) {
+      // Most cards = winner
+      if (humanPlayer.stackCount > botPlayer.stackCount) {
         outcome = "win";
-      } else if (humanPlayer.stackCount > botPlayer.stackCount) {
+      } else if (humanPlayer.stackCount < botPlayer.stackCount) {
         outcome = "loss";
       }
 
@@ -1672,69 +1675,79 @@ document.addEventListener("DOMContentLoaded", () => {
       finalStandingsList.appendChild(item);
     });
 
-    // Setup Victory Song Player Card
+    // Setup Victory Song Player Card — uses winner's last matched star
     const songPlayerEl = document.getElementById("victory-song-player");
-    const songPlayBtn = document.getElementById("victory-song-play-btn");
-    
+    let songPlayBtn = document.getElementById("victory-song-play-btn");
+
+    // Use the winner's last round-win star card for the victory song
+    const winnerStarId = window._pendingVictoryStar || window.lastRoundWinnerStarId || null;
+
     if (songPlayerEl && songPlayBtn) {
-      const starId = window.lastMatchWinningStarId;
       const songs = window.VictoryMusic ? window.VictoryMusic.songs : null;
-      const entry = (songs && starId) ? songs[starId] : null;
-      
+      const entry = (songs && winnerStarId) ? songs[winnerStarId] : null;
+
       if (entry) {
-        // Resolve star display name
+        // Resolve star display name from config
         const starCfg = (window.STAR_CONFIG && window.STAR_CONFIG.roster)
-          ? window.STAR_CONFIG.roster.find(s => s.id === starId)
+          ? window.STAR_CONFIG.roster.find(s => s.id === winnerStarId)
           : null;
-        const starName = starCfg ? starCfg.name : starId.replace(/_/g, ' ');
-        
+        const starName = starCfg ? starCfg.name : winnerStarId.replace(/_/g, ' ');
+
         document.getElementById("victory-song-name").textContent = entry.song;
         document.getElementById("victory-song-meta").textContent = `${entry.movie} · ${starName}`;
-        
-        // Show player card
+
+        // Show the player card
         songPlayerEl.style.display = "block";
         songPlayerEl.classList.remove("hidden");
-        
-        // Update play button text/state
-        const updatePlayBtn = () => {
-          const isPlaying = window.VictoryMusic && window.VictoryMusic.isPlaying && window.VictoryMusic.isPlaying();
-          const btnSpan = songPlayBtn.querySelector("span");
-          if (btnSpan) {
-            btnSpan.textContent = isPlaying ? "⏹️ Stop Victory Song" : "🔊 Play Victory Song";
-          }
+
+        // Helper to sync button label with playback state
+        const getIsPlaying = () =>
+          !!(window.VictoryMusic && window.VictoryMusic.isPlaying && window.VictoryMusic.isPlaying());
+
+        const refreshBtn = (btn) => {
+          const sp = btn.querySelector("span");
+          if (sp) sp.textContent = getIsPlaying() ? "⏹️ Stop Victory Song" : "🔊 Play Victory Song";
         };
-        
-        updatePlayBtn();
-        
-        // Remove existing listener to prevent double listeners
+
+        refreshBtn(songPlayBtn);
+
+        // Clone to remove stale listeners
         const newBtn = songPlayBtn.cloneNode(true);
         songPlayBtn.parentNode.replaceChild(newBtn, songPlayBtn);
-        
-        newBtn.addEventListener("click", () => {
-          if (window.VictoryMusic) {
-            const isPlaying = window.VictoryMusic.isPlaying && window.VictoryMusic.isPlaying();
-            if (isPlaying) {
-              window.VictoryMusic.stop();
-            } else {
-              window.VictoryMusic.play(starId);
-            }
-            updatePlayBtn();
+        songPlayBtn = newBtn;
+
+        songPlayBtn.addEventListener("click", () => {
+          if (!window.VictoryMusic) return;
+          if (getIsPlaying()) {
+            window.VictoryMusic.stop();
+          } else {
+            window.VictoryMusic.play(winnerStarId);
           }
+          setTimeout(() => refreshBtn(songPlayBtn), 400);
         });
-        
-        // Poll briefly or listen to changes to reset button when song ends naturally
-        let checkTimer = setInterval(() => {
-          if (!document.getElementById("victory-song-player")) {
-            clearInterval(checkTimer);
-            return;
-          }
-          updatePlayBtn();
+
+        // Keep button label in sync while on end screen
+        const syncTimer = setInterval(() => {
+          const btn = document.getElementById("victory-song-play-btn");
+          if (!btn) { clearInterval(syncTimer); return; }
+          refreshBtn(btn);
         }, 1000);
+
+        // Auto-play attempt (works if still within user-gesture chain)
+        setTimeout(() => {
+          if (window.VictoryMusic && !getIsPlaying()) {
+            window.VictoryMusic.play(winnerStarId);
+          }
+        }, 600);
+
       } else {
         songPlayerEl.style.display = "none";
         songPlayerEl.classList.add("hidden");
       }
     }
+
+    // Clear pending star after use
+    window._pendingVictoryStar = null;
   }
 
   // --- DRAWER TOGGLE CLICKS ---
