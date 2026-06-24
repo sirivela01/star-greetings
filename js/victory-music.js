@@ -21,37 +21,37 @@
   const VICTORY_SONGS = {
     // ── TOLLYWOOD ────────────────────────────────────────────────────────
     allu_arjun:         { videoId: 'Q1w226eM6m8', start: 30,  song: 'Srivalli',              movie: 'Pushpa' },
-    prabhas:            { videoId: 'Prot7h5vuMc', start: 15,  song: 'Naatu Naatu',            movie: 'RRR' },
-    mahesh_babu:        { videoId: 'avqnaE-XTYI', start: 0,   song: 'Seeti Maar',             movie: 'DJ Tillu' },
+    prabhas:            { videoId: 'n45s2sVd4z0', start: 30,  song: 'Dhivara',                movie: 'Baahubali' },
+    mahesh_babu:        { videoId: 'ZBDSNy4Yn9Q', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { videoId: '5vsOv_bcnhs', start: 20,  song: 'Chuttamalle',            movie: 'Devara' },
-    ram_charan:         { videoId: 'Prot7h5vuMc', start: 90,  song: 'Naatu Naatu',            movie: 'RRR' },
-    samantha:           { videoId: 'Q1w226eM6m8', start: 60,  song: 'Oo Antava',              movie: 'Pushpa' },
-    rashmika:           { videoId: 'Q1w226eM6m8', start: 0,   song: 'Saami Saami',            movie: 'Pushpa' },
-    vijay_deverakonda:  { videoId: 'BddP6PY9oSk', start: 45,  song: 'Kalaavathi',             movie: 'Sarkaru Vaari Paata' },
-    nani:               { videoId: 'Prot7h5vuMc', start: 45,  song: 'Yedo Yekkado',           movie: 'Jersey' },
-    pooja_hegde:        { videoId: 'BddP6PY9oSk', start: 0,   song: 'Bullet',                 movie: 'Radhe Shyam' },
+    ram_charan:         { videoId: 'OsU0CGZoV8E', start: 30,  song: 'Naatu Naatu',            movie: 'RRR' },
+    samantha:           { videoId: 'Qy9y5uK9J9w', start: 20,  song: 'Oo Antava',              movie: 'Pushpa' },
+    rashmika:           { videoId: 'Q11-0E3lR9s', start: 10,  song: 'Saami Saami',            movie: 'Pushpa' },
+    vijay_deverakonda:  { videoId: 'Vbu44JdN12s', start: 45,  song: 'Kalaavathi',             movie: 'Sarkaru Vaari Paata' },
+    nani:               { videoId: '2E_RRgTPtcU', start: 20,  song: 'Adiga Adiga',            movie: 'Ninnu Kori' },
+    pooja_hegde:        { videoId: 'xY623-2h0vU', start: 30,  song: 'Butta Bomma',            movie: 'Ala Vaikunthapurramuloo' },
     kajal_aggarwal:     { videoId: 'lP467N3oQcM', start: 20,  song: 'Dhinka Chika',           movie: 'Ready' },
-    sai_pallavi:        { videoId: 'Prot7h5vuMc', start: 0,   song: 'Rowdy Baby',             movie: 'Maari 2' },
+    sai_pallavi:        { videoId: 'UI5F5G4tM_M', start: 15,  song: 'Rowdy Baby',             movie: 'Maari 2' },
     keerthy_suresh:     { videoId: '5vsOv_bcnhs', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
-    anushka_shetty:     { videoId: 'Prot7h5vuMc', start: 30,  song: 'Baahubali Theme',        movie: 'Baahubali' },
-    shruti_haasan:      { videoId: 'BddP6PY9oSk', start: 30,  song: 'Oh Baby',                movie: 'Oh! Baby' },
+    anushka_shetty:     { videoId: 'n45s2sVd4z0', start: 0,   song: 'Dhivara',                movie: 'Baahubali' },
+    shruti_haasan:      { videoId: 'vS2h3s-u3zY', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'lP467N3oQcM', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
-    ranbir_kapoor:      { videoId: 'BddP6PY9oSk', start: 60,  song: 'Channa Mereya',          movie: 'Ae Dil Hai Mushkil' },
+    ranbir_kapoor:      { videoId: '2qFFGZEU788', start: 60,  song: 'Channa Mereya',          movie: 'Ae Dil Hai Mushkil' },
     ranveer_singh:      { videoId: 'a6PUh-n0NYg', start: 20,  song: 'Malhari',                movie: 'Bajirao Mastani' },
-    alia_bhatt:         { videoId: 'BddP6PY9oSk', start: 0,   song: 'Kesariya',               movie: 'Brahmastra' },
-    deepika_padukone:   { videoId: 'a6PUh-n0NYg', start: 60,  song: 'Nagada Sang Dhol',       movie: 'Ram-Leela' },
+    alia_bhatt:         { videoId: 'B_9vMRH1n3M', start: 15,  song: 'Kesariya',               movie: 'Brahmastra' },
+    deepika_padukone:   { videoId: 'vK5E_aeBGYA', start: 60,  song: 'Nagada Sang Dhol',       movie: 'Ram-Leela' },
     hrithik_roshan:     { videoId: 'qFkNATtc3mc', start: 30,  song: 'Ghungroo',               movie: 'War' },
-    katrina_kaif:       { videoId: 'lP467N3oQcM', start: 40,  song: 'Chikni Chameli',         movie: 'Agneepath' },
+    katrina_kaif:       { videoId: 'k4yXQkG2s1I', start: 40,  song: 'Kala Chashma',           movie: 'Baar Baar Dekho' },
     priyanka_chopra:    { videoId: 'lP467N3oQcM', start: 60,  song: 'Desi Girl',              movie: 'Dostana' },
-    kareena_kapoor:     { videoId: 'a6PUh-n0NYg', start: 0,   song: 'Fevicol Se',             movie: 'Dabangg 2' },
-    vicky_kaushal:      { videoId: 'qFkNATtc3mc', start: 60,  song: 'Bijlee Bijlee',          movie: 'Uri' },
+    kareena_kapoor:     { videoId: 'u0qO9b4_9n8', start: 10,  song: 'Chammak Challo',         movie: 'Ra.One' },
+    vicky_kaushal:      { videoId: 'LK7-_dgAVQE', start: 30,  song: 'Tauba Tauba',            movie: 'Bad Newz' },
     kiara_advani:       { videoId: 'kY41LShC1YI', start: 30,  song: 'Ranjha',                 movie: 'Shershaah' },
     ayushmann_khurrana: { videoId: 'kY41LShC1YI', start: 0,   song: 'Bala',                   movie: 'Bala' },
     shraddha_kapoor:    { videoId: 'kY41LShC1YI', start: 60,  song: 'Galliyan',               movie: 'Ek Villain' },
     rajkummar_rao:      { videoId: 'lP467N3oQcM', start: 80,  song: 'Aao Kabhi Haveli Pe',    movie: 'Stree' },
-    kriti_sanon:        { videoId: 'kY41LShC1YI', start: 90,  song: 'Mimi Title Track',       movie: 'Mimi' },
+    kriti_sanon:        { videoId: 'r6gM5yD-VqQ', start: 30,  song: 'Param Sundari',          movie: 'Mimi' },
   };
 
   const PLAY_DURATION_MS = 20000; // 20 seconds
@@ -79,44 +79,41 @@
     apiReady = true;
 
     /*
-     * KEY FIX: The player div must be VISIBLE (in the viewport) even if
-     * invisible to the user. Chrome/Edge block audio from players that are
-     * positioned far off-screen (e.g., top:-9999px). We use opacity:0 and
-     * pointer-events:none on a 1×1px element in the bottom-right corner.
+     * KEY FIX: The player iframe must be VISIBLE (in the viewport) and not have 
+     * zero dimensions/opacity:0, otherwise Chrome/Edge will block audio output 
+     * completely. We set width:320px, height:180px, opacity:0.01 (virtually invisible)
+     * and zIndex:9999 with pointer-events:none so it is click-through.
+     * We also explicitly set the allow="autoplay; encrypted-media" attribute.
      */
     const wrap = document.createElement('div');
     wrap.id = 'yt-victory-wrap';
     Object.assign(wrap.style, {
       position:      'fixed',
-      bottom:        '0',
-      right:         '0',
-      width:         '1px',
-      height:        '1px',
-      opacity:       '0',
+      bottom:        '10px',
+      right:         '10px',
+      width:         '320px',
+      height:        '180px',
+      opacity:       '0.01',
       pointerEvents: 'none',
-      zIndex:        '-1',
+      zIndex:        '9999',
       overflow:      'hidden',
     });
 
-    const playerDiv = document.createElement('div');
-    playerDiv.id = 'yt-victory-player';
-    wrap.appendChild(playerDiv);
+    // Create the iframe element directly with autoplay permission delegated
+    const playerIframe = document.createElement('iframe');
+    playerIframe.id = 'yt-victory-player';
+    playerIframe.width = '320';
+    playerIframe.height = '180';
+    playerIframe.setAttribute('allow', 'autoplay; encrypted-media');
+    
+    // Initialize with first song's videoId to establish proper API channel
+    const initialId = VICTORY_SONGS.allu_arjun.videoId;
+    playerIframe.src = `https://www.youtube.com/embed/${initialId}?enablejsapi=1&autoplay=0&controls=0&playsinline=1&origin=${encodeURIComponent(window.location.origin)}`;
+
+    wrap.appendChild(playerIframe);
     document.body.appendChild(wrap);
 
     ytPlayer = new YT.Player('yt-victory-player', {
-      height: '180',
-      width:  '320',
-      playerVars: {
-        autoplay:       0,
-        controls:       0,
-        disablekb:      1,
-        fs:             0,
-        modestbranding: 1,
-        rel:            0,
-        iv_load_policy: 3,
-        playsinline:    1,
-        origin:         window.location.origin,
-      },
       events: {
         onReady: onPlayerReady,
         onStateChange: onPlayerStateChange,
@@ -128,6 +125,13 @@
   function onPlayerReady() {
     playerReady = true;
     console.log('[VictoryMusic] YouTube player ready.');
+    // Double check that the iframe has the allow attribute
+    try {
+      const iframe = document.getElementById('yt-victory-player');
+      if (iframe) {
+        iframe.setAttribute('allow', 'autoplay; encrypted-media');
+      }
+    } catch (_) {}
     // Ensure unmuted at full volume from the start
     try {
       ytPlayer.unMute();
@@ -172,7 +176,35 @@
     console.warn('[VictoryMusic] YT error code:', event.data);
     // Error codes: 2=bad param, 5=HTML5 error, 100=not found,
     //              101/150=embedding not allowed
-    stopSong(true);
+    const entry = currentStarId ? VICTORY_SONGS[currentStarId] : null;
+    if (entry && (event.data === 101 || event.data === 150)) {
+      showEmbedBlockedWarning(entry);
+    } else {
+      stopSong(false); // remove toast completely for other errors
+    }
+  }
+
+  function showEmbedBlockedWarning(entry) {
+    if (toastEl) {
+      const textEl = toastEl.querySelector('.vmt-text');
+      if (textEl) {
+        const starName = getStarName(currentStarId);
+        textEl.innerHTML = `
+          <div class="vmt-song" style="color: #f87171;">⚠️ Embed Restricted</div>
+          <div class="vmt-meta" style="color: #fca5a5;">Tap below to hear on YouTube:</div>
+          <a href="https://www.youtube.com/watch?v=${entry.videoId}" target="_blank" class="vmt-yt-link" style="color: #fbbf24; text-decoration: underline; font-size: 11px; font-weight: 700; margin-top: 4px; display: inline-block;">Open YouTube ↗</a>
+        `;
+      }
+      if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+      const bar = document.getElementById('vmt-progress');
+      if (bar) {
+        bar.style.transition = 'none';
+        bar.style.width = '100%';
+        bar.style.background = '#f87171';
+      }
+      const unmuteBtn = document.getElementById('vmt-unmute-btn');
+      if (unmuteBtn) unmuteBtn.classList.add('hidden');
+    }
   }
 
   /* ─── 4. TOAST NOTIFICATION ─────────────────────────────────────────── */
@@ -196,7 +228,7 @@
           <div class="vmt-meta">${movie} · ${starName}</div>
           <div class="vmt-bar-wrap"><div class="vmt-bar" id="vmt-progress"></div></div>
         </div>
-        <button class="vmt-unmute hidden" id="vmt-unmute-btn" title="Tap to hear">🔊</button>
+        <button class="vmt-unmute" id="vmt-unmute-btn" title="Tap to hear">🔊 Unmute</button>
         <button class="vmt-stop" id="vmt-stop-btn" title="Stop music">✕</button>
       </div>
     `;
@@ -227,26 +259,13 @@
         } catch (_) {}
         unmuteBtn.classList.add('hidden');
       });
-    }
 
-    // After 800ms check if the player is muted (browser forced it) — show unmute button
-    setTimeout(() => {
-      try {
-        if (ytPlayer && ytPlayer.isMuted && ytPlayer.isMuted()) {
-          ytPlayer.unMute();
-          ytPlayer.setVolume(100);
-          // If still muted after attempt, show the tap-to-hear button
-          setTimeout(() => {
-            try {
-              if (ytPlayer.isMuted && ytPlayer.isMuted()) {
-                const btn = document.getElementById('vmt-unmute-btn');
-                if (btn) btn.classList.remove('hidden');
-              }
-            } catch (_) {}
-          }, 300);
-        }
-      } catch (_) {}
-    }, 800);
+      // Auto-hide the unmute button after 5 seconds to keep the UI clean
+      setTimeout(() => {
+        const btn = document.getElementById('vmt-unmute-btn');
+        if (btn) btn.classList.add('hidden');
+      }, 5000);
+    }
 
     setTimeout(() => toastEl && toastEl.classList.add('vmt-visible'), 50);
   }
