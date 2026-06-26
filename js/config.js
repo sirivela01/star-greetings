@@ -28,6 +28,8 @@ const STAR_CONFIG = {
     { id: "kajal_aggarwal", name: "Kajal Aggarwal", industry: "Tollywood", imagePath: "assets/stars/kajal_aggarwal.png" },
     { id: "sai_pallavi", name: "Sai Pallavi", industry: "Tollywood", imagePath: "assets/stars/sai_pallavi.png" },
     { id: "shruti_haasan", name: "Shruti Haasan", industry: "Tollywood", imagePath: "assets/stars/shruti_haasan.png" },
+    { id: "pawan_kalyan", name: "Pawan Kalyan", industry: "Tollywood", imagePath: "assets/stars/pawan_kalyan.png" },
+    { id: "chiranjeevi", name: "Chiranjeevi", industry: "Tollywood", imagePath: "assets/stars/chiranjeevi.png" },
 
     // --- BOLLYWOOD (15 Stars) ---
     { id: "ranbir_kapoor", name: "Ranbir Kapoor", industry: "Bollywood", imagePath: "assets/stars/ranbir_kapoor.png" },

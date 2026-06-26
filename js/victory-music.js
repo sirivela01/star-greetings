@@ -35,6 +35,8 @@
     keerthy_suresh:     { videoId: 'U5D3LSwAmZY', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
     anushka_shetty:     { videoId: 'pTdwbwoERSA', start: 20,  song: 'Darlingey',              movie: 'Mirchi' },
     shruti_haasan:      { videoId: 'kYJ6_g9pG9s', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
+    pawan_kalyan:       { videoId: 'ePOglweqy7o', start: 0,   song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
+    chiranjeevi:        { videoId: '6nH0YFbiRGA', start: 0,   song: 'Veera Shankar Reddy (Dialogue)', movie: 'Indra' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
