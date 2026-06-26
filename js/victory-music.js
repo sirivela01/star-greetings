@@ -33,7 +33,7 @@
     kajal_aggarwal:     { videoId: 'nXXhCz4fD78', start: 20,  song: 'Dhinka Chika',           movie: 'Ready' },
     sai_pallavi:        { videoId: '3nauk_scj9U', start: 15,  song: 'Rowdy Baby',             movie: 'Maari 2' },
     keerthy_suresh:     { videoId: 'U5D3LSwAmZY', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
-    anushka_shetty:     { videoId: 'ql-cPskAthI', start: 0,   song: 'Dhivara',                movie: 'Baahubali' },
+    anushka_shetty:     { videoId: 'pTdwbwoERSA', start: 20,  song: 'Darlingey',              movie: 'Mirchi' },
     shruti_haasan:      { videoId: 'aKzsXx3LcgU', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
