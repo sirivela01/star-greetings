@@ -37,6 +37,9 @@
     shruti_haasan:      { videoId: 'kYJ6_g9pG9s', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
     pawan_kalyan:       { videoId: 'ePOglweqy7o', start: 0,   song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
     chiranjeevi:        { videoId: '6nH0YFbiRGA', start: 0,   song: 'Veera Shankar Reddy (Dialogue)', movie: 'Indra' },
+    nagarjuna:          { videoId: '9pZENHoY4rc', start: 0,   song: 'Dhada Puttistha (Dialogue & Theme)', movie: 'Don' },
+    balakrishna:        { videoId: 'mq4SjYgZevo', start: 0,   song: 'Mass Warning (Dialogue)', movie: 'Legend' },
+    manchu_manoj:       { videoId: 'sWPMVO40GLs', start: 5,   song: 'Pilla O Pilla', movie: 'Current Theega' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
