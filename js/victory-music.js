@@ -168,7 +168,18 @@
       } catch (_) {}
     }
     if (event.data === 0 /* ENDED */) {
-      stopSong();
+      // Loop the dialogue/song if the 20-second victory timer is still running
+      if (stopTimer) {
+        try {
+          const entry = currentStarId ? VICTORY_SONGS[currentStarId] : null;
+          ytPlayer.seekTo(entry ? entry.start || 0 : 0);
+          ytPlayer.playVideo();
+        } catch (_) {
+          stopSong();
+        }
+      } else {
+        stopSong();
+      }
     }
   }
 
