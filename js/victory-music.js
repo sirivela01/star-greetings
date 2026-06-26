@@ -27,7 +27,7 @@
     ram_charan:         { videoId: 'pBVtSwb5G7M', start: 30,  song: 'Naatu Naatu',            movie: 'RRR' },
     samantha:           { videoId: 'u6BoyOceiPE', start: 20,  song: 'Oo Antava',              movie: 'Pushpa' },
     rashmika:           { videoId: 'C70GJYVoZ4Y', start: 10,  song: 'Saami Saami',            movie: 'Pushpa' },
-    vijay_deverakonda:  { videoId: '82JAEZRIPn0', start: 45,  song: 'Kalaavathi',             movie: 'Sarkaru Vaari Paata' },
+    vijay_deverakonda:  { videoId: '07VG8EVgtac', start: 10,  song: 'Telisiney Na Nuvvey',    movie: 'Arjun Reddy' },
     nani:               { videoId: 'PHUL7tQG0p0', start: 20,  song: 'Adiga Adiga',            movie: 'Ninnu Kori' },
     pooja_hegde:        { videoId: 'EsLmVQKiEv0', start: 30,  song: 'Butta Bomma',            movie: 'Ala Vaikunthapurramuloo' },
     kajal_aggarwal:     { videoId: 'nXXhCz4fD78', start: 20,  song: 'Dhinka Chika',           movie: 'Ready' },
@@ -153,7 +153,7 @@
      * Strategy: let it start muted if needed, then immediately unmute
      * when it transitions to PLAYING (1) or BUFFERING (3).
      */
-    if (event.data === 3 /* BUFFERING */ || event.data === 5 /* CUED */) {
+    if (event.data === 3 /* BUFFERING */) {
       try {
         ytPlayer.unMute();
         ytPlayer.setVolume(100);
