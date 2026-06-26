@@ -66,6 +66,8 @@
   let playerReady   = false;  // YT.Player onReady fired?
   let pendingStarId = null;   // queued play request (API not yet ready)
   let currentStarId = null;   // currently loaded/playing star
+  let audioUnlocked = false;
+  const isMobile    = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   /* ─── 3. LOAD YOUTUBE IFRAME API (once) ─────────────────────────────── */
   function loadYouTubeAPI() {
@@ -110,7 +112,7 @@
     
     // Initialize with first song's videoId to establish proper API channel
     const initialId = VICTORY_SONGS.allu_arjun.videoId;
-    playerIframe.src = `https://www.youtube.com/embed/${initialId}?enablejsapi=1&autoplay=0&controls=0&playsinline=1&origin=${encodeURIComponent(window.location.origin)}`;
+    playerIframe.src = `https://www.youtube.com/embed/${initialId}?enablejsapi=1&autoplay=0&controls=0&playsinline=1&mute=1&origin=${encodeURIComponent(window.location.origin)}`;
 
     wrap.appendChild(playerIframe);
     document.body.appendChild(wrap);
@@ -228,11 +230,19 @@
     return cfg ? cfg.name : starId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
-  function showToast(starId, song, movie) {
+  function showToast(starId, song, movie, showPlayButton = false) {
     removeToast();
     const starName = getStarName(starId);
     toastEl = document.createElement('div');
     toastEl.id = 'victory-music-toast';
+    
+    let actionBtnHtml = '';
+    if (showPlayButton) {
+      actionBtnHtml = `<button class="vmt-play-btn" id="vmt-play-btn">▶ TAP TO PLAY</button>`;
+    } else {
+      actionBtnHtml = `<button class="vmt-unmute" id="vmt-unmute-btn" title="Tap to hear">🔊 Unmute</button>`;
+    }
+
     toastEl.innerHTML = `
       <div class="vmt-inner">
         <span class="vmt-icon">🎵</span>
@@ -241,7 +251,7 @@
           <div class="vmt-meta">${movie} · ${starName}</div>
           <div class="vmt-bar-wrap"><div class="vmt-bar" id="vmt-progress"></div></div>
         </div>
-        <button class="vmt-unmute" id="vmt-unmute-btn" title="Tap to hear">🔊 Unmute</button>
+        ${actionBtnHtml}
         <button class="vmt-stop" id="vmt-stop-btn" title="Stop music">✕</button>
       </div>
     `;
@@ -258,6 +268,28 @@
     // Stop button
     const stopBtn = document.getElementById('vmt-stop-btn');
     if (stopBtn) stopBtn.addEventListener('click', () => stopSong());
+
+    // Play button (mobile unlock)
+    const playBtn = document.getElementById('vmt-play-btn');
+    if (playBtn) {
+      playBtn.addEventListener('click', () => {
+        const entry = VICTORY_SONGS[currentStarId];
+        if (entry && ytPlayer) {
+          try {
+            audioUnlocked = true; // Mark as unlocked
+            ytPlayer.unMute();
+            ytPlayer.setVolume(100);
+            ytPlayer.loadVideoById({ videoId: entry.videoId, startSeconds: entry.start || 0 });
+            ytPlayer.unMute();
+            ytPlayer.setVolume(100);
+            ytPlayer.playVideo();
+          } catch (e) {
+            console.error('[VictoryMusic] Manual play error:', e);
+          }
+        }
+        playBtn.remove();
+      });
+    }
 
     // Unmute button — shown if browser is playing silently
     const unmuteBtn = document.getElementById('vmt-unmute-btn');
@@ -309,22 +341,28 @@
 
     currentStarId = starId;
 
-    try {
-      // Unmute and set full volume BEFORE loading — browser may have muted it
-      ytPlayer.unMute();
-      ytPlayer.setVolume(100);
-      // loadVideoById starts buffering; onStateChange will call playVideo() + unMute again
-      ytPlayer.loadVideoById({ videoId: entry.videoId, startSeconds: entry.start || 0 });
-      // Also call playVideo() immediately — it may work right away
-      ytPlayer.unMute();
-      ytPlayer.setVolume(100);
-      ytPlayer.playVideo();
-    } catch (e) {
-      console.warn('[VictoryMusic] playback error:', e);
-      return;
+    let shouldAutoPlay = true;
+    if (isMobile && !audioUnlocked) {
+      shouldAutoPlay = false;
     }
 
-    showToast(starId, entry.song, entry.movie);
+    if (shouldAutoPlay) {
+      try {
+        // Unmute and set full volume BEFORE loading — browser may have muted it
+        ytPlayer.unMute();
+        ytPlayer.setVolume(100);
+        // loadVideoById starts buffering; onStateChange will call playVideo() + unMute again
+        ytPlayer.loadVideoById({ videoId: entry.videoId, startSeconds: entry.start || 0 });
+        // Also call playVideo() immediately — it may work right away
+        ytPlayer.unMute();
+        ytPlayer.setVolume(100);
+        ytPlayer.playVideo();
+      } catch (e) {
+        console.warn('[VictoryMusic] playback error:', e);
+      }
+    }
+
+    showToast(starId, entry.song, entry.movie, !shouldAutoPlay);
 
     // Auto-stop after 20 s
     stopTimer = setTimeout(() => stopSong(), PLAY_DURATION_MS);
@@ -453,11 +491,55 @@
       to   { box-shadow: 0 2px 16px rgba(251,191,36,0.8); }
     }
     .vmt-unmute:hover { background: linear-gradient(135deg, #fbbf24, #fcd34d); }
+    .vmt-play-btn {
+      background: linear-gradient(135deg, #10b981, #34d399);
+      border: none;
+      color: #1a1a2e;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(16,185,129,0.4);
+      animation: vmtPulseGreen 1s ease infinite alternate;
+    }
+    @keyframes vmtPulseGreen {
+      from { box-shadow: 0 2px 8px rgba(16,185,129,0.4); }
+      to   { box-shadow: 0 2px 16px rgba(16,185,129,0.8); }
+    }
+    .vmt-play-btn:hover { background: linear-gradient(135deg, #34d399, #6ee7b7); }
     .hidden { display: none !important; }
   `;
   document.head.appendChild(style);
 
   /* ─── 8. INIT — pre-load the API on page load ───────────────────────── */
   loadYouTubeAPI();
+
+  /* ─── 9. AUDIO UNLOCK FOR MOBILE ────────────────────────────────────── */
+  function unlockAudio() {
+    if (audioUnlocked || !ytPlayer || typeof ytPlayer.playVideo !== 'function') return;
+    try {
+      ytPlayer.mute();
+      ytPlayer.playVideo();
+      setTimeout(() => {
+        try {
+          ytPlayer.pauseVideo();
+          ytPlayer.unMute();
+          ytPlayer.setVolume(100);
+          audioUnlocked = true;
+          console.log('[VictoryMusic] Audio context unlocked.');
+        } catch (_) {}
+      }, 200);
+    } catch (_) {}
+    document.removeEventListener('touchend', unlockAudio);
+    document.removeEventListener('click', unlockAudio);
+  }
+  document.addEventListener('touchend', unlockAudio, { passive: true });
+  document.addEventListener('click', unlockAudio, { passive: true });
 
 })();
