@@ -34,7 +34,7 @@
     sai_pallavi:        { videoId: '3nauk_scj9U', start: 15,  song: 'Rowdy Baby',             movie: 'Maari 2' },
     keerthy_suresh:     { videoId: 'U5D3LSwAmZY', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
     anushka_shetty:     { videoId: 'pTdwbwoERSA', start: 20,  song: 'Darlingey',              movie: 'Mirchi' },
-    shruti_haasan:      { videoId: 'aKzsXx3LcgU', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
+    shruti_haasan:      { videoId: '4lZeiG5uLvY', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
