@@ -20,14 +20,14 @@
   ──────────────────────────────────────────────────────────────────────── */
   const VICTORY_SONGS = {
     // ── TOLLYWOOD ────────────────────────────────────────────────────────
-    allu_arjun:         { videoId: 'v2IGNN7CA4M', start: 30,  song: 'Srivalli',              movie: 'Pushpa' },
+    allu_arjun:         { videoId: '09gyurxkX6A', start: 0,   song: 'Thaggede Le (Dialogue)', movie: 'Pushpa' },
     prabhas:            { videoId: 'IBlnvjem8jI', start: 0,   song: 'Please... I Request (Dialogue)', movie: 'Salaar' },
     mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { videoId: 'zcMJ9TzACNY', start: 20,  song: 'Chuttamalle',            movie: 'Devara' },
-    ram_charan:         { videoId: 'pBVtSwb5G7M', start: 30,  song: 'Naatu Naatu',            movie: 'RRR' },
+    ram_charan:         { videoId: 'bO9Y3ArFnYA', start: 0,   song: 'Cricketer To Wrestler (Dialogue)', movie: 'Peddi' },
     samantha:           { videoId: 'u6BoyOceiPE', start: 20,  song: 'Oo Antava',              movie: 'Pushpa' },
     rashmika:           { videoId: 'C70GJYVoZ4Y', start: 10,  song: 'Saami Saami',            movie: 'Pushpa' },
-    vijay_deverakonda:  { videoId: '07VG8EVgtac', start: 10,  song: 'Telisiney Na Nuvvey',    movie: 'Arjun Reddy' },
+    vijay_deverakonda:  { videoId: '8IyDUalEhrw', start: 5,   song: 'Angry Mass BGM',         movie: 'Arjun Reddy' },
     nani:               { videoId: 'PHUL7tQG0p0', start: 20,  song: 'Adiga Adiga',            movie: 'Ninnu Kori' },
     pooja_hegde:        { videoId: 'EsLmVQKiEv0', start: 30,  song: 'Butta Bomma',            movie: 'Ala Vaikunthapurramuloo' },
     kajal_aggarwal:     { videoId: 'nXXhCz4fD78', start: 20,  song: 'Dhinka Chika',           movie: 'Ready' },
