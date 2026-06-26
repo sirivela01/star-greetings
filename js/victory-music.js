@@ -21,7 +21,7 @@
   const VICTORY_SONGS = {
     // ── TOLLYWOOD ────────────────────────────────────────────────────────
     allu_arjun:         { videoId: 'v2IGNN7CA4M', start: 30,  song: 'Srivalli',              movie: 'Pushpa' },
-    prabhas:            { videoId: 'ql-cPskAthI', start: 30,  song: 'Dhivara',                movie: 'Baahubali' },
+    prabhas:            { videoId: 'rrXvdEMHVXc', start: 30,  song: 'Sooreede',               movie: 'Salaar' },
     mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { videoId: 'zcMJ9TzACNY', start: 20,  song: 'Chuttamalle',            movie: 'Devara' },
     ram_charan:         { videoId: 'pBVtSwb5G7M', start: 30,  song: 'Naatu Naatu',            movie: 'RRR' },
