@@ -7,6 +7,7 @@ class CardInstance {
     this.name = starData.name;
     this.industry = starData.industry;
     this.imagePath = starData.imagePath;
+    this.movie = starData.movie || "";
     this.instanceId = instanceId; // Unique ID to identify this specific card instance
     this.playedBy = null; // Track who played this card in the pot
   }

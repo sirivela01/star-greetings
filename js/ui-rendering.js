@@ -360,6 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="card-info">
           <h3 class="card-name">${card.name}</h3>
+          <div class="card-movie-name">${card.movie || ""}</div>
         </div>
       </div>
     `;
