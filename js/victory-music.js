@@ -44,6 +44,8 @@
     baahubali:          { videoId: 'uqHn-TCiJcc', start: 0,   song: 'Oath Ceremony (Dialogue)', movie: 'Baahubali 2' },
     venkatesh:          { videoId: 'riLlxPSzAWc', start: 0,   song: 'Sound Thagginchu (Dialogue)', movie: 'Tulasi' },
     rangasthalam:       { videoId: '_C1THMQ36Yk', start: 0,   song: 'Sound Engineer (Dialogue)', movie: 'Rangasthalam' },
+    race_gurram:        { videoId: 'gTL7JR0oN7o', start: 0,   song: 'Stylish Warning (Dialogue)', movie: 'Race Gurram' },
+    gabbar_singh:       { videoId: '48Ki6Gahlvs', start: 0,   song: 'Thikkundi Lekkundi (Dialogue)', movie: 'Gabbar Singh' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
