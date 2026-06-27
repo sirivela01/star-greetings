@@ -43,6 +43,7 @@
     gopichand:          { videoId: 'k5_173M8r1I', start: 10,  song: 'Rules Writer (Dialogue)', movie: 'Andhrudu' },
     baahubali:          { videoId: 'uqHn-TCiJcc', start: 0,   song: 'Oath Ceremony (Dialogue)', movie: 'Baahubali 2' },
     venkatesh:          { videoId: 'riLlxPSzAWc', start: 0,   song: 'Sound Thagginchu (Dialogue)', movie: 'Tulasi' },
+    rangasthalam:       { videoId: '_C1THMQ36Yk', start: 0,   song: 'Sound Engineer (Dialogue)', movie: 'Rangasthalam' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },

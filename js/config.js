@@ -36,6 +36,7 @@ const STAR_CONFIG = {
     { id: "gopichand", name: "Gopichand", industry: "Tollywood", imagePath: "assets/stars/gopichand.png" },
     { id: "baahubali", name: "Baahubali", industry: "Tollywood", imagePath: "assets/stars/baahubali.png" },
     { id: "venkatesh", name: "Venkatesh", industry: "Tollywood", imagePath: "assets/stars/venkatesh.png" },
+    { id: "rangasthalam", name: "Chitti Babu (Rangasthalam)", industry: "Tollywood", imagePath: "assets/stars/rangasthalam.png" },
 
     // --- BOLLYWOOD (15 Stars) ---
     { id: "ranbir_kapoor", name: "Ranbir Kapoor", industry: "Bollywood", imagePath: "assets/stars/ranbir_kapoor.png" },
