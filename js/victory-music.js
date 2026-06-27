@@ -45,7 +45,7 @@
     venkatesh:          { videoId: 'riLlxPSzAWc', start: 0,   song: 'Sound Thagginchu (Dialogue)', movie: 'Tulasi' },
     rangasthalam:       { videoId: '_C1THMQ36Yk', start: 0,   song: 'Sound Engineer (Dialogue)', movie: 'Rangasthalam' },
     race_gurram:        { videoId: 'jbLmIef84V8', start: 0,   song: 'Powerful Warning (Dialogue)', movie: 'Race Gurram' },
-    gabbar_singh:       { videoId: '48Ki6Gahlvs', start: 0,   song: 'Thikkundi Lekkundi (Dialogue)', movie: 'Gabbar Singh' },
+    gabbar_singh:       { videoId: 'uAXpRqU6sFo', start: 0,   song: 'Cutout Warning (Dialogue)', movie: 'Gabbar Singh' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
