@@ -24,7 +24,7 @@
     prabhas:            { videoId: 'IBlnvjem8jI', start: 0,   song: 'Please... I Request (Dialogue)', movie: 'Salaar' },
     mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { videoId: 'y75QtkYiAwU', start: 0,   song: 'Fear Dialogue',          movie: 'Devara' },
-    ram_charan:         { videoId: 'bO9Y3ArFnYA', start: 0,   song: 'Cricketer To Wrestler (Dialogue)', movie: 'Peddi' },
+    ram_charan:         { videoId: 'VKIHgW5MAhQ', start: 0,   song: 'Six Sixers (Dialogue)', movie: 'Peddi' },
     samantha:           { videoId: 'u6BoyOceiPE', start: 20,  song: 'Oo Antava',              movie: 'Pushpa' },
     rashmika:           { videoId: 'C70GJYVoZ4Y', start: 10,  song: 'Saami Saami',            movie: 'Pushpa' },
     vijay_deverakonda:  { videoId: '8IyDUalEhrw', start: 5,   song: 'Angry Mass BGM',         movie: 'Arjun Reddy' },
