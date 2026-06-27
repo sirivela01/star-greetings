@@ -42,6 +42,7 @@
     manchu_manoj:       { videoId: 'sWPMVO40GLs', start: 5,   song: 'Pilla O Pilla', movie: 'Current Theega' },
     gopichand:          { videoId: 'k5_173M8r1I', start: 10,  song: 'Rules Writer (Dialogue)', movie: 'Andhrudu' },
     baahubali:          { videoId: 'uqHn-TCiJcc', start: 0,   song: 'Oath Ceremony (Dialogue)', movie: 'Baahubali 2' },
+    venkatesh:          { videoId: 'riLlxPSzAWc', start: 0,   song: 'Sound Thagginchu (Dialogue)', movie: 'Tulasi' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
