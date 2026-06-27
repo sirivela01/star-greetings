@@ -196,8 +196,15 @@ class GameState {
     // Assign played by owner index
     cardToPlay.playedBy = this.currentPlayerIndex;
 
-    // Check if card matches the top card currently in the pot (same star ID)
-    const hasMatch = this.pot.length > 0 && this.pot[this.pot.length - 1].id === cardToPlay.id;
+    // Check if card matches the top card currently in the pot (same star ID or actor)
+    const getActorId = (id) => {
+      if (id === 'baahubali') return 'prabhas';
+      if (id === 'race_gurram') return 'allu_arjun';
+      if (id === 'rangasthalam') return 'ram_charan';
+      if (id === 'gabbar_singh') return 'pawan_kalyan';
+      return id;
+    };
+    const hasMatch = this.pot.length > 0 && getActorId(this.pot[this.pot.length - 1].id) === getActorId(cardToPlay.id);
     const matchIndex = hasMatch ? this.pot.length - 1 : -1;
 
     let outcome = {

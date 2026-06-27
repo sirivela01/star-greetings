@@ -268,6 +268,29 @@
       assert(outcome.playedCard.instanceId === firstCard.instanceId, "Should play the top card of the stack");
     });
 
+    runTest("6. Same Actor Match (e.g., Prabhas and Baahubali)", () => {
+      const state = new GameState(window.STAR_CONFIG);
+      state.initializeGame(["Alice", "Bob"], 10);
+      
+      const starRoster = window.STAR_CONFIG.roster;
+      const starPrabhas = starRoster.find(s => s.id === "prabhas");
+      const starBaahubali = starRoster.find(s => s.id === "baahubali");
+      
+      const cardAlice = new CardInstance(starPrabhas, "alice_card_1");
+      const cardBob = new CardInstance(starBaahubali, "bob_card_1");
+      
+      state.players[0].stack = [cardAlice];
+      state.players[1].stack = [cardBob];
+      
+      // Alice plays prabhas
+      state.playCard("alice_card_1");
+      
+      // Bob plays baahubali (should match with prabhas because they represent the same actor)
+      const outcome = state.playCard("bob_card_1");
+      
+      assert(outcome.hasMatch === true, "Should be a match even though IDs are prabhas and baahubali");
+    });
+
     // --- RENDER SUMMARY ---
     if (failedCount === 0) {
       summaryBox.className = "summary all-pass";
