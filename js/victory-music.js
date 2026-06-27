@@ -38,13 +38,13 @@
     pawan_kalyan:       { videoId: 'ePOglweqy7o', start: 0,   song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
     chiranjeevi:        { videoId: '6nH0YFbiRGA', start: 0,   song: 'Veera Shankar Reddy (Dialogue)', movie: 'Indra' },
     nagarjuna:          { videoId: '9pZENHoY4rc', start: 0,   song: 'Dhada Puttistha (Dialogue & Theme)', movie: 'Don' },
-    balakrishna:        { videoId: 'mq4SjYgZevo', start: 0,   song: 'Mass Warning (Dialogue)', movie: 'Legend' },
+    balakrishna:        { videoId: 'Nle6jl8Kw6U', start: 0,   song: 'Flute Warning (Dialogue)', movie: 'Legend' },
     manchu_manoj:       { videoId: 'sWPMVO40GLs', start: 5,   song: 'Pilla O Pilla', movie: 'Current Theega' },
     gopichand:          { videoId: 'k5_173M8r1I', start: 10,  song: 'Rules Writer (Dialogue)', movie: 'Andhrudu' },
     baahubali:          { videoId: 'uqHn-TCiJcc', start: 0,   song: 'Oath Ceremony (Dialogue)', movie: 'Baahubali 2' },
     venkatesh:          { videoId: 'riLlxPSzAWc', start: 0,   song: 'Sound Thagginchu (Dialogue)', movie: 'Tulasi' },
     rangasthalam:       { videoId: '_C1THMQ36Yk', start: 0,   song: 'Sound Engineer (Dialogue)', movie: 'Rangasthalam' },
-    race_gurram:        { videoId: 'gTL7JR0oN7o', start: 0,   song: 'Stylish Warning (Dialogue)', movie: 'Race Gurram' },
+    race_gurram:        { videoId: 'jbLmIef84V8', start: 0,   song: 'Powerful Warning (Dialogue)', movie: 'Race Gurram' },
     gabbar_singh:       { videoId: '48Ki6Gahlvs', start: 0,   song: 'Thikkundi Lekkundi (Dialogue)', movie: 'Gabbar Singh' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
