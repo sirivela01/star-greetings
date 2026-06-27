@@ -351,7 +351,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Setup HTML with image and a fallback placeholder
     cardEl.innerHTML = `
       <div class="card-inner">
-        <div class="card-industry-tag">${card.industry}</div>
         <div class="card-image-area">
           <img class="card-img" src="${card.imagePath}?v=1.36.2" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <div class="card-fallback-placeholder">
