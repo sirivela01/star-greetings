@@ -236,10 +236,88 @@ def update_player_bluff_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def calculate_levenshtein_distance(s1, s2):
+    if len(s1) < len(s2):
+        return calculate_levenshtein_distance(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+        
+    return previous_row[-1]
+
+def get_ml_voice_match(transcript, roster_names):
+    if not transcript or not roster_names:
+        return None
+
+    best_match = None
+    best_score = 0.0
+
+    # Common phonetic substitutions in speech recognition
+    common_subs = {
+        "hello": "allu",
+        "nowthat": "nagarjuna",
+        "nowthere": "nagarjuna",
+        "now": "nag",
+        "that": "arjuna",
+        "ther": "arjuna",
+        "there": "arjuna",
+        "parbas": "prabhas",
+        "pravas": "prabhas",
+        "prabas": "prabhas",
+        "tarak": "ntr",
+        "junior": "jr",
+        "sam": "samantha"
+    }
+
+    spoken_clean = transcript.lower().strip()
+    for word, replacement in common_subs.items():
+        spoken_clean = spoken_clean.replace(word, replacement)
+    
+    spoken_compact = spoken_clean.replace(" ", "")
+
+    for star_name in roster_names:
+        star_clean = star_name.lower().strip()
+        star_compact = star_clean.replace(" ", "")
+        
+        # 1. Exact match after phonetic replacement
+        if spoken_compact == star_compact:
+            return star_name
+            
+        # 2. Substring match
+        if spoken_compact in star_compact or star_compact in spoken_compact:
+            score = min(len(spoken_compact), len(star_compact)) / max(len(spoken_compact), len(star_compact))
+            if score > best_score:
+                best_score = score
+                best_match = star_name
+                
+        # 3. Levenshtein edit distance similarity
+        dist = calculate_levenshtein_distance(spoken_compact, star_compact)
+        max_len = max(len(spoken_compact), len(star_compact))
+        similarity = 1.0 - (dist / max_len) if max_len > 0 else 0.0
+        
+        if similarity > best_score:
+            best_score = similarity
+            best_match = star_name
+
+    # Confident match threshold
+    if best_score >= 0.70:
+        return best_match
+
+    return None
+
 @app.route('/api/voice/correct', methods=['POST'])
 def correct_voice_input():
     """
-    Uses Gemini LLM and RAG (active star names context) to correct spoken actor name transcripts.
+    Uses Hybrid Machine Learning (edit distance phonetics) and Gemini LLM RAG to correct spoken actor names.
     """
     try:
         body = request.json or {}
@@ -252,6 +330,13 @@ def correct_voice_input():
         if not roster_names:
             return jsonify({"corrected": transcript})
 
+        # 1. Try high-confidence Machine Learning phonetic alignment first
+        ml_match = get_ml_voice_match(transcript, roster_names)
+        if ml_match:
+            print(f"🤖 ML Phonetic Matcher resolved: '{transcript}' -> '{ml_match}'")
+            return jsonify({"corrected": ml_match})
+
+        # 2. Fallback to Gemini Generative AI for complex cases
         global gemini_client
         if not gemini_client and os.environ.get("GEMINI_API_KEY"):
             try:
@@ -260,7 +345,6 @@ def correct_voice_input():
                 print(f"Lazy init of Gemini client failed: {e}")
 
         if gemini_client:
-            # RAG prompt guiding Gemini with the list of possible stars in play
             sys_instruction = (
                 "You are an expert phonetic parser and auto-correction engine for Indian actor names. "
                 "The user is playing a cinema game and spoke a name. The speech recognition transcribed it as a phonetic approximation. "
@@ -275,7 +359,8 @@ def correct_voice_input():
                 f"Roster of stars in play (RAG Context):\n"
                 f"{json.dumps(roster_names)}\n"
                 f"\nIdentify if the spoken transcription resembles one of the names in the roster phonetically, "
-                f"for example, 'Now That' sounds exactly like 'Nagarjuna' (a very common transcription error), "
+                f"for example, 'Hello Arjun' or 'Hello' sounds exactly like 'Allu Arjun', "
+                f"'Now That' sounds exactly like 'Nagarjuna', "
                 f"'Bunny' or 'Allu' is 'Allu Arjun', 'Sam' is 'Samantha Ruth Prabhu', 'NTR' or 'Tarak' is 'Jr NTR'. "
                 f"Output ONLY the corrected name or the original transcription if no match is found."
             )
@@ -294,11 +379,13 @@ def correct_voice_input():
             except Exception as gemini_err:
                 print(f"Gemini voice correction failed: {gemini_err}")
 
-        # Fallback local dictionary mapping if Gemini is offline
+        # Fallback local dictionary mapping if both offline
         clean_transcript = transcript.lower().replace(" ", "")
         local_mappings = {
             "nowthat": "Nagarjuna",
             "nowthere": "Nagarjuna",
+            "helloarjun": "Allu Arjun",
+            "hello": "Allu Arjun",
             "nagarjuna": "Nagarjuna",
             "nag": "Nagarjuna",
             "prabas": "Prabhas",
