@@ -1954,7 +1954,10 @@ class MultiplayerManager {
               </div>
               
               <p style="margin-top: 16px; margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Write the Hero or Heroine name:</p>
-              <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off" style="max-width: 300px; font-size: 1.1rem; padding: 10px; margin-bottom: 16px;">
+              <div class="guess-input-container">
+                <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off" style="flex: 1; font-size: 1.1rem; padding: 10px; margin-bottom: 0;">
+                <button type="button" id="voice-input-btn" class="voice-input-btn" title="Speak Guess">🎙️</button>
+              </div>
               
               <p style="margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Choose how many greetings to stake on your guess:</p>
               <div class="guessing-stake-btn-container" style="margin-bottom: 16px; display: flex; justify-content: center; gap: 16px;">
@@ -1965,6 +1968,13 @@ class MultiplayerManager {
               <button type="button" id="submit-guess-btn" class="menu-btn primary-btn">Submit Guess & Stake</button>
             </div>
           `;
+
+          const voiceBtn = contentEl.querySelector("#voice-input-btn");
+          if (voiceBtn) {
+            voiceBtn.addEventListener("click", () => {
+              window.startSpeechRecognition("guesser-name-input", "voice-input-btn");
+            });
+          }
 
           let selectedMovie = "";
           const movieButtons = contentEl.querySelectorAll(".movie-option-btn");
