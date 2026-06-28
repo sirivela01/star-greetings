@@ -84,9 +84,9 @@ class AuthManager {
           freeStackBuys: 10
         });
 
-        // Initialize Greetings Stack to 30 under players/{uid}
+        // Initialize Greetings Stack to 6 under players/{uid}
         await firebase.database().ref(`players/${uid}`).set({
-          greetingsStack: 30
+          greetingsStack: 6
         });
       } catch (err) {
         console.error("Firebase signup error:", err);
@@ -99,7 +99,7 @@ class AuthManager {
       password: password,
       coins: 300,
       freeStackBuys: 10,
-      greetingsStack: 30,
+      greetingsStack: 6,
       uid: uid
     };
 
@@ -114,7 +114,7 @@ class AuthManager {
 
     let fbUser = null;
     let uid = null;
-    let greetingsStack = 30;
+    let greetingsStack = 6;
     if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
       const email = `${normalizedUsername}@stargreetings.com`;
       try {
@@ -139,10 +139,10 @@ class AuthManager {
         const playerSnapshot = await firebase.database().ref(`players/${uid}`).once("value");
         if (playerSnapshot.exists()) {
           const val = playerSnapshot.val();
-          greetingsStack = (val && val.greetingsStack !== undefined) ? val.greetingsStack : 30;
+          greetingsStack = (val && val.greetingsStack !== undefined) ? val.greetingsStack : 6;
         } else {
-          await firebase.database().ref(`players/${uid}`).set({ greetingsStack: 30 });
-          greetingsStack = 30;
+          await firebase.database().ref(`players/${uid}`).set({ greetingsStack: 6 });
+          greetingsStack = 6;
         }
       } catch (err) {
         console.error("Firebase login error:", err);
@@ -173,7 +173,7 @@ class AuthManager {
         return { error: "Invalid username or password!" };
       }
       if (localUser.greetingsStack === undefined) {
-        localUser.greetingsStack = 30;
+        localUser.greetingsStack = 6;
         accounts[normalizedUsername] = localUser;
         this.saveAccounts(accounts);
       }
@@ -315,17 +315,17 @@ class AuthManager {
       
       const snapshot = await firebase.database().ref(`users/${user.uid}`).once("value");
       let dbUser;
-      let greetingsStack = 30;
+      let greetingsStack = 6;
       
       if (snapshot.exists()) {
         dbUser = snapshot.val();
         const playerSnapshot = await firebase.database().ref(`players/${user.uid}`).once("value");
         if (playerSnapshot.exists()) {
           const val = playerSnapshot.val();
-          greetingsStack = (val && val.greetingsStack !== undefined) ? val.greetingsStack : 30;
+          greetingsStack = (val && val.greetingsStack !== undefined) ? val.greetingsStack : 6;
         } else {
-          await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 30 });
-          greetingsStack = 30;
+          await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 6 });
+          greetingsStack = 6;
         }
       } else {
         dbUser = {
@@ -337,8 +337,8 @@ class AuthManager {
           avatar: user.photoURL || ""
         };
         await firebase.database().ref(`users/${user.uid}`).set(dbUser);
-        await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 30 });
-        greetingsStack = 30;
+        await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 6 });
+        greetingsStack = 6;
       }
 
       const accounts = this.getAccounts();

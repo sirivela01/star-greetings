@@ -621,9 +621,9 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Determine Stack Thickness class
       let thicknessClass = "stack-thin";
-      if (p.stackCount > 30) {
+      if (p.stackCount > 6) {
         thicknessClass = "stack-thick";
-      } else if (p.stackCount > 10) {
+      } else if (p.stackCount > 3) {
         thicknessClass = "stack-medium";
       }
       seat.classList.add(thicknessClass);
@@ -2308,7 +2308,7 @@ document.addEventListener("DOMContentLoaded", () => {
       playerBets.push(betVal);
     }
 
-    const stackSize = 30; // Lock stack size to 30 greetings
+    const stackSize = 6; // Lock stack size to 6 greetings
     const deckTheme = window.selectedOfflineTheme || "Tollywood";
 
     // If only 1 player is configured, automatically append a human opponent
@@ -2338,9 +2338,9 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         if (matchKey) {
           p.coins = isNaN(parseInt(accounts[matchKey].coins, 10)) ? 300 : parseInt(accounts[matchKey].coins, 10);
-          p.greetingsStack = accounts[matchKey].greetingsStack !== undefined ? accounts[matchKey].greetingsStack : 30;
+          p.greetingsStack = accounts[matchKey].greetingsStack !== undefined ? accounts[matchKey].greetingsStack : 6;
         } else {
-          p.greetingsStack = 30;
+          p.greetingsStack = 6;
         }
       });
     }
@@ -2823,7 +2823,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const playerNames = [p1Name, "Bot Ranbir"];
         const playerAvatarUrls = [AVATARS[0], AVATARS[1]];
         const playerBets = [25, 25];
-        const stackSize = 30;
+        const stackSize = 6;
         const deckTheme = selectedTheme || "tollywood";
         
         // Initialize state
@@ -3600,7 +3600,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let collectedCards = [];
     
     wrongGuessers.forEach(p => {
-      const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 30;
+      const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 6;
       const transferVal = Math.min(confirmedStake, originalVal);
       diffs[p.id] = -transferVal;
       totalCollected += transferVal;

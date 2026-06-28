@@ -391,7 +391,7 @@ class MultiplayerManager {
           betVote: 25,
           joinedAt: firebase.database.ServerValue.TIMESTAMP,
           status: "connected",
-          greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 30
+          greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 6
         }
       }
     };
@@ -513,7 +513,7 @@ class MultiplayerManager {
         betVote: 25,
         joinedAt: firebase.database.ServerValue.TIMESTAMP,
         status: "connected",
-        greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 30
+        greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 6
       }));
       await this.registerPresence();
 
@@ -797,7 +797,7 @@ class MultiplayerManager {
         const displayAvatar = p.avatar || "assets/avatars/avatar_1.png";
         const displayBetVote = p.betVote !== undefined ? p.betVote : 25;
         const isOffline = p.status === "disconnected";
-        const displayGreetings = p.greetingsStack !== undefined ? p.greetingsStack : 30;
+        const displayGreetings = p.greetingsStack !== undefined ? p.greetingsStack : 6;
         
         row.innerHTML = `
           <div class="lobby-player-info">
@@ -832,8 +832,8 @@ class MultiplayerManager {
     const startBtn = document.getElementById("online-start-match-btn");
     const waitingMsg = document.getElementById("online-host-msg");
     
-    // Check if any player has less than 30 greetings
-    const lowGreetingsPlayers = players.filter(p => (p.greetingsStack !== undefined ? p.greetingsStack : 30) < 30);
+    // Check if any player has less than 6 greetings
+    const lowGreetingsPlayers = players.filter(p => (p.greetingsStack !== undefined ? p.greetingsStack : 6) < 6);
     const hasLowGreetings = lowGreetingsPlayers.length > 0;
     
     if (startBtn && waitingMsg) {
@@ -847,7 +847,7 @@ class MultiplayerManager {
           startBtn.parentNode.insertBefore(warningBanner, startBtn);
         }
         const playerNamesStr = lowGreetingsPlayers.map(p => p.name).join(", ");
-        warningBanner.innerHTML = `⚠️ Cannot start match: <strong>${playerNamesStr}</strong> has less than 30 greetings.`;
+        warningBanner.innerHTML = `⚠️ Cannot start match: <strong>${playerNamesStr}</strong> has less than 6 greetings.`;
       } else {
         if (warningBanner) {
           warningBanner.remove();
@@ -870,7 +870,7 @@ class MultiplayerManager {
         startBtn.style.display = "none";
         waitingMsg.style.display = "block";
         if (hasLowGreetings) {
-          waitingMsg.innerHTML = `<span style="color: #f87171;">⚠️ Some players have less than 30 greetings. Waiting for them to acquire more...</span>`;
+          waitingMsg.innerHTML = `<span style="color: #f87171;">⚠️ Some players have less than 6 greetings. Waiting for them to acquire more...</span>`;
         } else {
           waitingMsg.textContent = "Waiting for Host to start match...";
         }
@@ -938,7 +938,7 @@ class MultiplayerManager {
       
       const gameEngine = new GameState();
       gameEngine.config.CARD_PLACEMENT_MODE = room.placementMode || "middle";
-      gameEngine.initializeGame(playerNames, 30, playerBets, room.deckTheme || "Tollywood");
+      gameEngine.initializeGame(playerNames, 6, playerBets, room.deckTheme || "Tollywood");
       
       // Bind avatars, usernames, and UIDs to GameState players
       gameEngine.players.forEach((p, idx) => {
@@ -2258,7 +2258,7 @@ class MultiplayerManager {
 
       let totalCollected = 0;
       wrongGuessers.forEach(p => {
-        const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 30;
+        const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 6;
         const transferVal = Math.min(confirmedStake, originalVal);
         totalCollected += transferVal;
         diffs[p.id] = -transferVal;
@@ -2410,7 +2410,7 @@ class MultiplayerManager {
 
     wrongGuessers.forEach(p => {
       const dbPlayer = dbPlayers[p.uid] || {};
-      const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 30;
+      const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 6;
       const transferVal = Math.min(confirmedStake, originalVal);
       const newVal = originalVal - transferVal;
       updates[`players/${p.uid}/greetingsStack`] = newVal;
@@ -2427,13 +2427,13 @@ class MultiplayerManager {
 
     const cardHolder = window.game.players[guessingRound.cardHolderId];
     const dbCardHolder = cardHolder ? (dbPlayers[cardHolder.uid] || {}) : {};
-    const originalHolderVal = dbCardHolder.greetingsStack !== undefined ? dbCardHolder.greetingsStack : 30;
+    const originalHolderVal = dbCardHolder.greetingsStack !== undefined ? dbCardHolder.greetingsStack : 6;
 
     if (correctGuessers.length > 0) {
       const awardVal = Math.floor(totalCollected / correctGuessers.length);
       correctGuessers.forEach(p => {
         const dbPlayer = dbPlayers[p.uid] || {};
-        const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 30;
+        const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 6;
         const newVal = originalVal + awardVal;
         updates[`players/${p.uid}/greetingsStack`] = newVal;
       });
