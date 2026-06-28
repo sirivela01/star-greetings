@@ -3372,11 +3372,71 @@ select.form-select option {
    Guessing Greeting Round Styling
    ========================================================================== */
 .guessing-round-box {
-  background: linear-gradient(135deg, rgba(22, 14, 38, 0.95), rgba(46, 8, 24, 0.95)) !important;
-  border: 1px solid rgba(236, 72, 153, 0.3) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(236, 72, 153, 0.15) !important;
-  max-width: 480px !important;
+  background: linear-gradient(135deg, rgba(26, 12, 42, 0.98), rgba(46, 8, 30, 0.98)) !important;
+  border: 2px solid rgba(236, 72, 153, 0.5) !important;
+  box-shadow: 0 0 35px rgba(236, 72, 153, 0.25), inset 0 0 20px rgba(255, 255, 255, 0.05) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 36px 32px !important;
+  max-width: 540px !important;
   width: 90% !important;
+  color: #fff !important;
+}
+
+.guessing-round-box h2 {
+  font-size: 2.1rem !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 15px rgba(236, 72, 153, 0.6) !important;
+  background: linear-gradient(135deg, #fff, #f472b6) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  margin-bottom: 8px !important;
+}
+
+.guessing-round-box #guessing-round-instructions {
+  font-size: 1.1rem !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  margin-bottom: 24px !important;
+}
+
+.guessing-round-box .pass-screen-box h3 {
+  font-size: 1.65rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  margin: 32px 0 !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
+  line-height: 1.5 !important;
+}
+
+/* Stunning Premium Button for Guessing Round */
+.guessing-round-box .menu-btn {
+  display: block !important;
+  width: 100% !important;
+  max-width: 340px !important;
+  height: auto !important;
+  padding: 16px 28px !important;
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  border-radius: 50px !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #3b82f6 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 25px rgba(168, 85, 247, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  margin: 24px auto 8px !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
+}
+
+.guessing-round-box .menu-btn:hover {
+  transform: scale(1.05) translateY(-3px) !important;
+  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.7), 0 0 20px rgba(236, 72, 153, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.guessing-round-box .menu-btn:active {
+  transform: scale(0.98) translateY(1px) !important;
 }
 
 /* Card 3D Flip */
@@ -3552,27 +3612,60 @@ select.form-select option {
 }
 
 .guessing-results-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 16px;
-  font-size: 0.9rem;
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 20px 0 !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  font-size: 1rem !important;
 }
 
 .guessing-results-table th, .guessing-results-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 14px 16px !important;
+  text-align: left !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
 .guessing-results-table th {
-  color: var(--text-muted);
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-size: 0.85rem !important;
 }
 
 .guessing-results-table tr.correct-row td {
-  color: #10b981;
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.04) !important;
 }
 
 .guessing-results-table tr.wrong-row td {
-  color: #ef4444;
+  color: #f43f5e !important;
+  background: rgba(244, 63, 94, 0.04) !important;
+}
+
+.guessing-results-table tr:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.guessing-round-box .star-revealed-text {
+  font-size: 1.3rem !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  margin: 16px 0 !important;
+  text-align: center !important;
+}
+
+.guessing-round-box .star-revealed-text strong {
+  background: linear-gradient(90deg, #ffd700 0%, #fff 50%, #ffd700 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.6) !important;
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  display: inline-block !important;
+  padding: 2px 4px !important;
 }

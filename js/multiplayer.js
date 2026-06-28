@@ -2199,8 +2199,8 @@ class MultiplayerManager {
       }).join("");
 
       contentEl.innerHTML = `
-        <div style="text-align: center; margin-bottom: 12px;">
-          <h4 style="color: var(--accent-pink);">Star revealed: <strong>${correctStarName}</strong></h4>
+        <div class="star-revealed-text">
+          Star revealed: <strong>${correctStarName}</strong>
         </div>
         <table class="guessing-results-table">
           <thead>
@@ -2216,7 +2216,7 @@ class MultiplayerManager {
           </tbody>
         </table>
         <div style="text-align: center; margin-top: 24px;">
-          ${this.isHost ? `<button type="button" id="continue-online-match-btn" class="menu-btn primary-btn" style="width: 220px; margin: 0 auto;">Continue Game</button>` : `<p>Waiting for Host to continue game...</p>`}
+          ${this.isHost ? `<button type="button" id="continue-online-match-btn" class="menu-btn primary-btn">Continue Game</button>` : `<p>Waiting for Host to continue game...</p>`}
         </div>
       `;
 
