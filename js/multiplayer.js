@@ -1771,21 +1771,11 @@ class MultiplayerManager {
     // Get unique movie names from these 6 cards
     const top6Movies = top6Cards.map(c => c.movie).filter(m => m);
     const uniqueTop6Movies = [...new Set(top6Movies)];
+    const movieOptions = uniqueTop6Movies.sort(() => 0.5 - Math.random());
 
-    // Fill with other roster movies until we have exactly 6 unique movies
-    let moviePool = [...uniqueTop6Movies];
-    if (moviePool.length < 6) {
-      const rosterFallback = window.game.config.roster
-        .map(s => s.movie)
-        .filter(m => m && !moviePool.includes(m));
-      const shuffledFallback = rosterFallback.sort(() => 0.5 - Math.random());
-      for (let i = 0; i < shuffledFallback.length && moviePool.length < 6; i++) {
-        moviePool.push(shuffledFallback[i]);
-      }
-    }
-    const movieOptions = moviePool.slice(0, 6).sort(() => 0.5 - Math.random());
-
+    const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
     const correctStarName = targetCard.name;
+    const correctMovie = targetCard.movie || "Salaar";
 
     window.game.players.forEach(p => {
       if (p.id !== outcome.playerIndex && p.isBot && p.stackCount > 0) {
