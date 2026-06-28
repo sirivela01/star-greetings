@@ -628,12 +628,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       seat.classList.add(thicknessClass);
 
+      const statusSymbol = (window.playerStatusIndicators && window.playerStatusIndicators[p.id]) || "";
+
       // Setup Seat layout
       seat.innerHTML = `
         <div class="player-avatar-wrapper">
           <img src="${p.avatar}" alt="${p.name}" draggable="false">
           ${isActive ? `<span class="player-seat-active-badge">Playing</span>` : ""}
           ${p.id === game.currentPotStarterIndex ? `<span class="player-seat-starter-badge" title="Starter (Played First)">⭐ Starter</span>` : ""}
+          ${statusSymbol ? `<span class="player-status-badge">${statusSymbol}</span>` : ""}
         </div>
         <div class="player-seat-info">
           <span class="player-seat-name">${p.name} ${p.isBot ? '🤖' : ''}</span>
@@ -1200,16 +1203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (outcome.isGameOver) {
           triggerGameOver();
         } else {
-          // Check if human player lost the round and should see the continue/leave modal
-          const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
-          // Round lost if outcome is a match AND winner was not human
-          const humanLostRound = (outcome.hasMatch && outcome.playerIndex !== game.players.indexOf(humanPlayer));
-          
-          if (humanLostRound && !humanPlayer.isBot) {
-            showRoundLossModal(humanPlayer.stackCount);
-          } else {
-            resumeAfterRoundLoss();
-          }
+          startOfflineGuessingRound(outcome);
         }
       }, 300);
     }, 1800);
@@ -1262,18 +1256,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (game.isGameOver) {
           triggerGameOver();
         } else {
-          const nextPlayer = game.getCurrentPlayer();
-          hudActivePlayerName.textContent = nextPlayer.name;
-          hudRoundNum.textContent = game.roundNumber;
-          renderSeats();
-          
-          if (!nextPlayer.isBot) {
-            window.lastTurnStartTime = Date.now();
-          }
-          
-          if (nextPlayer.isBot) {
-            checkAndTriggerBotTurn();
-          }
+          const outcome = {
+            playerIndex: playerIndex,
+            playerName: playerName,
+            playedCard: { name: cardName },
+            wonCount: wonCount,
+            isGameOver: game.isGameOver
+          };
+          startOfflineGuessingRound(outcome);
         }
       }, 300);
     }, 1800);
@@ -1912,16 +1902,22 @@ document.addEventListener("DOMContentLoaded", () => {
           const wonCardsCount = game.pot.length;
           const cardIndex = activePlayer.stack.findIndex(c => c.instanceId === cardInstanceId);
           activePlayer.stack.splice(cardIndex, 1);
-          activePlayer.stack.push(...game.pot);
-          activePlayer.stack.push(cardToPlay);
           
           const activePlayers = game.getActivePlayers();
           const totalOpponents = activePlayers.filter(p => p.id !== activePlayer.id).length;
           const winnings = totalOpponents * game.matchBet;
-          activePlayer.coins += (winnings + game.matchBet);
 
-          game.pot = [];
-          game.isBetDeductedForCurrentPot = false;
+          game.pendingMatchWinnings = {
+            winnerIndex: activePlayer.id,
+            cards: [...game.pot, cardToPlay],
+            coins: winnings + game.matchBet,
+            deductionPlayers: game.players.filter(p => p.id !== activePlayer.id && p.stackCount > 0).map(p => p.id),
+            wonCardsCount: wonCardsCount,
+            winnings: winnings,
+            matchedStarName: cardToPlay.name,
+            roundNumber: game.roundNumber
+          };
+
           game.addLog(`Round ${game.roundNumber}: Bot ${bot ? bot.name : "Ranbir"} let ${activePlayer.name}'s bluff pass! ${activePlayer.name} won the pot.`);
           
           const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
@@ -1947,14 +1943,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const wonCardsCount = game.pot.length;
         const cardIndex = activePlayer.stack.findIndex(c => c.instanceId === cardInstanceId);
         activePlayer.stack.splice(cardIndex, 1);
-        activePlayer.stack.push(...game.pot);
-        activePlayer.stack.push(cardToPlay);
+        
         const activePlayers = game.getActivePlayers();
         const totalOpponents = activePlayers.filter(p => p.id !== activePlayer.id).length;
         const winnings = totalOpponents * game.matchBet;
-        activePlayer.coins += (winnings + game.matchBet);
-        game.pot = [];
-        game.isBetDeductedForCurrentPot = false;
+
+        game.pendingMatchWinnings = {
+          winnerIndex: activePlayer.id,
+          cards: [...game.pot, cardToPlay],
+          coins: winnings + game.matchBet,
+          deductionPlayers: game.players.filter(p => p.id !== activePlayer.id && p.stackCount > 0).map(p => p.id),
+          wonCardsCount: wonCardsCount,
+          winnings: winnings,
+          matchedStarName: cardToPlay.name,
+          roundNumber: game.roundNumber
+        };
+
         game.addLog(`Round ${game.roundNumber}: ${activePlayer.name}'s bluff was let pass (fallback).`);
         
         const elapsed = Date.now() - (window.lastTurnStartTime || Date.now());
@@ -1999,16 +2003,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const cardIndex = bot.stack.findIndex(c => c.instanceId === card.instanceId);
         if (cardIndex !== -1) bot.stack.splice(cardIndex, 1);
         
-        bot.stack.push(...game.pot);
-        bot.stack.push(card);
-        
         const activePlayers = game.getActivePlayers();
         const totalOpponents = activePlayers.filter(p => p.id !== bot.id).length;
         const winnings = totalOpponents * game.matchBet;
-        bot.coins += (winnings + game.matchBet);
 
-        game.pot = [];
-        game.isBetDeductedForCurrentPot = false;
+        game.pendingMatchWinnings = {
+          winnerIndex: bot.id,
+          cards: [...game.pot, card],
+          coins: winnings + game.matchBet,
+          deductionPlayers: game.players.filter(p => p.id !== bot.id && p.stackCount > 0).map(p => p.id),
+          wonCardsCount: wonCardsCount,
+          winnings: winnings,
+          matchedStarName: card.name,
+          roundNumber: game.roundNumber
+        };
+
         game.addLog(`Round ${game.roundNumber}: Bot ${bot.name} successfully bluffed match and won the pot of ${wonCardsCount} cards!`);
         
         const activePlayersAfter = game.getActivePlayers();
@@ -2329,6 +2338,9 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         if (matchKey) {
           p.coins = isNaN(parseInt(accounts[matchKey].coins, 10)) ? 300 : parseInt(accounts[matchKey].coins, 10);
+          p.greetingsStack = accounts[matchKey].greetingsStack !== undefined ? accounts[matchKey].greetingsStack : 30;
+        } else {
+          p.greetingsStack = 30;
         }
       });
     }
@@ -3106,6 +3118,472 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
     observer.observe(themeSelectionScreen, { attributes: true });
+  }
+
+  let offlineGuessingState = {
+    active: false,
+    phase: "placing",
+    cardHolderIndex: 0,
+    selectedCardInstanceId: null,
+    guesses: {},
+    bets: {},
+    confirmedStake: 0,
+    currentGuesserIds: [],
+    currentGuesserPointer: 0,
+    outcome: null
+  };
+
+  window.startOfflineGuessingRound = function(outcome) {
+    const guesserIds = game.players
+      .filter(p => p.id !== outcome.playerIndex && p.stackCount > 0)
+      .map(p => p.id);
+
+    offlineGuessingState = {
+      active: true,
+      phase: "placing",
+      cardHolderIndex: outcome.playerIndex,
+      selectedCardInstanceId: null,
+      guesses: {},
+      bets: {},
+      confirmedStake: 0,
+      currentGuesserIds: guesserIds.filter(id => !game.players[id].isBot),
+      currentGuesserPointer: 0,
+      outcome: outcome
+    };
+
+    window.playerStatusIndicators = {};
+
+    const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+    const correctStarName = targetCard.name;
+
+    game.players.forEach(p => {
+      if (p.id !== outcome.playerIndex && p.isBot && p.stackCount > 0) {
+        const P_correct = 0.3;
+        let botGuess = "";
+        if (Math.random() < P_correct) {
+          botGuess = correctStarName;
+        } else {
+          const incorrectStars = game.config.roster.filter(s => s.name !== correctStarName);
+          botGuess = incorrectStars.length > 0 ? incorrectStars[Math.floor(Math.random() * incorrectStars.length)].name : "Prabhas";
+        }
+        
+        offlineGuessingState.guesses[p.id] = botGuess;
+        offlineGuessingState.bets[p.id] = Math.random() < 0.6 ? 5 : 10;
+        window.playerStatusIndicators[p.id] = "✏️";
+      }
+    });
+
+    renderSeats();
+
+    const overlay = document.getElementById("guessing-round-overlay");
+    if (overlay) {
+      overlay.classList.remove("hidden");
+      overlay.style.display = "flex";
+    }
+
+    renderOfflineGuessingRoundView();
+  };
+
+  function renderOfflineGuessingRoundView() {
+    const titleEl = document.getElementById("guessing-round-title");
+    const instructionsEl = document.getElementById("guessing-round-instructions");
+    const contentEl = document.getElementById("guessing-round-content");
+    const cardHolder = game.players[offlineGuessingState.cardHolderIndex];
+
+    if (offlineGuessingState.phase === "placing") {
+      titleEl.innerHTML = "🎴 Placing Face-Down Card";
+      instructionsEl.innerHTML = `Pass the screen to <strong>${cardHolder.name}</strong>. Choose a card from your stack to place face-down.`;
+
+      let cardsHtml = cardHolder.stack.map((c, index) => {
+        return `<div class="star-card card-back" data-card-idx="${index}" style="width: 110px; height: 154px; margin: 4px; border: 2px solid rgba(255,255,255,0.1); border-radius: 8px; background: linear-gradient(135deg, #4c1d95, #1e1b4b); box-shadow: var(--shadow-sm); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <div style="font-size: 1.5rem;">🌟</div>
+        </div>`;
+      }).join("");
+
+      contentEl.innerHTML = `
+        <div style="text-align: center; margin-bottom: 16px;">
+          <p>Choose one card to place face-down:</p>
+        </div>
+        <div class="guessing-card-scroll" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 300px; overflow-y: auto;">
+          ${cardsHtml}
+        </div>
+      `;
+
+      contentEl.querySelectorAll(".star-card").forEach(el => {
+        el.addEventListener("click", () => {
+          const cardIdx = parseInt(el.dataset.cardIdx);
+          offlineGuessingState.selectedCardInstanceId = cardHolder.stack[cardIdx].instanceId;
+          
+          game.players.forEach(p => {
+            if (p.id !== offlineGuessingState.cardHolderIndex && p.isBot && p.stackCount > 0) {
+              window.playerStatusIndicators[p.id] = "🎴";
+            }
+          });
+
+          offlineGuessingState.phase = "guessing";
+          offlineGuessingState.currentGuesserPointer = 0;
+          renderOfflineGuessingRoundView();
+        });
+      });
+    }
+
+    else if (offlineGuessingState.phase === "guessing") {
+      const humanGuesserIds = offlineGuessingState.currentGuesserIds;
+      
+      if (humanGuesserIds.length === 0 || offlineGuessingState.currentGuesserPointer >= humanGuesserIds.length) {
+        offlineGuessingState.phase = "betting";
+        offlineGuessingState.currentGuesserPointer = 0;
+        renderOfflineGuessingRoundView();
+        return;
+      }
+
+      const activeGuesserId = humanGuesserIds[offlineGuessingState.currentGuesserPointer];
+      const guesser = game.players[activeGuesserId];
+
+      titleEl.innerHTML = "✏️ Enter Your Guess";
+      instructionsEl.innerHTML = `Pass the screen to <strong>${guesser.name}</strong>.`;
+
+      contentEl.innerHTML = `
+        <div class="pass-screen-box" style="text-align: center; padding: 24px 0;">
+          <h3 style="margin-bottom: 20px;">Are you holding the device, ${guesser.name}?</h3>
+          <button type="button" id="proceed-guess-btn" class="menu-btn primary-btn" style="width: 200px; margin: 0 auto;">Confirm & Proceed</button>
+        </div>
+      `;
+
+      document.getElementById("proceed-guess-btn").addEventListener("click", () => {
+        contentEl.innerHTML = `
+          <div style="text-align: center; padding: 12px 0;">
+            <p style="margin-bottom: 12px; font-size: 0.95rem;">Who is on this card? Write the Hero or Heroine name:</p>
+            <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off">
+            <button type="button" id="submit-guess-btn" class="menu-btn primary-btn" style="width: 200px; margin: 12px auto 0;">Submit Guess</button>
+          </div>
+        `;
+
+        document.getElementById("submit-guess-btn").addEventListener("click", () => {
+          const guessVal = document.getElementById("guesser-name-input").value.trim();
+          if (!guessVal) {
+            alert("Please type a guess!");
+            return;
+          }
+
+          offlineGuessingState.guesses[activeGuesserId] = guessVal;
+          window.playerStatusIndicators[activeGuesserId] = "✏️";
+          renderSeats();
+
+          offlineGuessingState.currentGuesserPointer++;
+          renderOfflineGuessingRoundView();
+        });
+      });
+    }
+
+    else if (offlineGuessingState.phase === "betting") {
+      const humanGuesserIds = offlineGuessingState.currentGuesserIds;
+
+      if (humanGuesserIds.length === 0 || offlineGuessingState.currentGuesserPointer >= humanGuesserIds.length) {
+        offlineGuessingState.phase = "revealing";
+        renderOfflineGuessingRoundView();
+        return;
+      }
+
+      const activeGuesserId = humanGuesserIds[offlineGuessingState.currentGuesserPointer];
+      const guesser = game.players[activeGuesserId];
+
+      titleEl.innerHTML = "🎴 Stake Your Greetings";
+      instructionsEl.innerHTML = `Pass the screen to <strong>${guesser.name}</strong>.`;
+
+      contentEl.innerHTML = `
+        <div class="pass-screen-box" style="text-align: center; padding: 24px 0;">
+          <h3 style="margin-bottom: 20px;">Are you holding the device, ${guesser.name}?</h3>
+          <button type="button" id="proceed-stake-btn" class="menu-btn primary-btn" style="width: 200px; margin: 0 auto;">Confirm & Proceed</button>
+        </div>
+      `;
+
+      document.getElementById("proceed-stake-btn").addEventListener("click", () => {
+        contentEl.innerHTML = `
+          <div style="text-align: center; padding: 12px 0;">
+            <p style="margin-bottom: 16px; font-size: 0.95rem;">Choose how many greetings to stake on your guess:</p>
+            <div class="guessing-stake-btn-container">
+              <button type="button" class="menu-btn stake-btn" data-amt="5" style="border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1);">Stake 5 Greetings</button>
+              <button type="button" class="menu-btn stake-btn" data-amt="10" style="border-color: var(--accent-pink); background: rgba(236, 72, 153, 0.1);">Stake 10 Greetings</button>
+            </div>
+          </div>
+        `;
+
+        contentEl.querySelectorAll(".stake-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const amt = parseInt(btn.dataset.amt);
+            offlineGuessingState.bets[activeGuesserId] = amt;
+            window.playerStatusIndicators[activeGuesserId] = "🎴";
+            renderSeats();
+
+            offlineGuessingState.currentGuesserPointer++;
+            renderOfflineGuessingRoundView();
+          });
+        });
+      });
+    }
+
+    else if (offlineGuessingState.phase === "revealing") {
+      titleEl.innerHTML = "📢 Vote Tally & Confirm";
+      instructionsEl.innerHTML = `Tallying the votes. Card Holder (<strong>${cardHolder.name}</strong>) must confirm the stake.`;
+
+      let count5 = 0;
+      let count10 = 0;
+      game.players.forEach(p => {
+        if (p.id !== offlineGuessingState.cardHolderIndex && p.stackCount > 0) {
+          const betVal = offlineGuessingState.bets[p.id] || 5;
+          if (betVal === 10) count10++;
+          else count5++;
+        }
+      });
+
+      const totalVoters = count5 + count10;
+      const pct5 = totalVoters > 0 ? Math.round((count5 / totalVoters) * 100) : 100;
+      const pct10 = totalVoters > 0 ? Math.round((count10 / totalVoters) * 100) : 0;
+      const confirmedStake = count10 > count5 ? 10 : 5;
+
+      contentEl.innerHTML = `
+        <div class="stake-vote-tally-container">
+          <div class="stake-tally-row">
+            <div class="stake-tally-info">
+              <span>Stake 5 Greetings</span>
+              <span>${count5} votes (${pct5}%)</span>
+            </div>
+            <div class="stake-tally-progress-bg">
+              <div class="stake-tally-progress-fill" style="width: ${pct5}%;"></div>
+            </div>
+          </div>
+          <div class="stake-tally-row" style="margin-top: 12px;">
+            <div class="stake-tally-info">
+              <span>Stake 10 Greetings</span>
+              <span>${count10} votes (${pct10}%)</span>
+            </div>
+            <div class="stake-tally-progress-bg">
+              <div class="stake-tally-progress-fill" style="width: ${pct10}%; background: linear-gradient(90deg, #ec4899, #f43f5e);"></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 16px;">
+          <p style="font-size: 0.95rem; margin-bottom: 16px;">Majority vote result: <strong>Stake is ${confirmedStake} Greetings</strong></p>
+          <button type="button" id="confirm-stake-btn" class="menu-btn primary-btn" style="width: 260px; margin: 0 auto;">Confirm — Stake is ${confirmedStake} Greetings</button>
+        </div>
+      `;
+
+      document.getElementById("confirm-stake-btn").addEventListener("click", () => {
+        offlineGuessingState.confirmedStake = confirmedStake;
+        
+        titleEl.innerHTML = "🃏 Reveal Hidden Card";
+        instructionsEl.innerHTML = `Let's see who is on the hidden card!`;
+
+        const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+        
+        contentEl.innerHTML = `
+          <div class="guessing-card-container">
+            <div class="guessing-card-inner" id="flip-card-inner">
+              <div class="guessing-card-back pulse-glow" style="width: 100%; height: 100%; border-radius: 8px; background: linear-gradient(135deg, #4c1d95, #1e1b4b); box-shadow: 0 0 15px rgba(255,215,0,0.5); display: flex; align-items: center; justify-content: center;">
+                <div style="font-size: 2rem;">🌟</div>
+              </div>
+              <div class="guessing-card-front" id="flip-card-front" style="width: 100%; height: 100%;">
+                <!-- Card Front Rendered Here -->
+              </div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 16px;">
+            <button type="button" id="flip-action-btn" class="menu-btn primary-btn" style="width: 180px; margin: 0 auto;">Flip Card 🃏</button>
+          </div>
+        `;
+
+        const frontContainer = document.getElementById("flip-card-front");
+        const frontCardDom = createCardElement(targetCard);
+        frontCardDom.style.width = "100%";
+        frontCardDom.style.height = "100%";
+        frontCardDom.style.margin = "0";
+        frontCardDom.style.boxShadow = "none";
+        frontContainer.appendChild(frontCardDom);
+
+        document.getElementById("flip-action-btn").addEventListener("click", () => {
+          const innerEl = document.getElementById("flip-card-inner");
+          innerEl.classList.add("flipped");
+
+          if (window.playTouchSound) window.playTouchSound();
+
+          setTimeout(() => {
+            offlineGuessingState.phase = "results";
+            calculateAndApplyOfflineTransfers(targetCard.name);
+            renderOfflineGuessingRoundView();
+          }, 700);
+        });
+      });
+    }
+
+    else if (offlineGuessingState.phase === "results") {
+      titleEl.innerHTML = "📊 Round Results";
+      instructionsEl.innerHTML = `Greeting card balances have been updated.`;
+
+      const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+      const correctStarName = targetCard.name;
+      const confirmedStake = offlineGuessingState.confirmedStake;
+
+      let rowsHtml = game.players.map((p, index) => {
+        if (index === offlineGuessingState.cardHolderIndex) {
+          return `
+            <tr class="results-row-stagger" style="--row-index: ${index}; font-style: italic;">
+              <td>${p.name} (Winner)</td>
+              <td>—</td>
+              <td>—</td>
+              <td>No Change</td>
+            </tr>
+          `;
+        }
+        
+        if (p.stackCount <= 0 && !offlineGuessingState.guesses[p.id]) {
+          return `
+            <tr class="results-row-stagger" style="--row-index: ${index}; color: var(--text-muted);">
+              <td>${p.name}</td>
+              <td>—</td>
+              <td>—</td>
+              <td>Eliminated</td>
+            </tr>
+          `;
+        }
+
+        const guessText = offlineGuessingState.guesses[p.id] || "No Guess";
+        const isCorrect = isCorrectGuess(guessText, correctStarName);
+        const changeVal = offlineGuessingState.transferDiffs ? (offlineGuessingState.transferDiffs[p.id] || 0) : 0;
+        const changeStr = changeVal > 0 ? `+${changeVal} Stack` : changeVal < 0 ? `${changeVal} Stack` : `0 Stack`;
+        const resultClass = isCorrect ? "correct-row" : "wrong-row";
+        
+        return `
+          <tr class="${resultClass} results-row-stagger" style="--row-index: ${index};">
+            <td>${p.name} ${p.isBot ? '🤖' : ''}</td>
+            <td>"${guessText}"</td>
+            <td>${isCorrect ? "✅ Correct" : "❌ Incorrect"}</td>
+            <td><strong>${changeStr}</strong></td>
+          </tr>
+        `;
+      }).join("");
+
+      contentEl.innerHTML = `
+        <div style="text-align: center; margin-bottom: 12px;">
+          <h4 style="color: var(--accent-pink);">Star revealed: <strong>${correctStarName}</strong></h4>
+        </div>
+        <table class="guessing-results-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Guess</th>
+              <th>Status</th>
+              <th>Transfer</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+        <div style="text-align: center; margin-top: 24px;">
+          <button type="button" id="continue-next-round-btn" class="menu-btn primary-btn" style="width: 220px; margin: 0 auto;">Continue Game</button>
+        </div>
+      `;
+
+      document.getElementById("continue-next-round-btn").addEventListener("click", () => {
+        const overlay = document.getElementById("guessing-round-overlay");
+        if (overlay) {
+          overlay.classList.add("hidden");
+          overlay.style.display = "none";
+        }
+
+        window.playerStatusIndicators = null;
+
+        game.collectMatchEarnings();
+
+        renderPot();
+        renderSeats();
+        renderScoreboard();
+        renderLogs();
+
+        if (game.isGameOver) {
+          triggerGameOver();
+        } else {
+          const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+          const humanLostRound = (offlineGuessingState.outcome.hasMatch && offlineGuessingState.outcome.playerIndex !== game.players.indexOf(humanPlayer));
+          
+          if (humanLostRound && !humanPlayer.isBot) {
+            showRoundLossModal(humanPlayer.stackCount);
+          } else {
+            resumeAfterRoundLoss();
+          }
+        }
+      });
+    }
+  }
+
+  function calculateAndApplyOfflineTransfers(actualStarName) {
+    const confirmedStake = offlineGuessingState.confirmedStake;
+    const diffs = {};
+
+    let wrongGuessers = [];
+    let correctGuessers = [];
+
+    game.players.forEach((p, index) => {
+      if (index === offlineGuessingState.cardHolderIndex) return;
+      if (p.stackCount <= 0 && !offlineGuessingState.guesses[p.id]) return;
+
+      const guessText = offlineGuessingState.guesses[p.id];
+      if (isCorrectGuess(guessText, actualStarName)) {
+        correctGuessers.push(p);
+      } else {
+        wrongGuessers.push(p);
+      }
+    });
+
+    let totalCollected = 0;
+    wrongGuessers.forEach(p => {
+      const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 30;
+      const transferVal = Math.min(confirmedStake, originalVal);
+      p.greetingsStack = originalVal - transferVal;
+      totalCollected += transferVal;
+      diffs[p.id] = -transferVal;
+    });
+
+    if (correctGuessers.length > 0) {
+      const awardVal = Math.floor(totalCollected / correctGuessers.length);
+      correctGuessers.forEach(p => {
+        const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 30;
+        p.greetingsStack = originalVal + awardVal;
+        diffs[p.id] = awardVal;
+      });
+    }
+
+    correctGuessers.forEach(p => {
+      if (diffs[p.id] === undefined) diffs[p.id] = 0;
+    });
+
+    offlineGuessingState.transferDiffs = diffs;
+
+    if (window.auth) {
+      const accounts = window.auth.getAccounts();
+      game.players.forEach(p => {
+        const normalizedPlayerName = p.name.trim().toLowerCase();
+        const matchKey = Object.keys(accounts).find(key => 
+          key === normalizedPlayerName || 
+          accounts[key].name.trim().toLowerCase() === normalizedPlayerName
+        );
+        if (matchKey) {
+          accounts[matchKey].coins = p.coins;
+          accounts[matchKey].greetingsStack = p.greetingsStack;
+        }
+      });
+      window.auth.saveAccounts(accounts);
+    }
+  }
+
+  function isCorrectGuess(guessText, actualStarName) {
+    if (!guessText) return false;
+    const normalizedGuess = guessText.trim().toLowerCase().replace(/\s+/g, "");
+    const normalizedActual = actualStarName.trim().toLowerCase().replace(/\s+/g, "");
+    return normalizedGuess === normalizedActual || 
+           normalizedActual.includes(normalizedGuess) || 
+           normalizedGuess.includes(normalizedActual);
   }
 
   // Initialize view

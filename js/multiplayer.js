@@ -988,6 +988,16 @@ class MultiplayerManager {
       isBetDeductedForCurrentPot: game.isBetDeductedForCurrentPot,
       currentPotStarterIndex: game.currentPotStarterIndex,
       selectedCategory: game.selectedCategory || "Tollywood",
+      pendingMatchWinnings: game.pendingMatchWinnings ? {
+        winnerIndex: game.pendingMatchWinnings.winnerIndex,
+        cards: game.pendingMatchWinnings.cards.map(c => this.serializeCard(c)),
+        coins: game.pendingMatchWinnings.coins,
+        deductionPlayers: game.pendingMatchWinnings.deductionPlayers,
+        wonCardsCount: game.pendingMatchWinnings.wonCardsCount,
+        winnings: game.pendingMatchWinnings.winnings,
+        matchedStarName: game.pendingMatchWinnings.matchedStarName,
+        roundNumber: game.pendingMatchWinnings.roundNumber
+      } : null,
       players: game.players.map(p => ({
         id: p.id,
         name: p.name || p.username || "Player",
@@ -1070,6 +1080,23 @@ class MultiplayerManager {
 
     if (window.game.isGameOver) {
       this.triggerGameOver();
+    }
+
+    // Sync Guessing Round Overlay online
+    const overlay = document.getElementById("guessing-round-overlay");
+    if (room.guessingRound && room.guessingRound.active) {
+      if (overlay) {
+        overlay.classList.remove("hidden");
+        overlay.style.display = "flex";
+      }
+      this.renderOnlineGuessingRoundView(room.guessingRound);
+    } else {
+      if (overlay && !overlay.classList.contains("hidden")) {
+        overlay.classList.add("hidden");
+        overlay.style.display = "none";
+        window.playerStatusIndicators = null;
+        window.renderSeats();
+      }
     }
   }
 
@@ -1228,6 +1255,10 @@ class MultiplayerManager {
         
         if (outcome.isGameOver) {
           this.triggerGameOver();
+        } else {
+          if (this.isHost) {
+            this.initializeOnlineGuessingRound(outcome);
+          }
         }
       }, 300);
     }, 1800);
@@ -1721,6 +1752,553 @@ class MultiplayerManager {
       console.error("Failed to update player offsets in DB:", e);
     }
   }
+
+  async initializeOnlineGuessingRound(outcome) {
+    if (!this.roomRef) return;
+    
+    this.onlineTransfersApplied = false;
+
+    const guessers = window.game.players.filter(p => p.id !== outcome.playerIndex && p.stackCount > 0);
+    const guesserUids = guessers.map(p => p.uid).filter(uid => uid);
+
+    const initialGuesses = {};
+    const initialBets = {};
+
+    const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+    const correctStarName = targetCard.name;
+
+    window.game.players.forEach(p => {
+      if (p.id !== outcome.playerIndex && p.isBot && p.stackCount > 0) {
+        const P_correct = 0.3;
+        let botGuess = "";
+        if (Math.random() < P_correct) {
+          botGuess = correctStarName;
+        } else {
+          const incorrectStars = window.game.config.roster.filter(s => s.name !== correctStarName);
+          botGuess = incorrectStars.length > 0 ? incorrectStars[Math.floor(Math.random() * incorrectStars.length)].name : "Prabhas";
+        }
+        initialGuesses[p.id] = { guess: botGuess, locked: true };
+        initialBets[p.id] = Math.random() < 0.6 ? 5 : 10;
+      }
+    });
+
+    try {
+      await this.roomRef.child("guessingRound").set({
+        active: true,
+        phase: "placing",
+        cardHolderId: outcome.playerIndex,
+        guesses: initialGuesses,
+        bets: initialBets,
+        confirmedStake: 0,
+        revealed: false,
+        guesserUids: guesserUids
+      });
+    } catch (e) {
+      console.error("Failed to initialize online guessing round:", e);
+    }
+  }
+
+  async renderOnlineGuessingRoundView(guessingRound) {
+    const titleEl = document.getElementById("guessing-round-title");
+    const instructionsEl = document.getElementById("guessing-round-instructions");
+    const contentEl = document.getElementById("guessing-round-content");
+    
+    const cardHolder = window.game.players[guessingRound.cardHolderId];
+    if (!cardHolder) return;
+    
+    const myUid = this.getMyUid();
+    const myId = window.game.players.findIndex(p => p.uid === myUid);
+    const isCardHolder = (myId === guessingRound.cardHolderId);
+
+    window.playerStatusIndicators = {};
+    window.game.players.forEach(p => {
+      if (p.id === guessingRound.cardHolderId) return;
+      if (guessingRound.bets && guessingRound.bets[p.id] !== undefined) {
+        window.playerStatusIndicators[p.id] = "🎴";
+      } else if (guessingRound.guesses && guessingRound.guesses[p.id] !== undefined) {
+        window.playerStatusIndicators[p.id] = "✏️";
+      }
+    });
+    window.renderSeats();
+
+    if (guessingRound.phase === "placing") {
+      if (isCardHolder) {
+        titleEl.innerHTML = "🎴 Placing Face-Down Card";
+        instructionsEl.innerHTML = `Choose one card from your stack to place face-down.`;
+
+        let cardsHtml = cardHolder.stack.map((c, index) => {
+          const starInfo = window.game.config.roster.find(s => s.id === c.id) || c;
+          const imgHtml = starInfo.imagePath ? `<img src="${starInfo.imagePath}" style="width: 100%; height: 100%; border-radius: 8px; object-fit: cover;">` : `<div style="font-size: 1.2rem; margin-top: 40px;">🎬</div>`;
+          return `<div class="star-card" data-card-idx="${index}" style="width: 110px; height: 154px; margin: 4px; border: 2px solid var(--accent-cyan); border-radius: 8px; background: #0f0c29; box-shadow: var(--shadow-sm); cursor: pointer; position: relative;">
+            ${imgHtml}
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); font-size: 0.72rem; padding: 4px; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; text-align: center;">${starInfo.name}</div>
+          </div>`;
+        }).join("");
+
+        contentEl.innerHTML = `
+          <div style="text-align: center; margin-bottom: 16px;">
+            <p>Select one greeting card to place face-down:</p>
+          </div>
+          <div class="guessing-card-scroll" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 300px; overflow-y: auto;">
+            ${cardsHtml}
+          </div>
+        `;
+
+        contentEl.querySelectorAll(".star-card").forEach(el => {
+          el.addEventListener("click", async () => {
+            const cardIdx = parseInt(el.dataset.cardIdx);
+            const selectedCard = cardHolder.stack[cardIdx];
+            
+            await this.roomRef.child("guessingRound/selectedCardInstanceId").set(selectedCard.instanceId);
+            await this.roomRef.child("guessingRound/phase").set("guessing");
+          });
+        });
+      } else {
+        titleEl.innerHTML = "🎴 Placing Face-Down Card";
+        instructionsEl.innerHTML = `Waiting for <strong>${cardHolder.name}</strong> to place a card face-down.`;
+        contentEl.innerHTML = `
+          <div style="text-align: center; padding: 32px 0;">
+            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--accent-pink); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p>Wait for the hidden card to be placed...</p>
+          </div>
+        `;
+      }
+    }
+
+    else if (guessingRound.phase === "guessing") {
+      if (isCardHolder) {
+        titleEl.innerHTML = "✏️ Guessers Thinking...";
+        instructionsEl.innerHTML = `Waiting for other players to enter their guesses.`;
+
+        let guesserStatusHtml = window.game.players.filter(p => p.id !== guessingRound.cardHolderId && p.stackCount > 0).map(p => {
+          const hasGuessed = guessingRound.guesses && guessingRound.guesses[p.id];
+          return `
+            <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span>${p.name} ${p.isBot ? '🤖' : ''}</span>
+              <span>${hasGuessed ? "✏️ Locked In" : "⌛ Thinking..."}</span>
+            </div>
+          `;
+        }).join("");
+
+        contentEl.innerHTML = `
+          <div style="padding: 12px 0;">
+            ${guesserStatusHtml}
+          </div>
+        `;
+
+        if (this.isHost) {
+          const allGuessed = guessingRound.guesserUids.every(uid => {
+            const p = window.game.players.find(pl => pl.uid === uid);
+            return p && guessingRound.guesses && guessingRound.guesses[p.id];
+          });
+          if (allGuessed) {
+            await this.roomRef.child("guessingRound/phase").set("betting");
+          }
+        }
+      } else {
+        const hasGuessed = guessingRound.guesses && guessingRound.guesses[myId];
+
+        if (!hasGuessed) {
+          titleEl.innerHTML = "✏️ Enter Your Guess";
+          instructionsEl.innerHTML = `Who is on this card? Write the Hero or Heroine name.`;
+
+          contentEl.innerHTML = `
+            <div style="text-align: center; padding: 12px 0;">
+              <p style="margin-bottom: 12px; font-size: 0.95rem;">Type the Star name:</p>
+              <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off">
+              <button type="button" id="submit-guess-btn" class="menu-btn primary-btn" style="width: 200px; margin: 12px auto 0;">Submit Guess</button>
+            </div>
+          `;
+
+          document.getElementById("submit-guess-btn").addEventListener("click", async () => {
+            const guessVal = document.getElementById("guesser-name-input").value.trim();
+            if (!guessVal) {
+              alert("Please type a guess!");
+              return;
+            }
+
+            await this.roomRef.child(`guessingRound/guesses/${myId}`).set({ guess: guessVal, locked: true });
+          });
+        } else {
+          titleEl.innerHTML = "✏️ Guess Submitted";
+          instructionsEl.innerHTML = `Waiting for other players to submit their guesses.`;
+          
+          let guesserStatusHtml = window.game.players.filter(p => p.id !== guessingRound.cardHolderId && p.stackCount > 0).map(p => {
+            const isLocal = p.uid === myUid;
+            const hasGuessed = guessingRound.guesses && guessingRound.guesses[p.id];
+            return `
+              <div style="display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); ${isLocal ? 'color: var(--accent-cyan); font-weight: 600;' : ''}">
+                <span>${p.name} ${p.isBot ? '🤖' : ''} ${isLocal ? '(You)' : ''}</span>
+                <span>${hasGuessed ? "✏️ Locked In" : "⌛ Thinking..."}</span>
+              </div>
+            `;
+          }).join("");
+
+          contentEl.innerHTML = `
+            <div style="padding: 12px 0;">
+              ${guesserStatusHtml}
+            </div>
+          `;
+        }
+      }
+    }
+
+    else if (guessingRound.phase === "betting") {
+      let count5 = 0;
+      let count10 = 0;
+      window.game.players.forEach(p => {
+        if (p.id !== guessingRound.cardHolderId && p.stackCount > 0) {
+          const betVal = guessingRound.bets && guessingRound.bets[p.id];
+          if (betVal === 10) count10++;
+          else if (betVal === 5) count5++;
+        }
+      });
+
+      const totalVoters = count5 + count10;
+      const pct5 = totalVoters > 0 ? Math.round((count5 / totalVoters) * 100) : 0;
+      const pct10 = totalVoters > 0 ? Math.round((count10 / totalVoters) * 100) : 0;
+      const confirmedStake = count10 > count5 ? 10 : 5;
+
+      const hasVoted = guessingRound.bets && guessingRound.bets[myId] !== undefined;
+
+      if (isCardHolder) {
+        titleEl.innerHTML = "📢 Vote Tally & Confirm";
+        instructionsEl.innerHTML = `Tallying the votes. Confirm the stake once all guessers vote.`;
+
+        const allVoted = guessingRound.guesserUids.every(uid => {
+          const p = window.game.players.find(pl => pl.uid === uid);
+          return p && guessingRound.bets && guessingRound.bets[p.id] !== undefined;
+        });
+
+        contentEl.innerHTML = `
+          <div class="stake-vote-tally-container">
+            <div class="stake-tally-row">
+              <div class="stake-tally-info">
+                <span>Stake 5 Greetings</span>
+                <span>${count5} votes (${pct5}%)</span>
+              </div>
+              <div class="stake-tally-progress-bg">
+                <div class="stake-tally-progress-fill" style="width: ${pct5}%;"></div>
+              </div>
+            </div>
+            <div class="stake-tally-row" style="margin-top: 12px;">
+              <div class="stake-tally-info">
+                <span>Stake 10 Greetings</span>
+                <span>${count10} votes (${pct10}%)</span>
+              </div>
+              <div class="stake-tally-progress-bg">
+                <div class="stake-tally-progress-fill" style="width: ${pct10}%; background: linear-gradient(90deg, #ec4899, #f43f5e);"></div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 16px;">
+            <p style="font-size: 0.95rem; margin-bottom: 16px;">
+              ${allVoted ? `Majority vote result: <strong>Stake is ${confirmedStake} Greetings</strong>` : `Waiting for all guessers to vote...`}
+            </p>
+            <button type="button" id="confirm-stake-btn" class="menu-btn primary-btn" ${allVoted ? "" : "disabled"} style="width: 260px; margin: 0 auto; ${allVoted ? "" : "opacity: 0.5; cursor: not-allowed;"}">Confirm — Stake is ${confirmedStake} Greetings</button>
+          </div>
+        `;
+
+        if (allVoted) {
+          document.getElementById("confirm-stake-btn").addEventListener("click", async () => {
+            await this.roomRef.child("guessingRound/confirmedStake").set(confirmedStake);
+            await this.roomRef.child("guessingRound/phase").set("revealing");
+          });
+        }
+      } else {
+        if (!hasVoted) {
+          titleEl.innerHTML = "🎴 Stake Your Greetings";
+          instructionsEl.innerHTML = `Choose how many greetings to stake on your guess.`;
+
+          contentEl.innerHTML = `
+            <div style="text-align: center; padding: 12px 0;">
+              <p style="margin-bottom: 16px; font-size: 0.95rem;">Choose how many greetings to stake:</p>
+              <div class="guessing-stake-btn-container">
+                <button type="button" class="menu-btn stake-btn" data-amt="5" style="border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1);">Stake 5 Greetings</button>
+                <button type="button" class="menu-btn stake-btn" data-amt="10" style="border-color: var(--accent-pink); background: rgba(236, 72, 153, 0.1);">Stake 10 Greetings</button>
+              </div>
+            </div>
+          `;
+
+          contentEl.querySelectorAll(".stake-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const amt = parseInt(btn.dataset.amt);
+              await this.roomRef.child(`guessingRound/bets/${myId}`).set(amt);
+            });
+          });
+        } else {
+          titleEl.innerHTML = "📢 Vote Submitted";
+          instructionsEl.innerHTML = `Waiting for all guessers to vote and Card Holder to confirm.`;
+
+          contentEl.innerHTML = `
+            <div class="stake-vote-tally-container">
+              <div class="stake-tally-row">
+                <div class="stake-tally-info">
+                  <span>Stake 5 Greetings</span>
+                  <span>${count5} votes (${pct5}%)</span>
+                </div>
+                <div class="stake-tally-progress-bg">
+                  <div class="stake-tally-progress-fill" style="width: ${pct5}%;"></div>
+                </div>
+              </div>
+              <div class="stake-tally-row" style="margin-top: 12px;">
+                <div class="stake-tally-info">
+                  <span>Stake 10 Greetings</span>
+                  <span>${count10} votes (${pct10}%)</span>
+                </div>
+                <div class="stake-tally-progress-bg">
+                  <div class="stake-tally-progress-fill" style="width: ${pct10}%; background: linear-gradient(90deg, #ec4899, #f43f5e);"></div>
+                </div>
+              </div>
+            </div>
+            <div style="text-align: center; padding: 12px 0;">
+              <p>Waiting for Card Holder confirmation...</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    else if (guessingRound.phase === "revealing") {
+      titleEl.innerHTML = "🃏 Reveal Hidden Card";
+      instructionsEl.innerHTML = `Let's see who is on the hidden card!`;
+
+      const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+
+      contentEl.innerHTML = `
+        <div class="guessing-card-container">
+          <div class="guessing-card-inner" id="flip-card-inner">
+            <div class="guessing-card-back pulse-glow" style="width: 100%; height: 100%; border-radius: 8px; background: linear-gradient(135deg, #4c1d95, #1e1b4b); box-shadow: 0 0 15px rgba(255,215,0,0.5); display: flex; align-items: center; justify-content: center;">
+              <div style="font-size: 2rem;">🌟</div>
+            </div>
+            <div class="guessing-card-front" id="flip-card-front" style="width: 100%; height: 100%;">
+              <!-- Card Front Rendered Here -->
+            </div>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 16px;">
+          ${isCardHolder ? `<button type="button" id="flip-action-btn" class="menu-btn primary-btn" style="width: 180px; margin: 0 auto;">Flip Card 🃏</button>` : `<p>Waiting for <strong>${cardHolder.name}</strong> to flip the card...</p>`}
+        </div>
+      `;
+
+      const frontContainer = document.getElementById("flip-card-front");
+      const frontCardDom = window.createCardElement(targetCard);
+      frontCardDom.style.width = "100%";
+      frontCardDom.style.height = "100%";
+      frontCardDom.style.margin = "0";
+      frontCardDom.style.boxShadow = "none";
+      frontContainer.appendChild(frontCardDom);
+
+      if (isCardHolder) {
+        document.getElementById("flip-action-btn").addEventListener("click", async () => {
+          const innerEl = document.getElementById("flip-card-inner");
+          innerEl.classList.add("flipped");
+
+          if (window.playTouchSound) window.playTouchSound();
+
+          setTimeout(async () => {
+            await this.roomRef.child("guessingRound/revealed").set(true);
+            await this.roomRef.child("guessingRound/phase").set("results");
+          }, 700);
+        });
+      } else {
+        if (guessingRound.revealed) {
+          const innerEl = document.getElementById("flip-card-inner");
+          if (innerEl) innerEl.classList.add("flipped");
+        }
+      }
+    }
+
+    else if (guessingRound.phase === "results") {
+      titleEl.innerHTML = "📊 Round Results";
+      instructionsEl.innerHTML = `Greeting card balances have been updated.`;
+
+      const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+      const correctStarName = targetCard.name;
+      const confirmedStake = guessingRound.confirmedStake || 5;
+
+      if (this.isHost && !this.onlineTransfersApplied) {
+        this.onlineTransfersApplied = true;
+        await this.calculateAndApplyOnlineTransfers(guessingRound);
+      }
+
+      const diffs = {};
+      let wrongGuessers = [];
+      let correctGuessers = [];
+
+      window.game.players.forEach((p, index) => {
+        if (index === guessingRound.cardHolderId) return;
+        if (p.stackCount <= 0 && (!guessingRound.guesses || !guessingRound.guesses[p.id])) return;
+
+        const guessObj = guessingRound.guesses && guessingRound.guesses[p.id];
+        const guessText = guessObj ? guessObj.guess : "";
+        if (this.isCorrectGuess(guessText, correctStarName)) {
+          correctGuessers.push(p);
+        } else {
+          wrongGuessers.push(p);
+        }
+      });
+
+      let totalCollected = 0;
+      wrongGuessers.forEach(p => {
+        const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 30;
+        const transferVal = Math.min(confirmedStake, originalVal);
+        totalCollected += transferVal;
+        diffs[p.id] = -transferVal;
+      });
+
+      if (correctGuessers.length > 0) {
+        const awardVal = Math.floor(totalCollected / correctGuessers.length);
+        correctGuessers.forEach(p => {
+          diffs[p.id] = awardVal;
+        });
+      }
+
+      correctGuessers.forEach(p => {
+        if (diffs[p.id] === undefined) diffs[p.id] = 0;
+      });
+
+      let rowsHtml = window.game.players.map((p, index) => {
+        if (index === guessingRound.cardHolderId) {
+          return `
+            <tr class="results-row-stagger" style="--row-index: ${index}; font-style: italic;">
+              <td>${p.name} (Winner)</td>
+              <td>—</td>
+              <td>—</td>
+              <td>No Change</td>
+            </tr>
+          `;
+        }
+
+        if (p.stackCount <= 0 && (!guessingRound.guesses || !guessingRound.guesses[p.id])) {
+          return `
+            <tr class="results-row-stagger" style="--row-index: ${index}; color: var(--text-muted);">
+              <td>${p.name}</td>
+              <td>—</td>
+              <td>—</td>
+              <td>Eliminated</td>
+            </tr>
+          `;
+        }
+
+        const guessObj = guessingRound.guesses && guessingRound.guesses[p.id];
+        const guessText = guessObj ? guessObj.guess : "No Guess";
+        const isCorrect = this.isCorrectGuess(guessText, correctStarName);
+        const changeVal = diffs[p.id] || 0;
+        const changeStr = changeVal > 0 ? `+${changeVal} Stack` : changeVal < 0 ? `${changeVal} Stack` : `0 Stack`;
+        const resultClass = isCorrect ? "correct-row" : "wrong-row";
+
+        return `
+          <tr class="${resultClass} results-row-stagger" style="--row-index: ${index};">
+            <td>${p.name} ${p.isBot ? '🤖' : ''} ${p.uid === myUid ? '(You)' : ''}</td>
+            <td>"${guessText}"</td>
+            <td>${isCorrect ? "✅ Correct" : "❌ Incorrect"}</td>
+            <td><strong>${changeStr}</strong></td>
+          </tr>
+        `;
+      }).join("");
+
+      contentEl.innerHTML = `
+        <div style="text-align: center; margin-bottom: 12px;">
+          <h4 style="color: var(--accent-pink);">Star revealed: <strong>${correctStarName}</strong></h4>
+        </div>
+        <table class="guessing-results-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Guess</th>
+              <th>Status</th>
+              <th>Transfer</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+        <div style="text-align: center; margin-top: 24px;">
+          ${this.isHost ? `<button type="button" id="continue-online-match-btn" class="menu-btn primary-btn" style="width: 220px; margin: 0 auto;">Continue Game</button>` : `<p>Waiting for Host to continue game...</p>`}
+        </div>
+      `;
+
+      if (this.isHost) {
+        document.getElementById("continue-online-match-btn").addEventListener("click", async () => {
+          window.game.collectMatchEarnings();
+          const serializedGameState = this.serializeGameState(window.game);
+          
+          await this.roomRef.update({
+            gameState: serializedGameState,
+            lastAction: {
+              type: "guessingRoundContinue",
+              actionId: "guessing_continue_" + Math.random().toString(36).substring(2, 11),
+              timestamp: firebase.database.ServerValue.TIMESTAMP
+            },
+            guessingRound: null
+          });
+        });
+      }
+    }
+  }
+
+  async calculateAndApplyOnlineTransfers(guessingRound) {
+    if (!this.roomRef || !window.game) return;
+
+    const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+    const correctStarName = targetCard.name;
+    const confirmedStake = guessingRound.confirmedStake || 5;
+
+    let wrongGuessers = [];
+    let correctGuessers = [];
+
+    window.game.players.forEach((p, index) => {
+      if (index === guessingRound.cardHolderId) return;
+      if (p.stackCount <= 0 && (!guessingRound.guesses || !guessingRound.guesses[p.id])) return;
+
+      const guessObj = guessingRound.guesses && guessingRound.guesses[p.id];
+      const guessText = guessObj ? guessObj.guess : "";
+      
+      if (this.isCorrectGuess(guessText, correctStarName)) {
+        correctGuessers.push(p);
+      } else {
+        wrongGuessers.push(p);
+      }
+    });
+
+    const updates = {};
+    let totalCollected = 0;
+
+    const snapshot = await this.roomRef.child("players").once("value");
+    const dbPlayers = snapshot.val() || {};
+
+    wrongGuessers.forEach(p => {
+      const dbPlayer = dbPlayers[p.uid] || {};
+      const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 30;
+      const transferVal = Math.min(confirmedStake, originalVal);
+      const newVal = originalVal - transferVal;
+      updates[`players/${p.uid}/greetingsStack`] = newVal;
+      totalCollected += transferVal;
+    });
+
+    if (correctGuessers.length > 0) {
+      const awardVal = Math.floor(totalCollected / correctGuessers.length);
+      correctGuessers.forEach(p => {
+        const dbPlayer = dbPlayers[p.uid] || {};
+        const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 30;
+        const newVal = originalVal + awardVal;
+        updates[`players/${p.uid}/greetingsStack`] = newVal;
+      });
+    }
+
+    await this.roomRef.update(updates);
+  }
+
+  isCorrectGuess(guessText, actualStarName) {
+    if (!guessText) return false;
+    const normalizedGuess = guessText.trim().toLowerCase().replace(/\s+/g, "");
+    const normalizedActual = actualStarName.trim().toLowerCase().replace(/\s+/g, "");
+    return normalizedGuess === normalizedActual || 
+           normalizedActual.includes(normalizedGuess) || 
+           normalizedGuess.includes(normalizedActual);
+  }
 }
 
 // Reconstruct game logic from deserialization helper
@@ -1739,6 +2317,20 @@ GameState.prototype.deserialize = function(data) {
   this.isBetDeductedForCurrentPot = data.isBetDeductedForCurrentPot;
   this.currentPotStarterIndex = data.currentPotStarterIndex;
   this.selectedCategory = data.selectedCategory || "Tollywood";
+  this.pendingMatchWinnings = data.pendingMatchWinnings ? {
+    winnerIndex: data.pendingMatchWinnings.winnerIndex,
+    cards: (data.pendingMatchWinnings.cards || []).map(c => {
+      const card = new CardInstance(c, c.instanceId);
+      card.playedBy = c.playedBy;
+      return card;
+    }),
+    coins: data.pendingMatchWinnings.coins,
+    deductionPlayers: data.pendingMatchWinnings.deductionPlayers || [],
+    wonCardsCount: data.pendingMatchWinnings.wonCardsCount,
+    winnings: data.pendingMatchWinnings.winnings,
+    matchedStarName: data.pendingMatchWinnings.matchedStarName,
+    roundNumber: data.pendingMatchWinnings.roundNumber
+  } : null;
   
   const oldPlayers = this.players || [];
   this.players = (data.players || []).map(p => {

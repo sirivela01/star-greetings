@@ -44,6 +44,7 @@ class GameState {
     this.isBetDeductedForCurrentPot = false;
     this.currentPotStarterIndex = 0;
     this.selectedCategory = "Tollywood";
+    this.pendingMatchWinnings = null;
   }
 
   // Set up the game with player names and stack size
@@ -218,47 +219,32 @@ class GameState {
 
     if (hasMatch) {
       // Player wins the round!
-      // All cards currently in the pot (placed by other players) go to this player
       const wonCardsCount = this.pot.length;
       const matchedCard = this.pot[matchIndex];
       
-      // Move pot cards and the triggering card back to winner's stack
-      activePlayer.stack.push(...this.pot);
-      activePlayer.stack.push(cardToPlay);
-      
-      // Deduct 10 cards from all other players (round losers)
-      this.players.forEach(p => {
-        if (p.id !== this.currentPlayerIndex && p.stackCount > 0) {
-          p.stack.splice(0, 10);
-        }
-      });
-      
-      // Calculate and award coin payout immediately
+      // Calculate winnings
       const activePlayers = this.getActivePlayers();
       const totalOpponents = activePlayers.filter(p => p.id !== activePlayer.id).length;
       const winnings = totalOpponents * this.matchBet;
-      activePlayer.coins += (winnings + this.matchBet); // Return their own bet + win from opponents
       
-      // Clear pot
-      this.pot = [];
-      this.isBetDeductedForCurrentPot = false;
-      
+      // Store in pending state (winnings will be collected in collectMatchEarnings)
+      this.pendingMatchWinnings = {
+        winnerIndex: this.currentPlayerIndex,
+        cards: [...this.pot, cardToPlay],
+        coins: winnings + this.matchBet,
+        deductionPlayers: this.players.filter(p => p.id !== this.currentPlayerIndex && p.stackCount > 0).map(p => p.id),
+        wonCardsCount: wonCardsCount,
+        winnings: winnings,
+        matchedStarName: cardToPlay.name,
+        roundNumber: this.roundNumber
+      };
+
       // Add log
       this.addLog(`Round ${this.roundNumber}: ${activePlayer.name} matched "${cardToPlay.name}", won ${wonCardsCount} cards, and won 🪙${winnings} from opponents.`);
       
       outcome.wonCount = wonCardsCount;
       outcome.matchedWith = matchedCard;
-      
-      // Check if game is over (only 1 or 0 players have cards left)
-      const activePlayersAfter = this.getActivePlayers();
-      if (activePlayersAfter.length <= 1) {
-        this.isGameOver = true;
-        const winner = activePlayersAfter[0] || this.players[0];
-        this.addLog(`Game Over! Only ${activePlayersAfter.length > 0 ? activePlayersAfter[0].name : "nobody"} has cards left.`);
-        outcome.gameEnded = true;
-      } else {
-        // Winner starts the new round. No turn rotation is needed!
-      }
+      outcome.gameEnded = false;
     } else {
       // No match. Card is added to the pot.
       this.pot.push(cardToPlay);
@@ -312,6 +298,36 @@ class GameState {
     outcome.scoreboard = this.getScoreboard();
 
     return outcome;
+  }
+
+  collectMatchEarnings() {
+    if (!this.pendingMatchWinnings) return;
+    const { winnerIndex, cards, coins, deductionPlayers } = this.pendingMatchWinnings;
+    
+    const winnerPlayer = this.players[winnerIndex];
+    if (winnerPlayer) {
+      winnerPlayer.stack.push(...cards);
+      winnerPlayer.coins += coins;
+    }
+    
+    deductionPlayers.forEach(pId => {
+      const p = this.players[pId];
+      if (p && p.stackCount > 0) {
+        p.stack.splice(0, 10);
+      }
+    });
+    
+    this.pot = [];
+    this.isBetDeductedForCurrentPot = false;
+    
+    const activePlayersAfter = this.getActivePlayers();
+    if (activePlayersAfter.length <= 1) {
+      this.isGameOver = true;
+      const winner = activePlayersAfter[0] || this.players[0];
+      this.addLog(`Game Over! Only ${activePlayersAfter.length > 0 ? activePlayersAfter[0].name : "nobody"} has cards left.`);
+    }
+    
+    this.pendingMatchWinnings = null;
   }
 
   // Get current scoreboard rankings — most cards = highest rank (winner first)
