@@ -3526,25 +3526,44 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     let totalCollected = 0;
+    let collectedCards = [];
+    
     wrongGuessers.forEach(p => {
       const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 30;
       const transferVal = Math.min(confirmedStake, originalVal);
-      p.greetingsStack = originalVal - transferVal;
-      totalCollected += transferVal;
       diffs[p.id] = -transferVal;
+      totalCollected += transferVal;
+
+      // Physically transfer the cards from the player's active stack
+      const actualDeduct = Math.min(transferVal, p.stack.length);
+      const removed = p.stack.splice(0, actualDeduct);
+      collectedCards.push(...removed);
     });
 
     if (correctGuessers.length > 0) {
       const awardVal = Math.floor(totalCollected / correctGuessers.length);
       correctGuessers.forEach(p => {
-        const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 30;
-        p.greetingsStack = originalVal + awardVal;
         diffs[p.id] = awardVal;
       });
+
+      if (collectedCards.length > 0) {
+        const cardsPerWinner = Math.floor(collectedCards.length / correctGuessers.length);
+        correctGuessers.forEach((p, idx) => {
+          const startIdx = idx * cardsPerWinner;
+          const endIdx = idx === correctGuessers.length - 1 ? collectedCards.length : startIdx + cardsPerWinner;
+          const pCards = collectedCards.slice(startIdx, endIdx);
+          p.stack.push(...pCards);
+        });
+      }
     }
 
     correctGuessers.forEach(p => {
       if (diffs[p.id] === undefined) diffs[p.id] = 0;
+    });
+
+    // Make sure all players' greetingsStack profile counts are updated to match the new stack sizes
+    game.players.forEach(p => {
+      p.greetingsStack = p.stack.length;
     });
 
     offlineGuessingState.transferDiffs = diffs;

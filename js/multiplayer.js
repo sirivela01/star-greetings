@@ -2265,6 +2265,7 @@ class MultiplayerManager {
 
     const updates = {};
     let totalCollected = 0;
+    let collectedCards = [];
 
     const snapshot = await this.roomRef.child("players").once("value");
     const dbPlayers = snapshot.val() || {};
@@ -2276,6 +2277,14 @@ class MultiplayerManager {
       const newVal = originalVal - transferVal;
       updates[`players/${p.uid}/greetingsStack`] = newVal;
       totalCollected += transferVal;
+
+      // Physically transfer the cards in the game engine
+      const gamePlayer = window.game.players.find(gp => gp.id === p.id);
+      if (gamePlayer) {
+        const actualDeduct = Math.min(transferVal, gamePlayer.stack.length);
+        const removed = gamePlayer.stack.splice(0, actualDeduct);
+        collectedCards.push(...removed);
+      }
     });
 
     if (correctGuessers.length > 0) {
@@ -2286,6 +2295,19 @@ class MultiplayerManager {
         const newVal = originalVal + awardVal;
         updates[`players/${p.uid}/greetingsStack`] = newVal;
       });
+
+      if (collectedCards.length > 0) {
+        const cardsPerWinner = Math.floor(collectedCards.length / correctGuessers.length);
+        correctGuessers.forEach((p, idx) => {
+          const gamePlayer = window.game.players.find(gp => gp.id === p.id);
+          if (gamePlayer) {
+            const startIdx = idx * cardsPerWinner;
+            const endIdx = idx === correctGuessers.length - 1 ? collectedCards.length : startIdx + cardsPerWinner;
+            const pCards = collectedCards.slice(startIdx, endIdx);
+            gamePlayer.stack.push(...pCards);
+          }
+        });
+      }
     }
 
     await this.roomRef.update(updates);
