@@ -400,9 +400,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const fieldRow = document.createElement("div");
       fieldRow.className = "player-setup-row";
       
-      // Default player type assignment: Player 2 defaults to bot, others to human
+      // Default player type assignment: all players default to human
       if (playerTypes[i] === undefined) {
-        playerTypes[i] = (i === 2) ? "bot" : "human";
+        playerTypes[i] = "human";
       }
       
       let defaultVal = defaultNames[i - 1] || `Player ${i}`;
@@ -2311,12 +2311,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const stackSize = 30; // Lock stack size to 30 greetings
     const deckTheme = window.selectedOfflineTheme || "Tollywood";
 
-    // If only 1 player is configured, automatically append a bot opponent
+    // If only 1 player is configured, automatically append a human opponent
     if (playerInputCount === 1) {
-      playerNames.push("Bot Ranbir");
+      playerNames.push("Ranbir");
       playerAvatarUrls.push(AVATARS[1]);
       playerBets.push(25);
-      playerTypes[2] = "bot";
+      playerTypes[2] = "human";
       playerAvatars[2] = 1;
     }
 
