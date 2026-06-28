@@ -3138,28 +3138,26 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter(p => p.id !== outcome.playerIndex && p.stackCount > 0)
       .map(p => p.id);
 
-    const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
-    const correctMovie = targetCard.movie || "Salaar";
+    const cardHolder = game.players[outcome.playerIndex];
+    // Take the top 6 cards of the cardHolder's stack
+    const top6Cards = cardHolder ? cardHolder.stack.slice(0, 6) : [];
+    
+    // Get unique movie names from these 6 cards
+    const top6Movies = top6Cards.map(c => c.movie).filter(m => m);
+    const uniqueTop6Movies = [...new Set(top6Movies)];
 
-    // Collect movie names ONLY from cards currently in players' stacks (in-play cards)
-    const inPlayMovies = new Set();
-    game.players.forEach(p => {
-      p.stack.forEach(card => {
-        if (card.movie && card.movie !== correctMovie) {
-          inPlayMovies.add(card.movie);
-        }
-      });
-    });
-    let moviePool = [...inPlayMovies];
-    // If not enough in-play movies, fill with roster movies as fallback
-    if (moviePool.length < 5) {
+    // Fill with other roster movies until we have exactly 6 unique movies
+    let moviePool = [...uniqueTop6Movies];
+    if (moviePool.length < 6) {
       const rosterFallback = game.config.roster
         .map(s => s.movie)
-        .filter(m => m && m !== correctMovie && !inPlayMovies.has(m));
-      moviePool = [...moviePool, ...rosterFallback];
+        .filter(m => m && !moviePool.includes(m));
+      const shuffledFallback = rosterFallback.sort(() => 0.5 - Math.random());
+      for (let i = 0; i < shuffledFallback.length && moviePool.length < 6; i++) {
+        moviePool.push(shuffledFallback[i]);
+      }
     }
-    const shuffledOthers = moviePool.sort(() => 0.5 - Math.random()).slice(0, 5);
-    const movieOptions = [correctMovie, ...shuffledOthers].sort(() => 0.5 - Math.random());
+    const movieOptions = moviePool.slice(0, 6).sort(() => 0.5 - Math.random());
 
     offlineGuessingState = {
       active: true,
@@ -3177,31 +3175,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.playerStatusIndicators = {};
-
-    const correctStarName = targetCard.name;
-
-    game.players.forEach(p => {
-      if (p.id !== outcome.playerIndex && p.isBot && p.stackCount > 0) {
-        const P_correct = 0.3;
-        let botGuess = "";
-        let botMovie = "";
-        if (Math.random() < P_correct) {
-          botGuess = correctStarName;
-          botMovie = correctMovie;
-        } else {
-          const incorrectMovies = movieOptions.filter(m => m !== correctMovie);
-          botMovie = incorrectMovies[Math.floor(Math.random() * incorrectMovies.length)];
-          const starForMovie = game.config.roster.find(s => s.movie === botMovie);
-          botGuess = starForMovie ? starForMovie.name : "Prabhas";
-        }
-        
-        offlineGuessingState.guesses[p.id] = botGuess;
-        offlineGuessingState.selectedMovies[p.id] = botMovie;
-        offlineGuessingState.bets[p.id] = Math.random() < 0.6 ? 5 : 10;
-        window.playerStatusIndicators[p.id] = "✏️";
-      }
-    });
-
     renderSeats();
 
     const overlay = document.getElementById("guessing-round-overlay");
@@ -3219,11 +3192,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const contentEl = document.getElementById("guessing-round-content");
     const cardHolder = game.players[offlineGuessingState.cardHolderIndex];
 
+    if (!titleEl || !instructionsEl || !contentEl) return;
+
     if (offlineGuessingState.phase === "placing") {
       titleEl.innerHTML = "🎴 Placing Face-Down Card";
       instructionsEl.innerHTML = `Pass the screen to <strong>${cardHolder.name}</strong>. Choose a card from your stack to place face-down.`;
 
-      let cardsHtml = cardHolder.stack.map((c, index) => {
+      // Show ONLY the top 6 cards of the stack
+      const top6Cards = cardHolder.stack.slice(0, 6);
+      let cardsHtml = top6Cards.map((c, index) => {
         return `<div class="star-card card-back" data-card-idx="${index}" style="width: 110px; height: 154px; margin: 4px; border: 2px solid rgba(255,255,255,0.1); border-radius: 8px; background: linear-gradient(135deg, #4c1d95, #1e1b4b); box-shadow: var(--shadow-sm); cursor: pointer; display: flex; align-items: center; justify-content: center;">
           <div style="font-size: 1.5rem;">🌟</div>
         </div>`;
@@ -3231,7 +3208,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       contentEl.innerHTML = `
         <div style="text-align: center; margin-bottom: 16px;">
-          <p>Choose one card to place face-down:</p>
+          <p>Choose one card to place face-down (from top 6 cards):</p>
         </div>
         <div class="guessing-card-scroll" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 300px; overflow-y: auto;">
           ${cardsHtml}
@@ -3241,10 +3218,32 @@ document.addEventListener("DOMContentLoaded", () => {
       contentEl.querySelectorAll(".star-card").forEach(el => {
         el.addEventListener("click", () => {
           const cardIdx = parseInt(el.dataset.cardIdx);
-          offlineGuessingState.selectedCardInstanceId = cardHolder.stack[cardIdx].instanceId;
+          const selectedCard = cardHolder.stack[cardIdx];
+          offlineGuessingState.selectedCardInstanceId = selectedCard.instanceId;
+          
+          const correctStarName = selectedCard.name;
+          const correctMovie = selectedCard.movie || "Salaar";
           
           game.players.forEach(p => {
             if (p.id !== offlineGuessingState.cardHolderIndex && p.isBot && p.stackCount > 0) {
+              const P_correct = 0.3;
+              let botGuess = "";
+              let botMovie = "";
+              if (Math.random() < P_correct) {
+                botGuess = correctStarName;
+                botMovie = correctMovie;
+              } else {
+                const incorrectMovies = offlineGuessingState.movieOptions.filter(m => m !== correctMovie);
+                botMovie = incorrectMovies[Math.floor(Math.random() * incorrectMovies.length)];
+                const starForMovie = game.config.roster.find(s => s.movie === botMovie);
+                botGuess = starForMovie ? starForMovie.name : "Prabhas";
+              }
+              
+              offlineGuessingState.guesses[p.id] = botGuess;
+              offlineGuessingState.selectedMovies[p.id] = botMovie;
+              offlineGuessingState.bets[p.id] = Math.random() < 0.6 ? 5 : 10;
+              window.playerStatusIndicators[p.id] = "✏️";
+            } else if (p.id !== offlineGuessingState.cardHolderIndex && p.stackCount > 0) {
               window.playerStatusIndicators[p.id] = "🎴";
             }
           });
@@ -3427,7 +3426,7 @@ document.addEventListener("DOMContentLoaded", () => {
         titleEl.innerHTML = "🃏 Reveal Hidden Card";
         instructionsEl.innerHTML = `Let's see who is on the hidden card!`;
 
-        const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+        const targetCard = (cardHolder && cardHolder.stack.find(c => c.instanceId === offlineGuessingState.selectedCardInstanceId)) || game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
         
         contentEl.innerHTML = `
           <div class="guessing-card-container">
@@ -3472,7 +3471,7 @@ document.addEventListener("DOMContentLoaded", () => {
       titleEl.innerHTML = "📊 Round Results";
       instructionsEl.innerHTML = `Greeting card balances have been updated.`;
 
-      const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+      const targetCard = (cardHolder && cardHolder.stack.find(c => c.instanceId === offlineGuessingState.selectedCardInstanceId)) || game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
       const correctStarName = targetCard.name;
       const confirmedStake = offlineGuessingState.confirmedStake;
 
@@ -3572,7 +3571,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function calculateAndApplyOfflineTransfers(actualStarName) {
-    const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+    const cardHolder = game.players[offlineGuessingState.cardHolderIndex];
+    const targetCard = (cardHolder && cardHolder.stack.find(c => c.instanceId === offlineGuessingState.selectedCardInstanceId)) || game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
     const actualMovieName = targetCard.movie || "";
     const confirmedStake = offlineGuessingState.confirmedStake;
     const diffs = {};

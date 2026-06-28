@@ -1764,28 +1764,26 @@ class MultiplayerManager {
     const initialGuesses = {};
     const initialBets = {};
 
-    const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
-    const correctMovie = targetCard.movie || "Salaar";
+    const cardHolder = window.game.players[outcome.playerIndex];
+    // Take the top 6 cards of the cardHolder's stack
+    const top6Cards = cardHolder ? cardHolder.stack.slice(0, 6) : [];
+    
+    // Get unique movie names from these 6 cards
+    const top6Movies = top6Cards.map(c => c.movie).filter(m => m);
+    const uniqueTop6Movies = [...new Set(top6Movies)];
 
-    // Collect movie names ONLY from cards currently in players' stacks (in-play cards)
-    const inPlayMovies = new Set();
-    window.game.players.forEach(p => {
-      p.stack.forEach(card => {
-        if (card.movie && card.movie !== correctMovie) {
-          inPlayMovies.add(card.movie);
-        }
-      });
-    });
-    let moviePool = [...inPlayMovies];
-    // If not enough in-play movies, fill with roster movies as fallback
-    if (moviePool.length < 5) {
+    // Fill with other roster movies until we have exactly 6 unique movies
+    let moviePool = [...uniqueTop6Movies];
+    if (moviePool.length < 6) {
       const rosterFallback = window.game.config.roster
         .map(s => s.movie)
-        .filter(m => m && m !== correctMovie && !inPlayMovies.has(m));
-      moviePool = [...moviePool, ...rosterFallback];
+        .filter(m => m && !moviePool.includes(m));
+      const shuffledFallback = rosterFallback.sort(() => 0.5 - Math.random());
+      for (let i = 0; i < shuffledFallback.length && moviePool.length < 6; i++) {
+        moviePool.push(shuffledFallback[i]);
+      }
     }
-    const shuffledOthers = moviePool.sort(() => 0.5 - Math.random()).slice(0, 5);
-    const movieOptions = [correctMovie, ...shuffledOthers].sort(() => 0.5 - Math.random());
+    const movieOptions = moviePool.slice(0, 6).sort(() => 0.5 - Math.random());
 
     const correctStarName = targetCard.name;
 
@@ -1853,7 +1851,9 @@ class MultiplayerManager {
         titleEl.innerHTML = "🎴 Placing Face-Down Card";
         instructionsEl.innerHTML = `Choose one card from your stack to place face-down.`;
 
-        let cardsHtml = cardHolder.stack.map((c, index) => {
+        // Show ONLY the top 6 cards of the stack
+        const top6Cards = cardHolder.stack.slice(0, 6);
+        let cardsHtml = top6Cards.map((c, index) => {
           const starInfo = window.game.config.roster.find(s => s.id === c.id) || c;
           const imgHtml = starInfo.imagePath ? `<img src="${starInfo.imagePath}" style="width: 100%; height: 100%; border-radius: 8px; object-fit: cover;">` : `<div style="font-size: 1.2rem; margin-top: 40px;">🎬</div>`;
           return `<div class="star-card" data-card-idx="${index}" style="width: 110px; height: 154px; margin: 4px; border: 2px solid var(--accent-cyan); border-radius: 8px; background: #0f0c29; box-shadow: var(--shadow-sm); cursor: pointer; position: relative;">
@@ -1864,7 +1864,7 @@ class MultiplayerManager {
 
         contentEl.innerHTML = `
           <div style="text-align: center; margin-bottom: 16px;">
-            <p>Select one greeting card to place face-down:</p>
+            <p>Select one greeting card to place face-down (from top 6 cards):</p>
           </div>
           <div class="guessing-card-scroll" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-height: 300px; overflow-y: auto;">
             ${cardsHtml}
@@ -1914,6 +1914,44 @@ class MultiplayerManager {
         `;
 
         if (this.isHost) {
+          // Dynamic bot guesses computation based on the actual selected card
+          const cardHolder = window.game.players[guessingRound.cardHolderId];
+          const targetCard = (cardHolder && cardHolder.stack.find(c => c.instanceId === guessingRound.selectedCardInstanceId)) || window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+          const correctStarName = targetCard.name;
+          const correctMovie = targetCard.movie || "Salaar";
+          
+          let needsBotUpdate = false;
+          const updatedGuesses = { ...guessingRound.guesses };
+          const updatedBets = { ...guessingRound.bets };
+          
+          window.game.players.forEach(p => {
+            if (p.id !== guessingRound.cardHolderId && p.isBot && p.stackCount > 0) {
+              const currentGuess = guessingRound.guesses && guessingRound.guesses[p.id];
+              if (!currentGuess || !currentGuess.actualValidated) {
+                const P_correct = 0.3;
+                let botGuess = "";
+                let botMovie = "";
+                if (Math.random() < P_correct) {
+                  botGuess = correctStarName;
+                  botMovie = correctMovie;
+                } else {
+                  const incorrectMovies = guessingRound.movieOptions.filter(m => m !== correctMovie);
+                  botMovie = incorrectMovies[Math.floor(Math.random() * incorrectMovies.length)];
+                  const starForMovie = window.game.config.roster.find(s => s.movie === botMovie);
+                  botGuess = starForMovie ? starForMovie.name : "Prabhas";
+                }
+                updatedGuesses[p.id] = { guess: botGuess, selectedMovie: botMovie, locked: true, actualValidated: true };
+                updatedBets[p.id] = Math.random() < 0.6 ? 5 : 10;
+                needsBotUpdate = true;
+              }
+            }
+          });
+          
+          if (needsBotUpdate) {
+            this.roomRef.child("guessingRound/guesses").set(updatedGuesses);
+            this.roomRef.child("guessingRound/bets").set(updatedBets);
+          }
+
           const allGuessed = guessingRound.guesserUids.every(uid => {
             const p = window.game.players.find(pl => pl.uid === uid);
             return p && guessingRound.guesses && guessingRound.guesses[p.id];
@@ -2176,7 +2214,7 @@ class MultiplayerManager {
       titleEl.innerHTML = "🃏 Reveal Hidden Card";
       instructionsEl.innerHTML = `Let's see who is on the hidden card!`;
 
-      const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+      const targetCard = (cardHolder && cardHolder.stack.find(c => c.instanceId === guessingRound.selectedCardInstanceId)) || window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
 
       contentEl.innerHTML = `
         <div class="guessing-card-container">
@@ -2226,7 +2264,7 @@ class MultiplayerManager {
       titleEl.innerHTML = "📊 Round Results";
       instructionsEl.innerHTML = `Greeting card balances have been updated.`;
 
-      const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+      const targetCard = (cardHolder && cardHolder.stack.find(c => c.instanceId === guessingRound.selectedCardInstanceId)) || window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
       const correctStarName = targetCard.name;
       const confirmedStake = guessingRound.confirmedStake || 5;
 
@@ -2376,7 +2414,8 @@ class MultiplayerManager {
   async calculateAndApplyOnlineTransfers(guessingRound) {
     if (!this.roomRef || !window.game) return;
 
-    const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+    const cardHolder = window.game.players[guessingRound.cardHolderId];
+    const targetCard = (cardHolder && cardHolder.stack.find(c => c.instanceId === guessingRound.selectedCardInstanceId)) || window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
     const correctStarName = targetCard.name;
     const correctMovieName = targetCard.movie || "";
     const confirmedStake = guessingRound.confirmedStake || 5;
