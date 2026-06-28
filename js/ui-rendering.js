@@ -3231,7 +3231,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const humanGuesserIds = offlineGuessingState.currentGuesserIds;
       
       if (humanGuesserIds.length === 0 || offlineGuessingState.currentGuesserPointer >= humanGuesserIds.length) {
-        offlineGuessingState.phase = "betting";
+        offlineGuessingState.phase = "revealing";
         offlineGuessingState.currentGuesserPointer = 0;
         renderOfflineGuessingRoundView();
         return;
@@ -3240,24 +3240,59 @@ document.addEventListener("DOMContentLoaded", () => {
       const activeGuesserId = humanGuesserIds[offlineGuessingState.currentGuesserPointer];
       const guesser = game.players[activeGuesserId];
 
-      titleEl.innerHTML = "✏️ Enter Your Guess";
+      titleEl.innerHTML = "✏️ Enter Your Guess & Stake";
       instructionsEl.innerHTML = `Pass the screen to <strong>${guesser.name}</strong>.`;
 
       contentEl.innerHTML = `
         <div class="pass-screen-box" style="text-align: center; padding: 24px 0;">
           <h3 style="margin-bottom: 20px;">Are you holding the device, ${guesser.name}?</h3>
-          <button type="button" id="proceed-guess-btn" class="menu-btn primary-btn" style="width: 200px; margin: 0 auto;">Confirm & Proceed</button>
+          <button type="button" id="proceed-guess-btn" class="menu-btn primary-btn">Confirm & Proceed</button>
         </div>
       `;
 
       document.getElementById("proceed-guess-btn").addEventListener("click", () => {
         contentEl.innerHTML = `
           <div style="text-align: center; padding: 12px 0;">
-            <p style="margin-bottom: 12px; font-size: 0.95rem;">Who is on this card? Write the Hero or Heroine name:</p>
-            <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off">
-            <button type="button" id="submit-guess-btn" class="menu-btn primary-btn" style="width: 200px; margin: 12px auto 0;">Submit Guess</button>
+            <p style="margin-bottom: 12px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Who is on this card? Write the Hero or Heroine name:</p>
+            <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off" style="max-width: 320px; font-size: 1.1rem; padding: 14px; margin-bottom: 24px;">
+            
+            <p style="margin-bottom: 12px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Choose how many greetings to stake on your guess:</p>
+            <div class="guessing-stake-btn-container" style="margin-bottom: 24px; display: flex; justify-content: center; gap: 16px;">
+              <button type="button" class="menu-btn stake-option-btn active" data-amt="5" style="border: 2px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.25); width: 140px; font-size: 1.05rem; display: inline-block;">5 Greetings</button>
+              <button type="button" class="menu-btn stake-option-btn" data-amt="10" style="border: 2px solid rgba(236, 72, 153, 0.2); background: rgba(236, 72, 153, 0.05); width: 140px; font-size: 1.05rem; display: inline-block;">10 Greetings</button>
+            </div>
+            
+            <button type="button" id="submit-guess-btn" class="menu-btn primary-btn">Submit Guess & Stake</button>
           </div>
         `;
+
+        let selectedStake = 5;
+        const stakeButtons = contentEl.querySelectorAll(".stake-option-btn");
+        stakeButtons.forEach(btn => {
+          btn.addEventListener("click", () => {
+            stakeButtons.forEach(b => {
+              b.classList.remove("active");
+              b.style.borderWidth = "2px";
+              b.style.borderStyle = "solid";
+              if (b.dataset.amt === "5") {
+                b.style.borderColor = "rgba(6, 182, 212, 0.2)";
+                b.style.background = "rgba(6, 182, 212, 0.05)";
+              } else {
+                b.style.borderColor = "rgba(236, 72, 153, 0.2)";
+                b.style.background = "rgba(236, 72, 153, 0.05)";
+              }
+            });
+            btn.classList.add("active");
+            selectedStake = parseInt(btn.dataset.amt);
+            if (selectedStake === 5) {
+              btn.style.borderColor = "var(--accent-cyan)";
+              btn.style.background = "rgba(6, 182, 212, 0.25)";
+            } else {
+              btn.style.borderColor = "var(--accent-pink)";
+              btn.style.background = "rgba(236, 72, 153, 0.25)";
+            }
+          });
+        });
 
         document.getElementById("submit-guess-btn").addEventListener("click", () => {
           const guessVal = document.getElementById("guesser-name-input").value.trim();
@@ -3267,58 +3302,12 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           offlineGuessingState.guesses[activeGuesserId] = guessVal;
+          offlineGuessingState.bets[activeGuesserId] = selectedStake;
           window.playerStatusIndicators[activeGuesserId] = "✏️";
           renderSeats();
 
           offlineGuessingState.currentGuesserPointer++;
           renderOfflineGuessingRoundView();
-        });
-      });
-    }
-
-    else if (offlineGuessingState.phase === "betting") {
-      const humanGuesserIds = offlineGuessingState.currentGuesserIds;
-
-      if (humanGuesserIds.length === 0 || offlineGuessingState.currentGuesserPointer >= humanGuesserIds.length) {
-        offlineGuessingState.phase = "revealing";
-        renderOfflineGuessingRoundView();
-        return;
-      }
-
-      const activeGuesserId = humanGuesserIds[offlineGuessingState.currentGuesserPointer];
-      const guesser = game.players[activeGuesserId];
-
-      titleEl.innerHTML = "🎴 Stake Your Greetings";
-      instructionsEl.innerHTML = `Pass the screen to <strong>${guesser.name}</strong>.`;
-
-      contentEl.innerHTML = `
-        <div class="pass-screen-box" style="text-align: center; padding: 24px 0;">
-          <h3 style="margin-bottom: 20px;">Are you holding the device, ${guesser.name}?</h3>
-          <button type="button" id="proceed-stake-btn" class="menu-btn primary-btn" style="width: 200px; margin: 0 auto;">Confirm & Proceed</button>
-        </div>
-      `;
-
-      document.getElementById("proceed-stake-btn").addEventListener("click", () => {
-        contentEl.innerHTML = `
-          <div style="text-align: center; padding: 12px 0;">
-            <p style="margin-bottom: 16px; font-size: 0.95rem;">Choose how many greetings to stake on your guess:</p>
-            <div class="guessing-stake-btn-container">
-              <button type="button" class="menu-btn stake-btn" data-amt="5" style="border-color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1);">Stake 5 Greetings</button>
-              <button type="button" class="menu-btn stake-btn" data-amt="10" style="border-color: var(--accent-pink); background: rgba(236, 72, 153, 0.1);">Stake 10 Greetings</button>
-            </div>
-          </div>
-        `;
-
-        contentEl.querySelectorAll(".stake-btn").forEach(btn => {
-          btn.addEventListener("click", () => {
-            const amt = parseInt(btn.dataset.amt);
-            offlineGuessingState.bets[activeGuesserId] = amt;
-            window.playerStatusIndicators[activeGuesserId] = "🎴";
-            renderSeats();
-
-            offlineGuessingState.currentGuesserPointer++;
-            renderOfflineGuessingRoundView();
-          });
         });
       });
     }
