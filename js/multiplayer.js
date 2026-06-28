@@ -1766,8 +1766,25 @@ class MultiplayerManager {
 
     const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
     const correctMovie = targetCard.movie || "Salaar";
-    const allMovies = [...new Set(window.game.config.roster.map(s => s.movie).filter(m => m && m !== correctMovie))];
-    const shuffledOthers = allMovies.sort(() => 0.5 - Math.random()).slice(0, 5);
+
+    // Collect movie names ONLY from cards currently in players' stacks (in-play cards)
+    const inPlayMovies = new Set();
+    window.game.players.forEach(p => {
+      p.stack.forEach(card => {
+        if (card.movie && card.movie !== correctMovie) {
+          inPlayMovies.add(card.movie);
+        }
+      });
+    });
+    let moviePool = [...inPlayMovies];
+    // If not enough in-play movies, fill with roster movies as fallback
+    if (moviePool.length < 5) {
+      const rosterFallback = window.game.config.roster
+        .map(s => s.movie)
+        .filter(m => m && m !== correctMovie && !inPlayMovies.has(m));
+      moviePool = [...moviePool, ...rosterFallback];
+    }
+    const shuffledOthers = moviePool.sort(() => 0.5 - Math.random()).slice(0, 5);
     const movieOptions = [correctMovie, ...shuffledOthers].sort(() => 0.5 - Math.random());
 
     const correctStarName = targetCard.name;
@@ -2221,7 +2238,7 @@ class MultiplayerManager {
         const guessText = guessObj ? guessObj.guess : "";
         const selectedMovie = guessObj ? guessObj.selectedMovie : "";
         
-        const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName);
+        const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName, targetCard.id);
         if (isCorrect) {
           correctGuessers.push(p);
         } else {
@@ -2292,7 +2309,7 @@ class MultiplayerManager {
         const guessObj = guessingRound.guesses && guessingRound.guesses[p.id];
         const guessText = guessObj ? guessObj.guess : "No Guess";
         const selectedMovie = guessObj ? guessObj.selectedMovie : "None";
-        const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName);
+        const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName, targetCard.id);
         const resultClass = isCorrect ? "correct-row" : "wrong-row";
 
         return `
@@ -2365,7 +2382,7 @@ class MultiplayerManager {
       const guessText = guessObj ? guessObj.guess : "";
       const selectedMovie = guessObj ? guessObj.selectedMovie : "";
       
-      const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName);
+      const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName, targetCard.id);
 
       if (isCorrect) {
         correctGuessers.push(p);
@@ -2442,13 +2459,32 @@ class MultiplayerManager {
     await this.roomRef.update(updates);
   }
 
-  isCorrectGuess(guessText, actualStarName) {
+  isCorrectGuess(guessText, actualStarName, cardId) {
     if (!guessText) return false;
     const normalizedGuess = guessText.trim().toLowerCase().replace(/\s+/g, "");
+    
+    // Check against the card's displayed name
     const normalizedActual = actualStarName.trim().toLowerCase().replace(/\s+/g, "");
-    return normalizedGuess === normalizedActual || 
-           normalizedActual.includes(normalizedGuess) || 
-           normalizedGuess.includes(normalizedActual);
+    if (normalizedGuess === normalizedActual ||
+        normalizedActual.includes(normalizedGuess) ||
+        normalizedGuess.includes(normalizedActual)) {
+      return true;
+    }
+    
+    // Also check against the real actor name from the roster (e.g. "Prabhas" for "Baahubali" card)
+    if (cardId && window.game && window.game.config && window.game.config.roster) {
+      const rosterEntry = window.game.config.roster.find(s => s.id === cardId);
+      if (rosterEntry && rosterEntry.name !== actualStarName) {
+        const normalizedRoster = rosterEntry.name.trim().toLowerCase().replace(/\s+/g, "");
+        if (normalizedGuess === normalizedRoster ||
+            normalizedRoster.includes(normalizedGuess) ||
+            normalizedGuess.includes(normalizedRoster)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 }
 

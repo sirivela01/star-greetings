@@ -3140,8 +3140,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
     const correctMovie = targetCard.movie || "Salaar";
-    const allMovies = [...new Set(game.config.roster.map(s => s.movie).filter(m => m && m !== correctMovie))];
-    const shuffledOthers = allMovies.sort(() => 0.5 - Math.random()).slice(0, 5);
+
+    // Collect movie names ONLY from cards currently in players' stacks (in-play cards)
+    const inPlayMovies = new Set();
+    game.players.forEach(p => {
+      p.stack.forEach(card => {
+        if (card.movie && card.movie !== correctMovie) {
+          inPlayMovies.add(card.movie);
+        }
+      });
+    });
+    let moviePool = [...inPlayMovies];
+    // If not enough in-play movies, fill with roster movies as fallback
+    if (moviePool.length < 5) {
+      const rosterFallback = game.config.roster
+        .map(s => s.movie)
+        .filter(m => m && m !== correctMovie && !inPlayMovies.has(m));
+      moviePool = [...moviePool, ...rosterFallback];
+    }
+    const shuffledOthers = moviePool.sort(() => 0.5 - Math.random()).slice(0, 5);
     const movieOptions = [correctMovie, ...shuffledOthers].sort(() => 0.5 - Math.random());
 
     offlineGuessingState = {
@@ -3477,7 +3494,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const selectedMovie = offlineGuessingState.selectedMovies[p.id] || "None";
         const guessText = offlineGuessingState.guesses[p.id] || "No Guess";
-        const isCorrect = (selectedMovie === targetCard.movie) && isCorrectGuess(guessText, correctStarName);
+        const isCorrect = (selectedMovie === targetCard.movie) && isCorrectGuess(guessText, correctStarName, targetCard.id);
         const resultClass = isCorrect ? "correct-row" : "wrong-row";
         
         return `
@@ -3560,7 +3577,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const selectedMovie = offlineGuessingState.selectedMovies[p.id];
       const guessText = offlineGuessingState.guesses[p.id];
       
-      const isCorrect = (selectedMovie === actualMovieName) && isCorrectGuess(guessText, actualStarName);
+      const isCorrect = (selectedMovie === actualMovieName) && isCorrectGuess(guessText, actualStarName, targetCard.id);
 
       if (isCorrect) {
         correctGuessers.push(p);
@@ -3650,13 +3667,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function isCorrectGuess(guessText, actualStarName) {
+  function isCorrectGuess(guessText, actualStarName, cardId) {
     if (!guessText) return false;
     const normalizedGuess = guessText.trim().toLowerCase().replace(/\s+/g, "");
+    
+    // Check against the card's displayed name
     const normalizedActual = actualStarName.trim().toLowerCase().replace(/\s+/g, "");
-    return normalizedGuess === normalizedActual || 
-           normalizedActual.includes(normalizedGuess) || 
-           normalizedGuess.includes(normalizedActual);
+    if (normalizedGuess === normalizedActual ||
+        normalizedActual.includes(normalizedGuess) ||
+        normalizedGuess.includes(normalizedActual)) {
+      return true;
+    }
+    
+    // Also check against the real actor name from the roster (for entries like "Baahubali" → Prabhas)
+    if (cardId) {
+      const rosterEntry = game.config.roster.find(s => s.id === cardId);
+      if (rosterEntry && rosterEntry.name !== actualStarName) {
+        const normalizedRoster = rosterEntry.name.trim().toLowerCase().replace(/\s+/g, "");
+        if (normalizedGuess === normalizedRoster ||
+            normalizedRoster.includes(normalizedGuess) ||
+            normalizedGuess.includes(normalizedRoster)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 
   // Initialize view
