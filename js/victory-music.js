@@ -351,7 +351,7 @@
     currentStarId = starId;
 
     let shouldAutoPlay = true;
-    if (isMobile && !audioUnlocked) {
+    if (isMobile) {
       shouldAutoPlay = false;
     }
 
