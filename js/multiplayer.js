@@ -2464,7 +2464,7 @@ class MultiplayerManager {
       }
     });
 
-    const cardHolder = window.game.players[guessingRound.cardHolderId];
+     // cardHolder is already declared at the top of the function
     const dbCardHolder = cardHolder ? (dbPlayers[cardHolder.uid] || {}) : {};
     const originalHolderVal = dbCardHolder.greetingsStack !== undefined ? dbCardHolder.greetingsStack : 6;
 

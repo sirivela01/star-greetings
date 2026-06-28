@@ -66,7 +66,7 @@ class GameState {
     const filteredRoster = roster.filter(c => c.industry.toLowerCase() === activeCategory.toLowerCase());
     const finalRoster = filteredRoster.length > 0 ? filteredRoster : roster;
 
-    const lockedSize = 6; // Lock starting stack size to exactly 6 greetings
+    const lockedSize = 30; // Lock starting stack size to exactly 30 greetings
 
     this.players.forEach(player => {
       player.stack = [];
@@ -376,19 +376,19 @@ class GameState {
       return { error: "Not enough coins or free buys" };
     }
 
-    // Add 6 cards to player's stack from selected deck theme
+    // Add 30 cards to player's stack from selected deck theme
     const roster = this.config.roster;
     const activeCategory = this.selectedCategory || "Tollywood";
     const filteredRoster = roster.filter(c => c.industry.toLowerCase() === activeCategory.toLowerCase());
     const finalRoster = filteredRoster.length > 0 ? filteredRoster : roster;
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 30; i++) {
       const randomStar = finalRoster[Math.floor(Math.random() * finalRoster.length)];
       this.globalInstanceCounter++;
       player.stack.push(new CardInstance(randomStar, `card_${this.globalInstanceCounter}`));
     }
 
-    this.addLog(`${player.name} bought a new stack (6 greetings) using a ${costType}.`);
+    this.addLog(`${player.name} bought a new stack (30 greetings) using a ${costType}.`);
 
     // If game was over because only 1 active player was left, reset gameOver state if there are now >1 active players
     const activePlayers = this.getActivePlayers();

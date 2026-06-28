@@ -2823,7 +2823,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const playerNames = [p1Name, "Bot Ranbir"];
         const playerAvatarUrls = [AVATARS[0], AVATARS[1]];
         const playerBets = [25, 25];
-        const stackSize = 6;
+        const stackSize = 30;
         const deckTheme = selectedTheme || "tollywood";
         
         // Initialize state
@@ -3611,7 +3611,7 @@ document.addEventListener("DOMContentLoaded", () => {
       collectedCards.push(...removed);
     });
 
-    const cardHolder = game.players[offlineGuessingState.cardHolderIndex];
+     // cardHolder is already declared at the top of the function
 
     if (correctGuessers.length > 0) {
       const awardVal = Math.floor(totalCollected / correctGuessers.length);
