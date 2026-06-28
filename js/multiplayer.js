@@ -1765,19 +1765,28 @@ class MultiplayerManager {
     const initialBets = {};
 
     const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
+    const correctMovie = targetCard.movie || "Salaar";
+    const allMovies = [...new Set(window.game.config.roster.map(s => s.movie).filter(m => m && m !== correctMovie))];
+    const shuffledOthers = allMovies.sort(() => 0.5 - Math.random()).slice(0, 5);
+    const movieOptions = [correctMovie, ...shuffledOthers].sort(() => 0.5 - Math.random());
+
     const correctStarName = targetCard.name;
 
     window.game.players.forEach(p => {
       if (p.id !== outcome.playerIndex && p.isBot && p.stackCount > 0) {
         const P_correct = 0.3;
         let botGuess = "";
+        let botMovie = "";
         if (Math.random() < P_correct) {
           botGuess = correctStarName;
+          botMovie = correctMovie;
         } else {
-          const incorrectStars = window.game.config.roster.filter(s => s.name !== correctStarName);
-          botGuess = incorrectStars.length > 0 ? incorrectStars[Math.floor(Math.random() * incorrectStars.length)].name : "Prabhas";
+          const incorrectMovies = movieOptions.filter(m => m !== correctMovie);
+          botMovie = incorrectMovies[Math.floor(Math.random() * incorrectMovies.length)];
+          const starForMovie = window.game.config.roster.find(s => s.movie === botMovie);
+          botGuess = starForMovie ? starForMovie.name : "Prabhas";
         }
-        initialGuesses[p.id] = { guess: botGuess, locked: true };
+        initialGuesses[p.id] = { guess: botGuess, selectedMovie: botMovie, locked: true };
         initialBets[p.id] = Math.random() < 0.6 ? 5 : 10;
       }
     });
@@ -1791,7 +1800,8 @@ class MultiplayerManager {
         bets: initialBets,
         confirmedStake: 0,
         revealed: false,
-        guesserUids: guesserUids
+        guesserUids: guesserUids,
+        movieOptions: movieOptions
       });
     } catch (e) {
       console.error("Failed to initialize online guessing round:", e);
@@ -1892,32 +1902,108 @@ class MultiplayerManager {
             return p && guessingRound.guesses && guessingRound.guesses[p.id];
           });
           if (allGuessed) {
-            await this.roomRef.child("guessingRound/phase").set("betting");
+            let count5 = 0;
+            let count10 = 0;
+            window.game.players.forEach(p => {
+              if (p.id !== guessingRound.cardHolderId && p.stackCount > 0) {
+                const betVal = guessingRound.bets && guessingRound.bets[p.id];
+                if (betVal === 10) count10++;
+                else count5++;
+              }
+            });
+            const confirmedStake = count10 > count5 ? 10 : 5;
+
+            await this.roomRef.child("guessingRound/confirmedStake").set(confirmedStake);
+            await this.roomRef.child("guessingRound/phase").set("revealing");
           }
         }
       } else {
         const hasGuessed = guessingRound.guesses && guessingRound.guesses[myId];
 
         if (!hasGuessed) {
-          titleEl.innerHTML = "✏️ Enter Your Guess";
-          instructionsEl.innerHTML = `Who is on this card? Write the Hero or Heroine name.`;
+          titleEl.innerHTML = "✏️ Enter Your Guess & Stake";
+          instructionsEl.innerHTML = `Choose a movie, enter the star name, and choose your stake.`;
+
+          const movieOptions = guessingRound.movieOptions || [];
+          const movieButtonsHtml = movieOptions.map(m => {
+            return `<button type="button" class="movie-option-btn" data-movie="${m}">${m}</button>`;
+          }).join("");
 
           contentEl.innerHTML = `
             <div style="text-align: center; padding: 12px 0;">
-              <p style="margin-bottom: 12px; font-size: 0.95rem;">Type the Star name:</p>
-              <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off">
-              <button type="button" id="submit-guess-btn" class="menu-btn primary-btn" style="width: 200px; margin: 12px auto 0;">Submit Guess</button>
+              <p style="margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Select the movie name for this greeting card:</p>
+              <div class="movie-option-list">
+                ${movieButtonsHtml}
+              </div>
+              
+              <p style="margin-top: 16px; margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Write the Hero or Heroine name:</p>
+              <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off" style="max-width: 300px; font-size: 1.1rem; padding: 10px; margin-bottom: 16px;">
+              
+              <p style="margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Choose how many greetings to stake on your guess:</p>
+              <div class="guessing-stake-btn-container" style="margin-bottom: 16px; display: flex; justify-content: center; gap: 16px;">
+                <button type="button" class="menu-btn stake-option-btn active" data-amt="5" style="border: 2px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.25); width: 140px; font-size: 1.05rem; display: inline-block;">5 Greetings</button>
+                <button type="button" class="menu-btn stake-option-btn" data-amt="10" style="border: 2px solid rgba(236, 72, 153, 0.2); background: rgba(236, 72, 153, 0.05); width: 140px; font-size: 1.05rem; display: inline-block;">10 Greetings</button>
+              </div>
+              
+              <button type="button" id="submit-guess-btn" class="menu-btn primary-btn">Submit Guess & Stake</button>
             </div>
           `;
 
+          let selectedMovie = "";
+          const movieButtons = contentEl.querySelectorAll(".movie-option-btn");
+          movieButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+              movieButtons.forEach(b => b.classList.remove("selected"));
+              btn.classList.add("selected");
+              selectedMovie = btn.dataset.movie;
+            });
+          });
+
+          let selectedStake = 5;
+          const stakeButtons = contentEl.querySelectorAll(".stake-option-btn");
+          stakeButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+              stakeButtons.forEach(b => {
+                b.classList.remove("active");
+                b.style.borderWidth = "2px";
+                b.style.borderStyle = "solid";
+                if (b.dataset.amt === "5") {
+                  b.style.borderColor = "rgba(6, 182, 212, 0.2)";
+                  b.style.background = "rgba(6, 182, 212, 0.05)";
+                } else {
+                  b.style.borderColor = "rgba(236, 72, 153, 0.2)";
+                  b.style.background = "rgba(236, 72, 153, 0.05)";
+                }
+              });
+              btn.classList.add("active");
+              selectedStake = parseInt(btn.dataset.amt);
+              if (selectedStake === 5) {
+                btn.style.borderColor = "var(--accent-cyan)";
+                btn.style.background = "rgba(6, 182, 212, 0.25)";
+              } else {
+                btn.style.borderColor = "var(--accent-pink)";
+                btn.style.background = "rgba(236, 72, 153, 0.25)";
+              }
+            });
+          });
+
           document.getElementById("submit-guess-btn").addEventListener("click", async () => {
+            if (!selectedMovie) {
+              alert("Please select a movie name!");
+              return;
+            }
             const guessVal = document.getElementById("guesser-name-input").value.trim();
             if (!guessVal) {
               alert("Please type a guess!");
               return;
             }
 
-            await this.roomRef.child(`guessingRound/guesses/${myId}`).set({ guess: guessVal, locked: true });
+            await this.roomRef.child(`guessingRound/guesses/${myId}`).set({ 
+              guess: guessVal, 
+              selectedMovie: selectedMovie, 
+              locked: true 
+            });
+            await this.roomRef.child(`guessingRound/bets/${myId}`).set(selectedStake);
           });
         } else {
           titleEl.innerHTML = "✏️ Guess Submitted";
@@ -2125,6 +2211,7 @@ class MultiplayerManager {
       const diffs = {};
       let wrongGuessers = [];
       let correctGuessers = [];
+      const correctMovieName = targetCard.movie || "";
 
       window.game.players.forEach((p, index) => {
         if (index === guessingRound.cardHolderId) return;
@@ -2132,7 +2219,10 @@ class MultiplayerManager {
 
         const guessObj = guessingRound.guesses && guessingRound.guesses[p.id];
         const guessText = guessObj ? guessObj.guess : "";
-        if (this.isCorrectGuess(guessText, correctStarName)) {
+        const selectedMovie = guessObj ? guessObj.selectedMovie : "";
+        
+        const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName);
+        if (isCorrect) {
           correctGuessers.push(p);
         } else {
           wrongGuessers.push(p);
@@ -2147,11 +2237,26 @@ class MultiplayerManager {
         diffs[p.id] = -transferVal;
       });
 
+      const cardHolderPlayer = window.game.players[guessingRound.cardHolderId];
+
       if (correctGuessers.length > 0) {
         const awardVal = Math.floor(totalCollected / correctGuessers.length);
         correctGuessers.forEach(p => {
           diffs[p.id] = awardVal;
         });
+        const distributed = awardVal * correctGuessers.length;
+        const remainder = totalCollected - distributed;
+        if (remainder > 0 && cardHolderPlayer) {
+          diffs[cardHolderPlayer.id] = remainder;
+        }
+      } else {
+        if (cardHolderPlayer) {
+          diffs[cardHolderPlayer.id] = totalCollected;
+        }
+      }
+
+      if (cardHolderPlayer && diffs[cardHolderPlayer.id] === undefined) {
+        diffs[cardHolderPlayer.id] = 0;
       }
 
       correctGuessers.forEach(p => {
@@ -2159,13 +2264,16 @@ class MultiplayerManager {
       });
 
       let rowsHtml = window.game.players.map((p, index) => {
+        const changeVal = diffs[p.id] || 0;
+        const changeStr = changeVal > 0 ? `+${changeVal} Stack` : changeVal < 0 ? `${changeVal} Stack` : `0 Stack`;
+
         if (index === guessingRound.cardHolderId) {
           return `
             <tr class="results-row-stagger" style="--row-index: ${index}; font-style: italic;">
               <td>${p.name} (Winner)</td>
               <td>—</td>
               <td>—</td>
-              <td>No Change</td>
+              <td><strong>${changeStr}</strong></td>
             </tr>
           `;
         }
@@ -2183,15 +2291,14 @@ class MultiplayerManager {
 
         const guessObj = guessingRound.guesses && guessingRound.guesses[p.id];
         const guessText = guessObj ? guessObj.guess : "No Guess";
-        const isCorrect = this.isCorrectGuess(guessText, correctStarName);
-        const changeVal = diffs[p.id] || 0;
-        const changeStr = changeVal > 0 ? `+${changeVal} Stack` : changeVal < 0 ? `${changeVal} Stack` : `0 Stack`;
+        const selectedMovie = guessObj ? guessObj.selectedMovie : "None";
+        const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName);
         const resultClass = isCorrect ? "correct-row" : "wrong-row";
 
         return `
           <tr class="${resultClass} results-row-stagger" style="--row-index: ${index};">
             <td>${p.name} ${p.isBot ? '🤖' : ''} ${p.uid === myUid ? '(You)' : ''}</td>
-            <td>"${guessText}"</td>
+            <td>"${selectedMovie}" / "${guessText}"</td>
             <td>${isCorrect ? "✅ Correct" : "❌ Incorrect"}</td>
             <td><strong>${changeStr}</strong></td>
           </tr>
@@ -2244,6 +2351,7 @@ class MultiplayerManager {
 
     const targetCard = window.game.pendingMatchWinnings.cards[window.game.pendingMatchWinnings.cards.length - 1];
     const correctStarName = targetCard.name;
+    const correctMovieName = targetCard.movie || "";
     const confirmedStake = guessingRound.confirmedStake || 5;
 
     let wrongGuessers = [];
@@ -2255,8 +2363,11 @@ class MultiplayerManager {
 
       const guessObj = guessingRound.guesses && guessingRound.guesses[p.id];
       const guessText = guessObj ? guessObj.guess : "";
+      const selectedMovie = guessObj ? guessObj.selectedMovie : "";
       
-      if (this.isCorrectGuess(guessText, correctStarName)) {
+      const isCorrect = (selectedMovie === correctMovieName) && this.isCorrectGuess(guessText, correctStarName);
+
+      if (isCorrect) {
         correctGuessers.push(p);
       } else {
         wrongGuessers.push(p);
@@ -2287,6 +2398,10 @@ class MultiplayerManager {
       }
     });
 
+    const cardHolder = window.game.players[guessingRound.cardHolderId];
+    const dbCardHolder = cardHolder ? (dbPlayers[cardHolder.uid] || {}) : {};
+    const originalHolderVal = dbCardHolder.greetingsStack !== undefined ? dbCardHolder.greetingsStack : 30;
+
     if (correctGuessers.length > 0) {
       const awardVal = Math.floor(totalCollected / correctGuessers.length);
       correctGuessers.forEach(p => {
@@ -2307,6 +2422,20 @@ class MultiplayerManager {
             gamePlayer.stack.push(...pCards);
           }
         });
+
+        // The card holder who flipped the card gets any remainder cards!
+        const distributedCount = cardsPerWinner * correctGuessers.length;
+        const remainderCount = collectedCards.length - distributedCount;
+        if (remainderCount > 0 && cardHolder) {
+          cardHolder.stack.push(...collectedCards.slice(distributedCount));
+          updates[`players/${cardHolder.uid}/greetingsStack`] = originalHolderVal + remainderCount;
+        }
+      }
+    } else {
+      // If nobody guessed correctly, all wrong guessers' stakes go to the Card Holder!
+      if (cardHolder && collectedCards.length > 0) {
+        cardHolder.stack.push(...collectedCards);
+        updates[`players/${cardHolder.uid}/greetingsStack`] = originalHolderVal + collectedCards.length;
       }
     }
 

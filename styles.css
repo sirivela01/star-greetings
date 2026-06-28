@@ -3695,3 +3695,46 @@ select.form-select option {
   display: inline-block !important;
   padding: 2px 4px !important;
 }
+
+.movie-option-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin: 16px auto !important;
+  max-width: 320px !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+  border-radius: var(--radius-sm) !important;
+  background: rgba(0,0,0,0.15) !important;
+  padding: 8px !important;
+}
+
+.movie-option-btn {
+  width: 100% !important;
+  max-width: 300px !important;
+  padding: 10px 14px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-sm) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  margin: 0 auto !important;
+  text-align: center !important;
+}
+
+.movie-option-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.movie-option-btn.selected {
+  background: rgba(236, 72, 153, 0.25) !important;
+  border-color: var(--accent-pink) !important;
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.4) !important;
+  font-weight: 700 !important;
+}

@@ -3138,6 +3138,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter(p => p.id !== outcome.playerIndex && p.stackCount > 0)
       .map(p => p.id);
 
+    const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+    const correctMovie = targetCard.movie || "Salaar";
+    const allMovies = [...new Set(game.config.roster.map(s => s.movie).filter(m => m && m !== correctMovie))];
+    const shuffledOthers = allMovies.sort(() => 0.5 - Math.random()).slice(0, 5);
+    const movieOptions = [correctMovie, ...shuffledOthers].sort(() => 0.5 - Math.random());
+
     offlineGuessingState = {
       active: true,
       phase: "placing",
@@ -3145,6 +3151,8 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedCardInstanceId: null,
       guesses: {},
       bets: {},
+      selectedMovies: {},
+      movieOptions: movieOptions,
       confirmedStake: 0,
       currentGuesserIds: guesserIds.filter(id => !game.players[id].isBot),
       currentGuesserPointer: 0,
@@ -3153,21 +3161,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.playerStatusIndicators = {};
 
-    const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
     const correctStarName = targetCard.name;
 
     game.players.forEach(p => {
       if (p.id !== outcome.playerIndex && p.isBot && p.stackCount > 0) {
         const P_correct = 0.3;
         let botGuess = "";
+        let botMovie = "";
         if (Math.random() < P_correct) {
           botGuess = correctStarName;
+          botMovie = correctMovie;
         } else {
-          const incorrectStars = game.config.roster.filter(s => s.name !== correctStarName);
-          botGuess = incorrectStars.length > 0 ? incorrectStars[Math.floor(Math.random() * incorrectStars.length)].name : "Prabhas";
+          const incorrectMovies = movieOptions.filter(m => m !== correctMovie);
+          botMovie = incorrectMovies[Math.floor(Math.random() * incorrectMovies.length)];
+          const starForMovie = game.config.roster.find(s => s.movie === botMovie);
+          botGuess = starForMovie ? starForMovie.name : "Prabhas";
         }
         
         offlineGuessingState.guesses[p.id] = botGuess;
+        offlineGuessingState.selectedMovies[p.id] = botMovie;
         offlineGuessingState.bets[p.id] = Math.random() < 0.6 ? 5 : 10;
         window.playerStatusIndicators[p.id] = "✏️";
       }
@@ -3251,13 +3263,22 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       document.getElementById("proceed-guess-btn").addEventListener("click", () => {
+        const movieButtonsHtml = offlineGuessingState.movieOptions.map(m => {
+          return `<button type="button" class="movie-option-btn" data-movie="${m}">${m}</button>`;
+        }).join("");
+
         contentEl.innerHTML = `
           <div style="text-align: center; padding: 12px 0;">
-            <p style="margin-bottom: 12px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Who is on this card? Write the Hero or Heroine name:</p>
-            <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off" style="max-width: 320px; font-size: 1.1rem; padding: 14px; margin-bottom: 24px;">
+            <p style="margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Select the movie name for this greeting card:</p>
+            <div class="movie-option-list">
+              ${movieButtonsHtml}
+            </div>
             
-            <p style="margin-bottom: 12px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Choose how many greetings to stake on your guess:</p>
-            <div class="guessing-stake-btn-container" style="margin-bottom: 24px; display: flex; justify-content: center; gap: 16px;">
+            <p style="margin-top: 16px; margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Write the Hero or Heroine name:</p>
+            <input type="text" id="guesser-name-input" class="guess-input-field" placeholder="Type Hero/Heroine Name..." autofocus autocomplete="off" style="max-width: 300px; font-size: 1.1rem; padding: 10px; margin-bottom: 16px;">
+            
+            <p style="margin-bottom: 8px; font-size: 1.1rem; color: rgba(255,255,255,0.9);">Choose how many greetings to stake on your guess:</p>
+            <div class="guessing-stake-btn-container" style="margin-bottom: 16px; display: flex; justify-content: center; gap: 16px;">
               <button type="button" class="menu-btn stake-option-btn active" data-amt="5" style="border: 2px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.25); width: 140px; font-size: 1.05rem; display: inline-block;">5 Greetings</button>
               <button type="button" class="menu-btn stake-option-btn" data-amt="10" style="border: 2px solid rgba(236, 72, 153, 0.2); background: rgba(236, 72, 153, 0.05); width: 140px; font-size: 1.05rem; display: inline-block;">10 Greetings</button>
             </div>
@@ -3265,6 +3286,16 @@ document.addEventListener("DOMContentLoaded", () => {
             <button type="button" id="submit-guess-btn" class="menu-btn primary-btn">Submit Guess & Stake</button>
           </div>
         `;
+
+        let selectedMovie = "";
+        const movieButtons = contentEl.querySelectorAll(".movie-option-btn");
+        movieButtons.forEach(btn => {
+          btn.addEventListener("click", () => {
+            movieButtons.forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+            selectedMovie = btn.dataset.movie;
+          });
+        });
 
         let selectedStake = 5;
         const stakeButtons = contentEl.querySelectorAll(".stake-option-btn");
@@ -3295,12 +3326,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         document.getElementById("submit-guess-btn").addEventListener("click", () => {
+          if (!selectedMovie) {
+            alert("Please select a movie name!");
+            return;
+          }
           const guessVal = document.getElementById("guesser-name-input").value.trim();
           if (!guessVal) {
             alert("Please type a guess!");
             return;
           }
 
+          offlineGuessingState.selectedMovies[activeGuesserId] = selectedMovie;
           offlineGuessingState.guesses[activeGuesserId] = guessVal;
           offlineGuessingState.bets[activeGuesserId] = selectedStake;
           window.playerStatusIndicators[activeGuesserId] = "✏️";
@@ -3414,13 +3450,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const confirmedStake = offlineGuessingState.confirmedStake;
 
       let rowsHtml = game.players.map((p, index) => {
+        const changeVal = offlineGuessingState.transferDiffs ? (offlineGuessingState.transferDiffs[p.id] || 0) : 0;
+        const changeStr = changeVal > 0 ? `+${changeVal} Stack` : changeVal < 0 ? `${changeVal} Stack` : `0 Stack`;
+
         if (index === offlineGuessingState.cardHolderIndex) {
           return `
             <tr class="results-row-stagger" style="--row-index: ${index}; font-style: italic;">
               <td>${p.name} (Winner)</td>
               <td>—</td>
               <td>—</td>
-              <td>No Change</td>
+              <td><strong>${changeStr}</strong></td>
             </tr>
           `;
         }
@@ -3436,16 +3475,15 @@ document.addEventListener("DOMContentLoaded", () => {
           `;
         }
 
+        const selectedMovie = offlineGuessingState.selectedMovies[p.id] || "None";
         const guessText = offlineGuessingState.guesses[p.id] || "No Guess";
-        const isCorrect = isCorrectGuess(guessText, correctStarName);
-        const changeVal = offlineGuessingState.transferDiffs ? (offlineGuessingState.transferDiffs[p.id] || 0) : 0;
-        const changeStr = changeVal > 0 ? `+${changeVal} Stack` : changeVal < 0 ? `${changeVal} Stack` : `0 Stack`;
+        const isCorrect = (selectedMovie === targetCard.movie) && isCorrectGuess(guessText, correctStarName);
         const resultClass = isCorrect ? "correct-row" : "wrong-row";
         
         return `
           <tr class="${resultClass} results-row-stagger" style="--row-index: ${index};">
             <td>${p.name} ${p.isBot ? '🤖' : ''}</td>
-            <td>"${guessText}"</td>
+            <td>"${selectedMovie}" / "${guessText}"</td>
             <td>${isCorrect ? "✅ Correct" : "❌ Incorrect"}</td>
             <td><strong>${changeStr}</strong></td>
           </tr>
@@ -3507,6 +3545,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function calculateAndApplyOfflineTransfers(actualStarName) {
+    const targetCard = game.pendingMatchWinnings.cards[game.pendingMatchWinnings.cards.length - 1];
+    const actualMovieName = targetCard.movie || "";
     const confirmedStake = offlineGuessingState.confirmedStake;
     const diffs = {};
 
@@ -3517,8 +3557,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (index === offlineGuessingState.cardHolderIndex) return;
       if (p.stackCount <= 0 && !offlineGuessingState.guesses[p.id]) return;
 
+      const selectedMovie = offlineGuessingState.selectedMovies[p.id];
       const guessText = offlineGuessingState.guesses[p.id];
-      if (isCorrectGuess(guessText, actualStarName)) {
+      
+      const isCorrect = (selectedMovie === actualMovieName) && isCorrectGuess(guessText, actualStarName);
+
+      if (isCorrect) {
         correctGuessers.push(p);
       } else {
         wrongGuessers.push(p);
@@ -3540,6 +3584,8 @@ document.addEventListener("DOMContentLoaded", () => {
       collectedCards.push(...removed);
     });
 
+    const cardHolder = game.players[offlineGuessingState.cardHolderIndex];
+
     if (correctGuessers.length > 0) {
       const awardVal = Math.floor(totalCollected / correctGuessers.length);
       correctGuessers.forEach(p => {
@@ -3554,12 +3600,31 @@ document.addEventListener("DOMContentLoaded", () => {
           const pCards = collectedCards.slice(startIdx, endIdx);
           p.stack.push(...pCards);
         });
+
+        // The card holder who flipped the card gets any remainder cards!
+        const distributedCount = cardsPerWinner * correctGuessers.length;
+        const remainderCount = collectedCards.length - distributedCount;
+        if (remainderCount > 0 && cardHolder) {
+          const remainderCards = collectedCards.slice(distributedCount);
+          cardHolder.stack.push(...remainderCards);
+          diffs[cardHolder.id] = (diffs[cardHolder.id] || 0) + remainderCount;
+        }
+      }
+    } else {
+      // If nobody guessed correctly, all wrong guessers' stakes go to the Card Holder!
+      if (cardHolder && collectedCards.length > 0) {
+        cardHolder.stack.push(...collectedCards);
+        diffs[cardHolder.id] = (diffs[cardHolder.id] || 0) + collectedCards.length;
       }
     }
 
     correctGuessers.forEach(p => {
       if (diffs[p.id] === undefined) diffs[p.id] = 0;
     });
+
+    if (cardHolder && diffs[cardHolder.id] === undefined) {
+      diffs[cardHolder.id] = 0;
+    }
 
     // Make sure all players' greetingsStack profile counts are updated to match the new stack sizes
     game.players.forEach(p => {
