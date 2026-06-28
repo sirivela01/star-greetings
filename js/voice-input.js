@@ -51,14 +51,36 @@
       stopListening();
     };
 
-    recognition.onend = function() {
-      // Apply fuzzy name correction on the final text to automatically match the best star
+    recognition.onend = async function() {
       if (inputEl.value) {
-        const corrected = fuzzyCorrectStarName(inputEl.value);
-        if (corrected && corrected !== inputEl.value) {
-          console.log(`🎤 Voice Input Auto-Corrected: "${inputEl.value}" -> "${corrected}"`);
-          inputEl.value = corrected;
-          inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+        // Collect active star names (RAG Context)
+        const roster = (window.game && window.game.config && window.game.config.roster) || [];
+        const rosterNames = roster.map(s => s.name);
+
+        inputEl.placeholder = "Correcting with GenAI...";
+
+        try {
+          const response = await fetch("/api/voice/correct", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              transcript: inputEl.value,
+              roster: rosterNames
+            })
+          });
+          const data = await response.json();
+          if (data && data.corrected) {
+            console.log(`🎤 GenAI Voice Correction: "${inputEl.value}" -> "${data.corrected}"`);
+            inputEl.value = data.corrected;
+            inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        } catch (e) {
+          console.error("GenAI Voice Correction failed, applying local fallback:", e);
+          const corrected = fuzzyCorrectStarName(inputEl.value);
+          if (corrected && corrected !== inputEl.value) {
+            inputEl.value = corrected;
+            inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+          }
         }
       }
       stopListening();

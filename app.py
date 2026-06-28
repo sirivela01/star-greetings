@@ -236,6 +236,94 @@ def update_player_bluff_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/voice/correct', methods=['POST'])
+def correct_voice_input():
+    """
+    Uses Gemini LLM and RAG (active star names context) to correct spoken actor name transcripts.
+    """
+    try:
+        body = request.json or {}
+        transcript = body.get("transcript", "").strip()
+        roster_names = body.get("roster", [])
+        
+        if not transcript:
+            return jsonify({"corrected": ""})
+            
+        if not roster_names:
+            return jsonify({"corrected": transcript})
+
+        global gemini_client
+        if not gemini_client and os.environ.get("GEMINI_API_KEY"):
+            try:
+                gemini_client = genai.Client()
+            except Exception as e:
+                print(f"Lazy init of Gemini client failed: {e}")
+
+        if gemini_client:
+            # RAG prompt guiding Gemini with the list of possible stars in play
+            sys_instruction = (
+                "You are an expert phonetic parser and auto-correction engine for Indian actor names. "
+                "The user is playing a cinema game and spoke a name. The speech recognition transcribed it as a phonetic approximation. "
+                "Your goal is to match this approximation to the single most likely star from the provided roster. "
+                "Return ONLY the exact matched star name from the roster (e.g. 'Nagarjuna', 'Prabhas'). "
+                "If it does not resemble any star in the roster, return the original transcription as-is. "
+                "Do not include quotes, explanations, or any other characters."
+            )
+            
+            prompt = (
+                f"Spoken text phonetic transcription: '{transcript}'\n"
+                f"Roster of stars in play (RAG Context):\n"
+                f"{json.dumps(roster_names)}\n"
+                f"\nIdentify if the spoken transcription resembles one of the names in the roster phonetically, "
+                f"for example, 'Now That' sounds exactly like 'Nagarjuna' (a very common transcription error), "
+                f"'Bunny' or 'Allu' is 'Allu Arjun', 'Sam' is 'Samantha Ruth Prabhu', 'NTR' or 'Tarak' is 'Jr NTR'. "
+                f"Output ONLY the corrected name or the original transcription if no match is found."
+            )
+
+            try:
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=sys_instruction,
+                        max_output_tokens=50,
+                    )
+                )
+                corrected_name = response.text.strip().replace('"', '')
+                return jsonify({"corrected": corrected_name})
+            except Exception as gemini_err:
+                print(f"Gemini voice correction failed: {gemini_err}")
+
+        # Fallback local dictionary mapping if Gemini is offline
+        clean_transcript = transcript.lower().replace(" ", "")
+        local_mappings = {
+            "nowthat": "Nagarjuna",
+            "nowthere": "Nagarjuna",
+            "nagarjuna": "Nagarjuna",
+            "nag": "Nagarjuna",
+            "prabas": "Prabhas",
+            "prabhas": "Prabhas",
+            "baahubali": "Prabhas",
+            "bunny": "Allu Arjun",
+            "allu": "Allu Arjun",
+            "alluarjun": "Allu Arjun",
+            "ntr": "Jr NTR",
+            "tarak": "Jr NTR",
+            "charan": "Ram Charan",
+            "ramcharan": "Ram Charan",
+            "sam": "Samantha Ruth Prabhu",
+            "samantha": "Samantha Ruth Prabhu"
+        }
+        
+        for key, val in local_mappings.items():
+            if key in clean_transcript:
+                return jsonify({"corrected": val})
+
+        return jsonify({"corrected": transcript})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # Initialize Gemini Client
 gemini_client = None
 try:

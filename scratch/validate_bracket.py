@@ -53,3 +53,5 @@ def check_brackets(filepath):
 check_brackets('js/victory-music.js')
 check_brackets('js/ui-rendering.js')
 check_brackets('js/multiplayer.js')
+check_brackets('js/voice-input.js')
+check_brackets('app.py')
