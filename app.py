@@ -314,6 +314,85 @@ def get_ml_voice_match(transcript, roster_names):
 
     return None
 
+@app.route('/api/voice/transcribe', methods=['POST'])
+def transcribe_voice_audio():
+    """
+    Receives a raw audio file from the client, sends it directly to Gemini model
+    for high-accuracy audio transcription + RAG context matching of actor names.
+    """
+    try:
+        if 'audio' not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
+            
+        audio_file = request.files['audio']
+        roster_names_raw = request.form.get("roster", "[]")
+        try:
+            roster_names = json.loads(roster_names_raw)
+        except Exception:
+            roster_names = []
+            
+        audio_bytes = audio_file.read()
+        if not audio_bytes:
+            return jsonify({"error": "Empty audio file"}), 400
+            
+        # Determine mime type (default to audio/webm or audio/wav)
+        mime_type = audio_file.content_type or "audio/webm"
+        if "octet-stream" in mime_type or not mime_type:
+            mime_type = "audio/webm"
+
+        global gemini_client
+        if not gemini_client and os.environ.get("GEMINI_API_KEY"):
+            try:
+                gemini_client = genai.Client()
+            except Exception as e:
+                print(f"Lazy init of Gemini client failed: {e}")
+
+        if gemini_client:
+            sys_instruction = (
+                "You are an expert voice recognition and transcription engine for Indian actor names in a card game. "
+                "The user is speaking an actor's name (like Prabhas, Allu Arjun, Mahesh Babu, Samantha, Nagarjuna, etc.). "
+                "You will be given the raw audio recording and the list of active actor names in play (RAG Context). "
+                "Listen to the audio, identify what name they are saying, and match it to the closest actor name from the list. "
+                "Return ONLY the exact matched star name from the list. "
+                "If it matches absolutely nothing, return your best transcription of the name they spoke. "
+                "Do not add any explanations, quotes, punctuation, or other text."
+            )
+            
+            prompt = (
+                f"Identify the actor name spoken in this audio clip.\n"
+                f"RAG Context (Possible Star Names in Play):\n"
+                f"{json.dumps(roster_names)}\n"
+                f"\nRemember: 'Hello Arjun' or 'Hello' or 'Arjun' is 'Allu Arjun'. 'Now That' or similar is 'Nagarjuna'. "
+                f"Return ONLY the exact matched name."
+            )
+
+            try:
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[
+                        types.Part.from_bytes(
+                            data=audio_bytes,
+                            mime_type=mime_type
+                        ),
+                        prompt
+                    ],
+                    config=types.GenerateContentConfig(
+                        system_instruction=sys_instruction,
+                        max_output_tokens=50,
+                    )
+                )
+                corrected_name = response.text.strip().replace('"', '')
+                print(f"🎤 Gemini Audio Transcription resolved: '{corrected_name}'")
+                return jsonify({"success": True, "transcription": corrected_name})
+            except Exception as gemini_err:
+                print(f"Gemini audio transcription failed: {gemini_err}")
+
+        # Fallback if Gemini or network is offline
+        return jsonify({"success": False, "error": "GenAI Service Unavailable"}), 503
+    except Exception as e:
+        print(f"Error in audio transcription endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/voice/correct', methods=['POST'])
 def correct_voice_input():
     """
