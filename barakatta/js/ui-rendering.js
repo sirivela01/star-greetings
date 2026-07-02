@@ -73,9 +73,9 @@
         const x = c * cellSize;
         const y = r * cellSize;
 
-        // Alternating light/dark checkered cells
+        // Alternating light/dark checkered wood cells
         const isLight = ((r + c) % 2 === 0);
-        ctx.fillStyle = isLight ? "#ebdccb" : "#242424"; // Premium cream vs deep charcoal wood
+        ctx.fillStyle = isLight ? "#c49c74" : "#5c3a21"; // Premium maple wood vs walnut wood
         ctx.fillRect(x, y, cellSize, cellSize);
 
         // Draw 3D Bevel effect on each cell to give it three-dimensional depth
