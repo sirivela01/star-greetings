@@ -6,6 +6,138 @@
   let activeChunks = [];
   let recordTimeout = null;
 
+  // Voice Self-Healing & Diagnostic Recovery Engine
+  const VoiceSelfHealingEngine = {
+    diagnosticLog: [],
+    
+    log(event, details) {
+      const entry = { timestamp: new Date().toISOString(), event, details };
+      this.diagnosticLog.push(entry);
+      console.warn(`[Voice Self-Healing] ${event}:`, details);
+      if (this.diagnosticLog.length > 50) this.diagnosticLog.shift();
+    },
+
+    async runRecovery(errorType, context = {}) {
+      this.log("ERROR_DETECTED", { errorType, context });
+      
+      switch(errorType) {
+        case "PERMISSION_DENIED":
+          this.showPermissionGuide();
+          this.resetMicUI(context.buttonId, context.inputId);
+          break;
+          
+        case "RECORDER_STUCK":
+        case "RECORDER_ERROR":
+          this.log("RECOVERY_ACTION", "Resetting MediaRecorder and releasing streams...");
+          this.releaseStreams();
+          this.resetMicUI(context.buttonId, context.inputId);
+          if (context.fallback) {
+            this.log("RECOVERY_ACTION", "Triggering WebSpeech recognition fallback");
+            context.fallback();
+          }
+          break;
+          
+        case "API_TRANSCRIBE_FAILED":
+          this.log("RECOVERY_ACTION", "Transcription API failed. Falling back to Web Speech API.");
+          this.resetMicUI(context.buttonId, context.inputId);
+          if (context.fallback) {
+            context.fallback();
+          }
+          break;
+          
+        case "NO_SPEECH_DETECTED":
+          this.log("RECOVERY_ACTION", "No speech detected. Resetting UI with tooltip guide.");
+          this.showSpeechTooltip(context.inputId);
+          this.resetMicUI(context.buttonId, context.inputId);
+          break;
+
+        default:
+          this.log("RECOVERY_ACTION", "General reset applied.");
+          this.releaseStreams();
+          this.resetMicUI(context.buttonId, context.inputId);
+          break;
+      }
+    },
+
+    releaseStreams() {
+      if (activeStream) {
+        try {
+          activeStream.getTracks().forEach(track => track.stop());
+        } catch (e) {
+          this.log("STREAM_RELEASE_ERR", e.message);
+        }
+        activeStream = null;
+      }
+      activeRecorder = null;
+      activeChunks = [];
+      if (recordTimeout) {
+        clearTimeout(recordTimeout);
+        recordTimeout = null;
+      }
+    },
+
+    resetMicUI(buttonId, inputId) {
+      const btnEl = document.getElementById(buttonId);
+      const inputEl = document.getElementById(inputId);
+      if (btnEl) {
+        btnEl.classList.remove("listening");
+        btnEl.innerHTML = "🎙️";
+      }
+      if (inputEl) {
+        inputEl.placeholder = "Type Hero/Heroine Name...";
+      }
+    },
+
+    showPermissionGuide() {
+      const existingToast = document.getElementById("voice-permission-toast");
+      if (existingToast) existingToast.remove();
+
+      const toast = document.createElement("div");
+      toast.id = "voice-permission-toast";
+      toast.style.position = "fixed";
+      toast.style.bottom = "80px";
+      toast.style.left = "50%";
+      toast.style.transform = "translateX(-50%)";
+      toast.style.background = "rgba(18, 18, 24, 0.95)";
+      toast.style.color = "#ffffff";
+      toast.style.padding = "16px 24px";
+      toast.style.borderRadius = "12px";
+      toast.style.boxShadow = "0 8px 32px rgba(0,0,0,0.5)";
+      toast.style.border = "1px solid rgba(255, 75, 75, 0.3)";
+      toast.style.zIndex = "10000";
+      toast.style.maxWidth = "90%";
+      toast.style.fontSize = "14px";
+      toast.style.lineHeight = "1.5";
+      toast.style.textAlign = "center";
+
+      toast.innerHTML = `
+        <div style="font-weight: bold; color: #ff4b4b; margin-bottom: 6px;">🎙️ Microphone Blocked</div>
+        <div>Please allow microphone access in your browser settings to use voice guessing:</div>
+        <div style="margin-top: 8px; font-size: 12px; color: #aaa;">
+          <strong>Chrome:</strong> Click the lock icon in the address bar &gt; enable Microphone.<br/>
+          <strong>Safari:</strong> Settings &gt; Safari &gt; Microphone &gt; Allow.
+        </div>
+        <button id="close-voice-toast" style="margin-top: 10px; background: #ff4b4b; border: none; color: white; padding: 4px 12px; borderRadius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">Got it</button>
+      `;
+
+      document.body.appendChild(toast);
+      document.getElementById("close-voice-toast").onclick = () => toast.remove();
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000);
+    },
+
+    showSpeechTooltip(inputId) {
+      const inputEl = document.getElementById(inputId);
+      if (inputEl) {
+        inputEl.placeholder = "🎙️ Speak louder & closer to microphone...";
+        setTimeout(() => {
+          if (inputEl.placeholder.includes("Speak louder")) {
+            inputEl.placeholder = "Type Hero/Heroine Name...";
+          }
+        }, 3000);
+      }
+    }
+  };
+
   window.startSpeechRecognition = function(inputId, buttonId) {
     const inputEl = document.getElementById(inputId);
     const btnEl = document.getElementById(buttonId);
@@ -84,9 +216,11 @@
                 throw new Error(data.error || "Failed to transcribe");
               }
             } catch (err) {
-              console.warn("GenAI Audio Transcription failed, falling back to Web Speech API text matching:", err);
-              cleanupStreamAndUI();
-              startWebSpeechRecognition();
+              VoiceSelfHealingEngine.runRecovery("API_TRANSCRIBE_FAILED", {
+                buttonId,
+                inputId,
+                fallback: startWebSpeechRecognition
+              });
             }
           };
 
@@ -106,8 +240,16 @@
 
         })
         .catch(err => {
-          console.warn("getUserMedia failed or blocked, falling back to Web Speech API:", err);
-          startWebSpeechRecognition();
+          VoiceSelfHealingEngine.log("GET_USER_MEDIA_FAILED", err.message);
+          if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+            VoiceSelfHealingEngine.runRecovery("PERMISSION_DENIED", { buttonId, inputId });
+          } else {
+            VoiceSelfHealingEngine.runRecovery("RECORDER_ERROR", {
+              buttonId,
+              inputId,
+              fallback: startWebSpeechRecognition
+            });
+          }
         });
     }
 
@@ -163,9 +305,13 @@
       };
 
       recognition.onerror = function(event) {
-        console.error("Speech recognition error:", event.error);
+        VoiceSelfHealingEngine.log("SPEECH_REC_ERROR", event.error);
         if (event.error === "not-allowed") {
-          alert("Microphone access is blocked. Please allow microphone permissions in your browser settings.");
+          VoiceSelfHealingEngine.runRecovery("PERMISSION_DENIED", { buttonId, inputId });
+        } else if (event.error === "no-speech") {
+          VoiceSelfHealingEngine.runRecovery("NO_SPEECH_DETECTED", { buttonId, inputId });
+        } else {
+          VoiceSelfHealingEngine.runRecovery("GENERAL_ERROR", { buttonId, inputId });
         }
         stopWebSpeech();
       };
