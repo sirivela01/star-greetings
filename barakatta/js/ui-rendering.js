@@ -62,22 +62,28 @@
 
     const w = canvas.width;
     const h = canvas.height;
-    const cellSize = w / 8;
+    const cellSize = w / 7;
 
     // Clear board
     ctx.clearRect(0, 0, w, h);
 
     // Draw grid cells with a rich traditional wood aesthetic
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
+    for (let r = 0; r < 7; r++) {
+      for (let c = 0; c < 7; c++) {
         const x = c * cellSize;
         const y = r * cellSize;
 
-        // Base cell background color pattern
-        // Outer track vs inner cells
-        const isOuter = (r === 0 || r === 7 || c === 0 || c === 7);
+        const isOuter = (r === 0 || r === 6 || c === 0 || c === 6);
+        const isHomeStretch = (r === 3 || c === 3);
+
+        if (isOuter) {
+          ctx.fillStyle = "#4a3120"; // Outer path cells
+        } else if (isHomeStretch) {
+          ctx.fillStyle = "#3a2414"; // Home stretch cells
+        } else {
+          ctx.fillStyle = "#20130a"; // Unused inner cells
+        }
         
-        ctx.fillStyle = isOuter ? "#4a3120" : "#301d10";
         ctx.fillRect(x, y, cellSize, cellSize);
 
         // Draw border/grid lines
@@ -119,7 +125,7 @@
   function drawPlayerStartBadge(playerId, color) {
     const startIdx = BARAKATTA_BOARD.playerStartIndex[playerId];
     const cell = BARAKATTA_BOARD.path[startIdx];
-    const cellSize = canvas.width / 8;
+    const cellSize = canvas.width / 7;
     const x = cell.col * cellSize;
     const y = cell.row * cellSize;
 
@@ -156,7 +162,7 @@
 
   // Renders all board-active rock tokens onto the canvas
   function renderRocksOnBoard() {
-    const cellSize = canvas.width / 8;
+    const cellSize = canvas.width / 7;
     
     // Group all board active rocks by cell coordinate to calculate offsets for stacking
     const cellMap = {};
@@ -384,8 +390,8 @@
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    const col = Math.floor(clickX / (canvas.width / 8));
-    const row = Math.floor(clickY / (canvas.height / 8));
+    const col = Math.floor(clickX / (canvas.width / 7));
+    const row = Math.floor(clickY / (canvas.height / 7));
 
     // Find if a legal rock was clicked
     const actions = game.getLegalActions("player1", game.diceValue);

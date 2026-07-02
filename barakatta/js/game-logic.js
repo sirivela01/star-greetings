@@ -58,13 +58,13 @@ class BarakattaGame {
     if (!rock || rock.status === "yard") return null;
 
     const steps = rock.stepsMoved + stepsOffset;
-    if (steps < 28) {
+    if (steps < 24) {
       const startIdx = BARAKATTA_BOARD.playerStartIndex[playerId];
-      const pathIdx = (startIdx + steps) % 28;
+      const pathIdx = (startIdx + steps) % 24;
       return BARAKATTA_BOARD.path[pathIdx];
-    } else if (steps <= 30) {
+    } else if (steps <= 26) {
       const stretch = BARAKATTA_BOARD.homeStretches[playerId];
-      const idx = steps - 28;
+      const idx = steps - 24;
       return stretch[idx];
     }
     return null; // reached home
@@ -127,12 +127,12 @@ class BarakattaGame {
     const currentSteps = rock.stepsMoved;
     const targetSteps = currentSteps + steps;
 
-    // A rock reaches home exactly at step 30. Overshoot is illegal.
-    if (targetSteps > 30) return false;
+    // A rock reaches home exactly at step 26. Overshoot is illegal.
+    if (targetSteps > 26) return false;
 
     // Check capture lock for entering the home stretch
     const hasCapture = !this.requireCaptureToEnterHome || this.hasCapturedAnOpponent[playerId];
-    if (!hasCapture && targetSteps >= 28) {
+    if (!hasCapture && targetSteps >= 24) {
       // Without capture, rock cannot enter home stretch, but it can cycle outer loop
       return true; 
     }
@@ -166,15 +166,15 @@ class BarakattaGame {
       
       const hasCapture = !this.requireCaptureToEnterHome || this.hasCapturedAnOpponent[playerId];
       
-      if (!hasCapture && rock.stepsMoved + steps >= 28) {
+      if (!hasCapture && rock.stepsMoved + steps >= 24) {
         // Without capture, wrap around outer perimeter
-        rock.stepsMoved = (rock.stepsMoved + steps) % 28;
+        rock.stepsMoved = (rock.stepsMoved + steps) % 24;
       } else {
         rock.stepsMoved += steps;
       }
 
       // Check if it reached home
-      if (rock.stepsMoved === 30) {
+      if (rock.stepsMoved === 26) {
         rock.status = "home";
         actionSummary = `Moved rock #${rock.id + 1} home!`;
       } else {
@@ -302,11 +302,11 @@ class BarakattaGame {
     const enterAll6Action = legalActions.find(act => act.type === "ENTER_ALL_6");
     if (enterAll6Action) return enterAll6Action;
 
-    // 3. Move the rock closest to landing exactly home (step 30)
+    // 3. Move the rock closest to landing exactly home (step 26)
     const moveHomeActions = legalActions.filter(act => {
       if (act.type !== "MOVE_ROCK") return false;
       const rock = this.players.player3.rocks[act.rockId];
-      return (rock.stepsMoved + act.steps === 30);
+      return (rock.stepsMoved + act.steps === 26);
     });
     if (moveHomeActions.length > 0) {
       return moveHomeActions.reduce((prev, curr) => {
