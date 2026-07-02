@@ -85,9 +85,8 @@
               }
             } catch (err) {
               console.warn("GenAI Audio Transcription failed, falling back to Web Speech API text matching:", err);
-              inputEl.placeholder = "Mic processing failed. Type instead!";
-            } finally {
               cleanupStreamAndUI();
+              startWebSpeechRecognition();
             }
           };
 
@@ -238,18 +237,22 @@
      * Fuzzy match spoken text against the current active stars roster.
      */
     function fuzzyCorrectStarName(spokenText) {
-      const cleanSpoken = spokenText.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-      if (!cleanSpoken) return spokenText;
+      const normalizedSpoken = spokenText.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      if (!normalizedSpoken) return spokenText;
 
-      // Extract current deck roster (from configuration)
       const roster = (window.game && window.game.config && window.game.config.roster) || [];
       if (roster.length === 0) return spokenText;
 
       let bestMatchName = spokenText;
       let bestScore = 0;
 
-      // Direct matches and phonetic approximations
+      // Direct mappings on the compact string (no spaces)
+      const cleanSpoken = normalizedSpoken.replace(/\s+/g, "");
       const nameMappings = {
+        "helloarjun": "Allu Arjun",
+        "hello": "Allu Arjun",
+        "nowthat": "Nagarjuna",
+        "nowthere": "Nagarjuna",
         "prabas": "Prabhas",
         "parbas": "Prabhas",
         "pravas": "Prabhas",
@@ -298,7 +301,7 @@
         "nbk": "Nandamuri Balakrishna",
         "venkatesh": "Venkatesh",
         "venky": "Venkatesh",
-        "baahubali": "Prabhas", // Map Baahubali alias spoken to Prabhas
+        "baahubali": "Prabhas",
         "bahubali": "Prabhas"
       };
 
@@ -307,10 +310,11 @@
         return nameMappings[cleanSpoken];
       }
 
-      // 2. Perform fuzzy string matching over the roster names
+      // 2. Perform fuzzy string matching over the roster names using tokens
       roster.forEach(star => {
         const starName = star.name;
-        const cleanStar = starName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const starNormalized = starName.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+        const cleanStar = starNormalized.replace(/\s+/g, "");
 
         // Exact substring matches
         if (cleanSpoken.includes(cleanStar) || cleanStar.includes(cleanSpoken)) {
@@ -320,8 +324,8 @@
         }
 
         // Token match calculation
-        const spokenTokens = cleanSpoken.split(/\s+/);
-        const starTokens = cleanStar.split(/\s+/);
+        const spokenTokens = normalizedSpoken.split(/\s+/);
+        const starTokens = starNormalized.split(/\s+/);
         
         let matches = 0;
         spokenTokens.forEach(t => {
