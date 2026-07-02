@@ -67,7 +67,7 @@
     // Clear board
     ctx.clearRect(0, 0, w, h);
 
-    // Draw grid cells with premium chess-theme checkered look (cream/charcoal)
+    // Draw grid cells with premium 3D beveled chess-theme checkered look (cream/charcoal)
     for (let r = 0; r < 7; r++) {
       for (let c = 0; c < 7; c++) {
         const x = c * cellSize;
@@ -78,7 +78,46 @@
         ctx.fillStyle = isLight ? "#ebdccb" : "#242424"; // Premium cream vs deep charcoal wood
         ctx.fillRect(x, y, cellSize, cellSize);
 
-        // Draw fine grid lines
+        // Draw 3D Bevel effect on each cell to give it three-dimensional depth
+        if (isLight) {
+          // Highlight on top & left (light source from top-left)
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, y + cellSize);
+          ctx.lineTo(x, y);
+          ctx.lineTo(x + cellSize, y);
+          ctx.stroke();
+
+          // Drop shadow on bottom & right
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, y + cellSize);
+          ctx.lineTo(x + cellSize, y + cellSize);
+          ctx.lineTo(x + cellSize, y);
+          ctx.stroke();
+        } else {
+          // Recessed shadow on top & left
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, y + cellSize);
+          ctx.lineTo(x, y);
+          ctx.lineTo(x + cellSize, y);
+          ctx.stroke();
+
+          // Reflected light border on bottom & right
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, y + cellSize);
+          ctx.lineTo(x + cellSize, y + cellSize);
+          ctx.lineTo(x + cellSize, y);
+          ctx.stroke();
+        }
+
+        // Draw fine grid separator lines
         ctx.strokeStyle = "#121212";
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, cellSize, cellSize);
@@ -171,10 +210,21 @@
     renderRocksOnBoard();
     updateYardDisplay();
 
-    // Draw rich mahogany border frame around the board canvas
+    // Draw rich 3D mahogany wooden border frame with inner gold trim
+    // 1. Dark outer drop shadow border
+    ctx.strokeStyle = "#231103";
+    ctx.lineWidth = 12;
+    ctx.strokeRect(6, 6, w - 12, h - 12);
+
+    // 2. Rich mahogany center frame
     ctx.strokeStyle = "#5c2e0b";
     ctx.lineWidth = 8;
-    ctx.strokeRect(4, 4, w - 8, h - 8);
+    ctx.strokeRect(6, 6, w - 12, h - 12);
+
+    // 3. Inner beveled gold line trim
+    ctx.strokeStyle = "rgba(255, 224, 130, 0.25)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(10, 10, w - 20, h - 20);
   }
 
   function drawPlayerStartBadge(playerId, color) {
