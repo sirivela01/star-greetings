@@ -67,50 +67,55 @@
     // Clear board
     ctx.clearRect(0, 0, w, h);
 
-    // Draw grid cells with a rich traditional wood aesthetic
+    // Draw grid cells with premium chess-theme checkered look (cream/charcoal)
     for (let r = 0; r < 7; r++) {
       for (let c = 0; c < 7; c++) {
         const x = c * cellSize;
         const y = r * cellSize;
 
-        const isOuter = (r === 0 || r === 6 || c === 0 || c === 6);
-        const isHomeStretch = (r === 3 || c === 3);
-
-        if (isOuter) {
-          ctx.fillStyle = "#4a3120"; // Outer path cells
-        } else if (isHomeStretch) {
-          ctx.fillStyle = "#3a2414"; // Home stretch cells
-        } else {
-          ctx.fillStyle = "#20130a"; // Unused inner cells
-        }
-        
+        // Alternating light/dark checkered cells
+        const isLight = ((r + c) % 2 === 0);
+        ctx.fillStyle = isLight ? "#ebdccb" : "#242424"; // Premium cream vs deep charcoal wood
         ctx.fillRect(x, y, cellSize, cellSize);
 
-        // Draw border/grid lines
-        ctx.strokeStyle = "#5a3a24";
-        ctx.lineWidth = 2;
+        // Draw fine grid lines
+        ctx.strokeStyle = "#121212";
+        ctx.lineWidth = 1;
         ctx.strokeRect(x, y, cellSize, cellSize);
       }
     }
 
-    // Draw Safe Squares (X)
+    // Draw Safe Squares (X) - Shiny Silver Metallic Gradient
     BARAKATTA_BOARD.safeSquares.forEach(safe => {
       const x = safe.col * cellSize;
       const y = safe.row * cellSize;
 
-      // Safe square backdrop highlight
-      ctx.fillStyle = "rgba(245, 158, 11, 0.12)";
+      // Safe square backdrop highlight (metallic silver sheen)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
       ctx.fillRect(x, y, cellSize, cellSize);
 
-      // Draw the X mark
-      ctx.strokeStyle = "#fbbf24";
-      ctx.lineWidth = 3;
+      // Draw the X mark in shiny silver
+      const grad = ctx.createLinearGradient(x + 12, y + 12, x + cellSize - 12, y + cellSize - 12);
+      grad.addColorStop(0, "#7a7a7a");
+      grad.addColorStop(0.25, "#e5e5e5");
+      grad.addColorStop(0.5, "#ffffff");
+      grad.addColorStop(0.75, "#b8b8b8");
+      grad.addColorStop(1, "#5c5c5c");
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4;
+      ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+      ctx.shadowBlur = 8;
+
       ctx.beginPath();
-      ctx.moveTo(x + 10, y + 10);
-      ctx.lineTo(x + cellSize - 10, y + cellSize - 10);
-      ctx.moveTo(x + cellSize - 10, y + 10);
-      ctx.lineTo(x + 10, y + cellSize - 10);
+      ctx.moveTo(x + 12, y + 12);
+      ctx.lineTo(x + cellSize - 12, y + cellSize - 12);
+      ctx.moveTo(x + cellSize - 12, y + 12);
+      ctx.lineTo(x + 12, y + cellSize - 12);
       ctx.stroke();
+
+      // Reset shadows
+      ctx.shadowBlur = 0;
     });
 
     // Draw Starting Area Player Badges/Colors
@@ -120,6 +125,11 @@
     // Render rock tokens
     renderRocksOnBoard();
     updateYardDisplay();
+
+    // Draw rich mahogany border frame around the board canvas
+    ctx.strokeStyle = "#5c2e0b";
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, w - 8, h - 8);
   }
 
   function drawPlayerStartBadge(playerId, color) {
