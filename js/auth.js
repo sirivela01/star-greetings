@@ -543,7 +543,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
               }
             }).catch(err => console.error("Error syncing user data:", err));
-            showDashboard(currentUser);
+            showGameSelection(currentUser);
           } else {
             // Firebase authenticated but no local session? Sign out to stay in sync.
             try {
@@ -559,7 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Firebase user is not authenticated
           if (currentUser) {
             // We have a local session. Let them stay logged in locally for offline play.
-            showDashboard(currentUser);
+            showGameSelection(currentUser);
           } else {
             hideAllViews();
             loginView.classList.remove("hidden");
@@ -573,7 +573,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Fallback: resolve splash screen with local session
       const currentUser = auth.getCurrentUser();
       if (currentUser) {
-        showDashboard(currentUser);
+        showGameSelection(currentUser);
       } else {
         hideAllViews();
         loginView.classList.remove("hidden");
@@ -585,7 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // No Firebase loaded, resolve splash immediately
     const currentUser = auth.getCurrentUser();
     if (currentUser) {
-      showDashboard(currentUser);
+      showGameSelection(currentUser);
     } else {
       hideAllViews();
       loginView.classList.remove("hidden");
@@ -608,7 +608,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await auth.loginWithProvider(provider);
       if (res.success) {
-        showDashboard(res.user);
+        showGameSelection(res.user);
       } else {
         alert(res.error || "Login failed");
       }
@@ -730,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const res = await auth.login(userVal, passVal, rememberVal);
         if (res.success) {
-          showDashboard(res.user);
+          showGameSelection(res.user);
         } else {
           alert(res.error);
         }
@@ -946,7 +946,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (res.success) {
           const currentUser = auth.getCurrentUser();
           if (currentUser) {
-            showDashboard(currentUser);
+            if (window.selectedGame === "barakatta") {
+              showBarakattaDashboard(currentUser);
+            } else {
+              showDashboard(currentUser);
+            }
             // Also update the modal preview image instantly
             if (avatarModalImg) {
               avatarModalImg.src = compressedDataUrl;
@@ -960,6 +964,128 @@ document.addEventListener("DOMContentLoaded", () => {
           alert(res.error || "Failed to update avatar");
         }
       });
+    });
+  }
+
+  // --- Barakatta & Game Selection Screen Helper Functions ---
+  function showGameSelection(user) {
+    hideAllViews();
+    const selectionView = document.getElementById("game-selection-screen");
+    if (selectionView) {
+      selectionView.classList.remove("hidden");
+    }
+    window.currentUser = user;
+  }
+
+  function showBarakattaDashboard(user) {
+    hideAllViews();
+    const bkDashboardView = document.getElementById("barakatta-dashboard-screen");
+    if (bkDashboardView) {
+      bkDashboardView.classList.remove("hidden");
+    }
+    
+    document.getElementById("bk-dashboard-profile-name").textContent = user.name;
+    document.getElementById("bk-dashboard-profile-coins").textContent = user.coins;
+
+    const profileAvatar = document.getElementById("bk-dashboard-profile-avatar");
+    const avatarEmoji = document.getElementById("bk-dashboard-avatar-emoji");
+    if (profileAvatar && avatarEmoji) {
+      if (user.avatar) {
+        profileAvatar.src = user.avatar;
+        profileAvatar.classList.remove("hidden");
+        avatarEmoji.classList.add("hidden");
+      } else {
+        profileAvatar.src = "";
+        profileAvatar.classList.add("hidden");
+        avatarEmoji.classList.remove("hidden");
+      }
+    }
+
+    loadBarakattaStats(user);
+  }
+
+  function loadBarakattaStats(user) {
+    const winsLabel = document.getElementById("barakatta-stats-wins");
+    if (!winsLabel) return;
+    
+    winsLabel.textContent = "...";
+
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && user.uid) {
+      firebase.database().ref(`barakatta/userStats/${user.uid}/barakattaWins`).once("value")
+        .then(snapshot => {
+          const wins = snapshot.exists() ? snapshot.val() : 0;
+          winsLabel.textContent = wins;
+        })
+        .catch(err => {
+          console.warn("Failed to load Barakatta stats from Firebase:", err);
+          const localStats = JSON.parse(localStorage.getItem("bk_stats_" + user.username)) || { wins: 0 };
+          winsLabel.textContent = localStats.wins;
+        });
+    } else {
+      const localStats = JSON.parse(localStorage.getItem("bk_stats_" + user.username)) || { wins: 0 };
+      winsLabel.textContent = localStats.wins;
+    }
+  }
+
+  // Selection Card Click Events
+  const selectStarGreetingsBtn = document.getElementById("select-star-greetings-btn");
+  if (selectStarGreetingsBtn) {
+    selectStarGreetingsBtn.addEventListener("click", () => {
+      window.selectedGame = "star_greetings";
+      showDashboard(window.currentUser);
+    });
+  }
+
+  const selectBarakattaBtn = document.getElementById("select-barakatta-btn");
+  if (selectBarakattaBtn) {
+    selectBarakattaBtn.addEventListener("click", () => {
+      window.selectedGame = "barakatta";
+      showBarakattaDashboard(window.currentUser);
+    });
+  }
+
+  // Barakatta Dashboard controls
+  const bkDashboardBackBtn = document.getElementById("barakatta-dashboard-back-btn");
+  if (bkDashboardBackBtn) {
+    bkDashboardBackBtn.addEventListener("click", () => {
+      showGameSelection(window.currentUser);
+    });
+  }
+
+  const bkPlayAiBtn = document.getElementById("barakatta-play-ai-btn");
+  if (bkPlayAiBtn) {
+    bkPlayAiBtn.addEventListener("click", () => {
+      if (window.startBarakattaGame) {
+        window.startBarakattaGame("ai_bot");
+      } else {
+        alert("Barakatta game logic not loaded yet!");
+      }
+    });
+  }
+
+  const bkExitGameBtn = document.getElementById("bk-exit-game-btn");
+  if (bkExitGameBtn) {
+    bkExitGameBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to exit the match? Progress will be lost.")) {
+        showBarakattaDashboard(window.currentUser);
+      }
+    });
+  }
+
+  const bkRulesBtn = document.getElementById("bk-rules-btn");
+  const bkRulesModal = document.getElementById("bk-rules-modal");
+  const bkRulesCloseBtn = document.getElementById("bk-rules-close-btn");
+
+  if (bkRulesBtn && bkRulesModal) {
+    bkRulesBtn.addEventListener("click", () => {
+      bkRulesModal.classList.remove("hidden");
+      bkRulesModal.style.display = "flex";
+    });
+  }
+  if (bkRulesCloseBtn && bkRulesModal) {
+    bkRulesCloseBtn.addEventListener("click", () => {
+      bkRulesModal.classList.add("hidden");
+      bkRulesModal.style.display = "none";
     });
   }
 });

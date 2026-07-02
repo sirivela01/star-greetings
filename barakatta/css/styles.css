@@ -1,0 +1,190 @@
+/* Barakatta - earth/traditional visual styling */
+
+/* Style variables specific to Barakatta */
+:root {
+  --bk-terracotta: #d97706;
+  --bk-terracotta-glow: rgba(217, 119, 6, 0.4);
+  --bk-wood-dark: #140e0a;
+  --bk-wood-medium: #2a1c12;
+  --bk-wood-light: #432e20;
+  --bk-brass-gold: #fbbf24;
+  --bk-brass-glow: rgba(251, 191, 36, 0.3);
+  --bk-text-main: #f3f4f6;
+  --bk-text-muted: #9ca3af;
+}
+
+/* Base class styling overrides for barakatta screens */
+.barakatta-theme {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  color: var(--bk-text-main);
+  background: radial-gradient(circle at center, var(--bk-wood-medium) 0%, var(--bk-wood-dark) 100%) !important;
+}
+
+/* Game Selection screen cards styling */
+.selection-box {
+  background: rgba(25, 18, 12, 0.7) !important;
+  border: 1px solid rgba(245, 158, 11, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.game-select-card {
+  background: rgba(30, 20, 15, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-select-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-select-card:hover::before {
+  opacity: 1;
+}
+
+.game-select-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+#select-star-greetings-btn:hover {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.15);
+}
+
+#select-barakatta-btn:hover {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.15);
+}
+
+/* Barakatta Dashboard Theme overrides */
+.barakatta-theme.dashboard-box {
+  background: rgba(20, 14, 10, 0.75) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
+}
+
+.barakatta-theme .play-mode-btn:hover {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 15px var(--bk-brass-glow) !important;
+}
+
+/* Board Game View styles */
+.barakatta-tabletop {
+  min-height: 100vh;
+  background: radial-gradient(circle at center, #261910 0%, #0d0805 100%) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.bk-board-container {
+  touch-action: none;
+}
+
+#barakatta-board-canvas {
+  background: #3e2718;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 4px 20px rgba(0,0,0,0.6);
+  border: 8px solid #23160e;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.bk-control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bk-yard-rocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.bk-rock-token {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 2px 2px rgba(255,255,255,0.2);
+  border: 1px solid rgba(0,0,0,0.3);
+  position: relative;
+}
+
+/* Colors for active rocks */
+.bk-rock-red {
+  background: radial-gradient(circle at 35% 35%, #f87171 0%, #b91c1c 80%);
+}
+
+.bk-rock-yellow {
+  background: radial-gradient(circle at 35% 35%, #fbbf24 0%, #b45309 80%);
+}
+
+.bk-rock-green {
+  background: radial-gradient(circle at 35% 35%, #34d399 0%, #047857 80%);
+}
+
+.bk-rock-blue {
+  background: radial-gradient(circle at 35% 35%, #60a5fa 0%, #1d4ed8 80%);
+}
+
+/* Active Turn pulsing indicator */
+.bk-status-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(245,158,11,0.1);
+}
+
+.bk-dice-box {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bk-dice-box:active {
+  transform: scale(0.9) rotate(-10deg);
+}
+
+.bk-dice-rolling {
+  animation: bk-dice-shake 0.4s infinite alternate;
+}
+
+@keyframes bk-dice-shake {
+  0% { transform: translate(2px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(0px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(2px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(2px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+/* Button style extensions for Barakatta controls */
+.btn-barakatta-primary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.btn-barakatta-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.6);
+  transform: translateY(-2px);
+}

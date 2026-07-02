@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=4.1.3">
+  <link rel="stylesheet" href="barakatta/css/styles.css?v=1.0.0">
 </head>
 <body>
 
@@ -148,6 +149,82 @@
           <button type="submit" class="btn primary-btn">Reset Password</button>
           <p class="auth-toggle-lbl"><a href="#" id="link-forgot-to-login">Back to Login</a></p>
         </form>
+      </div>
+    </section>
+
+    <!-- GAME SELECTION SCREEN -->
+    <section id="game-selection-screen" class="screen-view hidden">
+      <div class="glass-container auth-box selection-box" style="max-width: 550px;">
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <div class="brand-badge">SIRIVELA</div>
+          <h1 class="app-title">Select Game</h1>
+          <p class="app-tagline">Choose your arcade arena</p>
+        </header>
+
+        <div class="games-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px;">
+          <!-- Star Greetings Card -->
+          <div class="game-select-card theme-card" id="select-star-greetings-btn" style="cursor: pointer; padding: 20px; border-radius: 12px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.3s ease; text-align: center;">
+            <div class="game-select-badge" style="font-size: 0.75rem; color: #f43f5e; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">CARD GAME</div>
+            <span class="game-select-icon" style="font-size: 3rem; display: block; margin-bottom: 12px;">🎴</span>
+            <h3 class="game-select-title" style="font-size: 1.25rem; font-weight: 600; color: #fff; margin-bottom: 8px;">Star Greetings</h3>
+            <p class="game-select-desc" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin: 0;">Memory, bluffing, and celebrity showdowns in Tollywood & Bollywood!</p>
+          </div>
+
+          <!-- Barakatta Card -->
+          <div class="game-select-card theme-card" id="select-barakatta-btn" style="cursor: pointer; padding: 20px; border-radius: 12px; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); transition: all 0.3s ease; text-align: center;">
+            <div class="game-select-badge" style="font-size: 0.75rem; color: #f59e0b; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">BOARD GAME</div>
+            <span class="game-select-icon" style="font-size: 3rem; display: block; margin-bottom: 12px;">🎲</span>
+            <h3 class="game-select-title" style="font-size: 1.25rem; font-weight: 600; color: #fff; margin-bottom: 8px;">Barakatta</h3>
+            <p class="game-select-desc" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin: 0;">Traditional Indian 8x8 race game. Roll dice, capture opponents, and reach home!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BARAKATTA DASHBOARD SCREEN -->
+    <section id="barakatta-dashboard-screen" class="screen-view hidden">
+      <div class="glass-container dashboard-box barakatta-theme" style="max-width: 600px;">
+        <!-- HEADER -->
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <div class="brand-badge">SIRIVELA</div>
+          <h1 class="app-title">Barakatta</h1>
+          <p class="app-tagline">Traditional Indian Dice Game</p>
+        </header>
+
+        <!-- PROFILE CARD -->
+        <div class="dashboard-profile-card" style="display: grid; grid-template-columns: 1.2fr 1fr 0.8fr; gap: 15px; align-items: center; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.2); margin-bottom: 25px;">
+          <div class="profile-info-main" style="display: flex; align-items: center; gap: 12px;">
+            <div class="profile-avatar-placeholder" id="bk-dashboard-avatar-container" style="position: relative; width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 2px solid #f59e0b; cursor: pointer;">
+              <img id="bk-dashboard-profile-avatar" src="" class="hidden" alt="Profile Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+              <span id="bk-dashboard-avatar-emoji">🤵</span>
+            </div>
+            <div class="profile-meta" style="text-align: left;">
+              <h2 id="bk-dashboard-profile-name" class="profile-name" style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">Player Name</h2>
+              <p class="profile-wallet" style="font-size: 0.9rem; color: #fbbf24; margin: 4px 0 0 0;">🪙 <span id="bk-dashboard-profile-coins">300</span> Coins</p>
+            </div>
+          </div>
+          <!-- Barakatta specific stats widget -->
+          <div class="gs-widget" id="barakatta-stats-wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); padding: 0 10px;">
+            <span class="stack-count" id="barakatta-stats-wins" style="font-size: 1.8rem; font-weight: 800; color: #f59e0b; line-height: 1;">0</span>
+            <div class="gs-labels" style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted); text-align: center; margin-top: 4px; letter-spacing: 0.05em; line-height: 1.2;">BARAKATTA<br>WINS</div>
+          </div>
+          <button type="button" id="barakatta-dashboard-back-btn" class="btn secondary-btn logout-small-btn" style="padding: 8px 12px; font-size: 0.85rem; border-color: rgba(245, 158, 11, 0.3); color: #fbbf24; width: auto; margin: 0;">Change Game</button>
+        </div>
+
+        <!-- PLAY BUTTONS -->
+        <div class="dashboard-actions" style="display: flex; flex-direction: column; gap: 15px;">
+          <button type="button" id="barakatta-play-ai-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
+            Play with AI BOT<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Quick 1v1 match against Computer AI</span>
+          </button>
+          <button type="button" id="barakatta-play-offline-btn" class="btn primary-btn play-mode-btn" disabled style="opacity: 0.5; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: var(--text-muted); width: 100%;">
+            Play Offline (Pass & Play)<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Coming Soon</span>
+          </button>
+          <button type="button" id="barakatta-play-online-btn" class="btn secondary-btn play-mode-btn" disabled style="opacity: 0.5; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: var(--text-muted); width: 100%;">
+            Play Online Game<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Coming Soon</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -682,12 +759,123 @@
     </div>
   </div>
 
-  <!-- Firebase Compat Libraries -->
+      <!-- BARAKATTA GAME SCREEN -->
+      <section id="barakatta-game-screen" class="screen-view hidden">
+        <div class="tabletop-container barakatta-tabletop">
+          <!-- Game HUD Top Bar -->
+          <header class="game-hud-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(245, 158, 11, 0.2); backdrop-filter: blur(10px);">
+            <div class="hud-logo" style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">★ Barakatta</div>
+            <div class="hud-status" style="display: flex; gap: 15px; font-size: 0.9rem; font-weight: 600;">
+              <span class="hud-turn-indicator" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 12px; border-radius: 20px; color: #fbbf24;">Turn: <strong id="bk-active-player-name">Player</strong></span>
+            </div>
+            <div class="hud-actions" style="display: flex; gap: 8px;">
+              <button type="button" id="bk-rules-btn" class="btn secondary-btn hud-drawer-btn" style="padding: 6px 12px; font-size: 0.85rem; border-color: rgba(245, 158, 11, 0.3); color: #fbbf24; width: auto; margin: 0;">📖 Rules</button>
+              <button type="button" id="bk-exit-game-btn" class="btn danger-btn hud-drawer-btn" style="padding: 6px 12px; font-size: 0.85rem; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; width: auto; margin: 0;">Exit Game</button>
+            </div>
+          </header>
+
+          <!-- Board & Control Panel Layout -->
+          <div class="bk-game-layout" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; padding: 20px; max-width: 1200px; margin: 0 auto;">
+            <!-- Left/Center: Canvas Board -->
+            <div class="bk-board-container" style="background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center;">
+              <canvas id="barakatta-board-canvas" width="560" height="560" style="max-width: 100%; height: auto; display: block; border-radius: 8px;"></canvas>
+            </div>
+
+            <!-- Right: Gameplay Control Panel -->
+            <div class="bk-control-panel glass-container" style="width: 320px; display: flex; flex-direction: column; gap: 20px; padding: 20px; border-radius: 16px; background: rgba(30, 20, 15, 0.6); border: 1px solid rgba(245, 158, 11, 0.15); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+              <!-- Turn Indicator/Status Card -->
+              <div class="bk-status-card" style="background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; text-align: left;">
+                <h3 id="bk-status-title" style="margin: 0; font-size: 1.05rem; font-weight: 600; color: #fff;">Your Turn</h3>
+                <p id="bk-status-desc" style="margin: 5px 0 0 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.3;">Roll the dice to start moving your rocks.</p>
+              </div>
+
+              <!-- Yard Displays -->
+              <div class="bk-yards-container" style="display: flex; gap: 15px;">
+                <div class="bk-yard-box" id="bk-player-yard" style="flex: 1; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 10px; border-radius: 8px; text-align: center;">
+                  <h4 style="margin: 0 0 8px 0; font-size: 0.8rem; text-transform: uppercase; color: #f87171; letter-spacing: 0.05em;">Your Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-player-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 24px;">
+                    <!-- 6 rock tokens in yard -->
+                  </div>
+                </div>
+                <div class="bk-yard-box" id="bk-bot-yard" style="flex: 1; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.15); padding: 10px; border-radius: 8px; text-align: center;">
+                  <h4 style="margin: 0 0 8px 0; font-size: 0.8rem; text-transform: uppercase; color: #fbbf24; letter-spacing: 0.05em;">Bot's Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-bot-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 24px;">
+                    <!-- 6 rock tokens in yard -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dice Roller Area -->
+              <div class="bk-dice-container" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 10px 0;">
+                <div class="bk-dice-box" id="bk-dice-element" style="width: 70px; height: 70px; background: linear-gradient(135deg, #f59e0b, #b45309); border-radius: 12px; border: 2px solid #fbbf24; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; color: #fff; cursor: pointer; user-select: none; transition: transform 0.15s ease;">🎲</div>
+                <button type="button" id="bk-roll-btn" class="btn primary-btn bk-action-btn" style="width: 100%; padding: 12px; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #000; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); width: 100%; margin: 0;">Roll Dice</button>
+              </div>
+
+              <!-- Optional Entry Choice Selector -->
+              <div class="bk-choice-box hidden" id="bk-choice-selector" style="display: none; background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-top: 5px;">
+                <p style="margin: 0 0 10px 0; font-size: 0.85rem; color: #fbbf24; font-weight: 600;">You rolled a 1! Choose action:</p>
+                <div class="bk-choice-buttons" style="display: flex; gap: 8px;">
+                  <button type="button" id="bk-choice-enter-btn" class="btn primary-btn" style="flex: 1; padding: 6px; font-size: 0.8rem; background: #f59e0b; color: #000; width: auto; margin: 0;">Enter Rock</button>
+                  <button type="button" id="bk-choice-move-btn" class="btn secondary-btn" style="flex: 1; padding: 6px; font-size: 0.8rem; border-color: rgba(255, 255, 255, 0.3); color: #fff; width: auto; margin: 0;">Move Rock</button>
+                </div>
+              </div>
+
+              <!-- Home statistics -->
+              <div class="bk-home-stats" style="background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.85rem; line-height: 1.4;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                  <span style="color: #f87171; font-weight: 600;">Your Rocks Home:</span>
+                  <strong id="bk-player-home-count" style="color: #fff;">0/6</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #fbbf24; font-weight: 600;">Bot Rocks Home:</span>
+                  <strong id="bk-bot-home-count" style="color: #fff;">0/6</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BARAKATTA RULES MODAL -->
+      <div id="bk-rules-modal" class="modal-overlay hidden" style="display: none; z-index: 1100;">
+        <div class="modal-content-box glass-container animate-scale" style="max-width: 500px;">
+          <header class="modal-header">
+            <h2>Barakatta Rules</h2>
+            <button type="button" id="bk-rules-close-btn" class="modal-close-x">&times;</button>
+          </header>
+          <div class="modal-body" style="text-align: left; max-height: 380px; overflow-y: auto; padding: 15px; font-size: 0.85rem; line-height: 1.5; color: #fff;">
+            <h3 style="color: #f59e0b; margin-top: 0; font-size: 1rem;">Objective</h3>
+            <p style="margin-top: 5px;">Race all 6 of your colored rock tokens from your starting square, around the outer loop counter-clockwise, then clockwise through the inner loop to land precisely in the center home square. The first to get all 6 rocks home wins!</p>
+
+            <h3 style="color: #f59e0b; font-size: 1rem; margin-top: 15px;">Rolling & Entering</h3>
+            <ul style="margin: 5px 0; padding-left: 20px;">
+              <li><strong>Roll 6</strong>: You enter all 6 rocks at once onto your starting square (marked with X) and get an extra roll.</li>
+              <li><strong>Roll 1</strong>: You can choose to enter exactly 1 rock from your yard OR move a rock on the board.</li>
+              <li><strong>Roll 2, 3, 4, 5</strong>: Move any of your active on-board rocks by that many steps. If no rocks are on the board, your turn is skipped.</li>
+            </ul>
+
+            <h3 style="color: #f59e0b; font-size: 1rem; margin-top: 15px;">Movement & Capturing</h3>
+            <ul style="margin: 5px 0; padding-left: 20px;">
+              <li><strong>Movement Path</strong>: Travel the outer track counter-clockwise. Once a capture has been made, your rocks can enter the inner loop to go clockwise towards the center.</li>
+              <li><strong>Capture Lock</strong>: To enter the inner loop home stretch, you must capture (cut) at least one opponent rock during the match.</li>
+              <li><strong>Capturing</strong>: Land on an opponent rock on any non-X square to capture it, send it back to their yard, and earn an extra roll!</li>
+              <li><strong>Safe Squares (X)</strong>: Starting cells and corners are safe zones. Captures cannot happen here, and multiple players can co-exist.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    <!-- Firebase Compat Libraries -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
   <!-- Scripts -->
+  <!-- Barakatta Scripts -->
+  <script src="barakatta/js/board-config.js?v=1.0.0"></script>
+  <script src="barakatta/js/game-logic.js?v=1.0.0"></script>
+  <script src="barakatta/js/ui-rendering.js?v=1.0.0"></script>
+
   <script src="js/self-healing.js?v=1.36.3"></script>
   <script src="js/config.js?v=1.36.3"></script>
   <script src="js/auth.js?v=1.36.3"></script>
