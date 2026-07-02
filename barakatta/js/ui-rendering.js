@@ -94,28 +94,73 @@
       ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
       ctx.fillRect(x, y, cellSize, cellSize);
 
-      // Draw the X mark in shiny silver (chrome-style high contrast)
-      const grad = ctx.createLinearGradient(x + 12, y + 12, x + cellSize - 12, y + cellSize - 12);
-      grad.addColorStop(0, "#E0E0E0");   // Light silver
-      grad.addColorStop(0.25, "#FFFFFF"); // White shiny highlight
-      grad.addColorStop(0.5, "#999999");  // Deep steel/chrome silver
-      grad.addColorStop(0.75, "#FFFFFF"); // White shiny highlight
-      grad.addColorStop(1, "#E0E0E0");   // Light silver
+      // Coordinates for X diagonals
+      const padding = 12;
+      const x1 = x + padding, y1 = y + padding;
+      const x2 = x + cellSize - padding, y2 = y + cellSize - padding;
+      const x3 = x + cellSize - padding, y3 = y + padding;
+      const x4 = x + padding, y4 = y + cellSize - padding;
 
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 5;
-      ctx.shadowColor = "rgba(255, 255, 255, 0.95)"; // Shiny white/silver glow
-      ctx.shadowBlur = 12;
+      // 1. Draw Diagonal 1 (Top-Left to Bottom-Right) - Thick 3D Chrome Cylinder
+      ctx.lineCap = "round";
 
+      // Dark drop shadow/depth outline
+      ctx.strokeStyle = "#111111";
+      ctx.lineWidth = 10;
       ctx.beginPath();
-      ctx.moveTo(x + 12, y + 12);
-      ctx.lineTo(x + cellSize - 12, y + cellSize - 12);
-      ctx.moveTo(x + cellSize - 12, y + 12);
-      ctx.lineTo(x + 12, y + cellSize - 12);
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
       ctx.stroke();
 
-      // Reset shadows
-      ctx.shadowBlur = 0;
+      // Shiny silver gradient body
+      const gradTLBR = ctx.createLinearGradient(x1, y1, x2, y2);
+      gradTLBR.addColorStop(0, "#7a7a7a");
+      gradTLBR.addColorStop(0.25, "#e8e8e8");
+      gradTLBR.addColorStop(0.5, "#8a8a8a");
+      gradTLBR.addColorStop(0.75, "#ffffff");
+      gradTLBR.addColorStop(1, "#5a5a5a");
+      ctx.strokeStyle = gradTLBR;
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      // Specs highlight core
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x1 + 1, y1 + 1);
+      ctx.lineTo(x2 - 1, y2 - 1);
+      ctx.stroke();
+
+      // 2. Draw Diagonal 2 (Top-Right to Bottom-Left) - Parallel 3D Chrome Tubes
+      const offsets = [-3.5, 3.5];
+      offsets.forEach(offset => {
+        // Dark outline
+        ctx.strokeStyle = "#111111";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(x3 + offset, y3 - offset);
+        ctx.lineTo(x4 + offset, y4 - offset);
+        ctx.stroke();
+
+        // Silver tube body
+        const gradTRBL = ctx.createLinearGradient(x3, y3, x4, y4);
+        gradTRBL.addColorStop(0, "#5a5a5a");
+        gradTRBL.addColorStop(0.25, "#ffffff");
+        gradTRBL.addColorStop(0.5, "#7a7a7a");
+        gradTRBL.addColorStop(0.75, "#dcdcdc");
+        gradTRBL.addColorStop(1, "#4a4a4a");
+        ctx.strokeStyle = gradTRBL;
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+
+        // spec highlight core
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 0.75;
+        ctx.beginPath();
+        ctx.moveTo(x3 + offset, y3 - offset);
+        ctx.lineTo(x4 + offset, y4 - offset);
+        ctx.stroke();
+      });
     });
 
     // Draw Starting Area Player Badges/Colors
