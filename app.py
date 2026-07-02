@@ -973,15 +973,15 @@ def get_player_greetings():
 
     # Offline mode — no Firebase URL, return default
     if not db_url:
-        return jsonify({"greetingsStack": 30})
+        return jsonify({"greetingsStack": 50})
     
     path = f"players/{userId}/greetingsStack"
     greetings = get_firebase_data(path, db_url)
     
     if greetings is None:
-        # Initialize to 30 if it does not exist
-        greetings = 30
-        update_firebase_data(f"players/{userId}", {"greetingsStack": 30}, db_url)
+        # Initialize to 50 if it does not exist
+        greetings = 50
+        update_firebase_data(f"players/{userId}", {"greetingsStack": 50}, db_url)
         
     return jsonify({"greetingsStack": greetings})
 
@@ -995,17 +995,17 @@ def start_match_deduction():
 
     # Offline mode — no Firebase URL, allow match without deduction
     if not db_url:
-        return jsonify({"success": True, "greetingsStack": 30})
+        return jsonify({"success": True, "greetingsStack": 50})
     
     path = f"players/{userId}/greetingsStack"
     current_greetings = get_firebase_data(path, db_url)
     if current_greetings is None:
-        current_greetings = 30
+        current_greetings = 50
         
-    if current_greetings < 30:
-        return jsonify({"error": f"Insufficient greetings: you have {current_greetings}, but need 30 to play."}), 400
+    if current_greetings < 50:
+        return jsonify({"error": f"Insufficient greetings: you have {current_greetings}, but need 50 to play."}), 400
         
-    new_greetings = current_greetings - 30
+    new_greetings = current_greetings - 50
     update_firebase_data(f"players/{userId}", {"greetingsStack": new_greetings}, db_url)
     return jsonify({"success": True, "greetingsStack": new_greetings})
 
