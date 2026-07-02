@@ -1560,7 +1560,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
         
       const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
-      const botPlayer = game.players.find(p => p.isBot) || { name: "Bot Ranbir", stackCount: 30 };
+      const botPlayer = game.players.find(p => p.isBot) || { name: "Bot Ranbir", stackCount: 50 };
       
       let outcome = "draw";
       // Most cards = winner
@@ -2823,7 +2823,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const playerNames = [p1Name, "Bot Ranbir"];
         const playerAvatarUrls = [AVATARS[0], AVATARS[1]];
         const playerBets = [25, 25];
-        const stackSize = 30;
+        const stackSize = 50;
         const deckTheme = selectedTheme || "tollywood";
         
         // Initialize state

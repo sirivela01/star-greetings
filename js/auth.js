@@ -993,8 +993,8 @@ window.refreshGreetingsStack = async function(user) {
           greetingsCountEl.classList.add("pulse-active");
         }
 
-        // Apply warning class if less than 30
-        if (newCount < 30) {
+        // Apply warning class if less than 50
+        if (newCount < 50) {
           greetingsWrapper.classList.add("low-greetings");
         } else {
           greetingsWrapper.classList.remove("low-greetings");

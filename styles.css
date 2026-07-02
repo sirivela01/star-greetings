@@ -3772,10 +3772,22 @@ select.form-select option {
 }
 
 .voice-input-btn.listening {
-  background: rgba(239, 68, 68, 0.25) !important;
-  border-color: #ef4444 !important;
-  color: #ef4444 !important;
-  animation: pulse-mic 1.5s infinite !important;
+  background: rgba(6, 182, 212, 0.25) !important;
+  border-color: var(--accent-cyan, #06b6d4) !important;
+  color: var(--accent-cyan, #06b6d4) !important;
+  box-shadow: 0 0 calc(var(--vu-pulse, 4px) * 2.5) rgba(6, 182, 212, 0.4) !important;
+  transform: scale(calc(1 + var(--vu-pulse, 4px) * 0.012)) !important;
+  animation: pulse-mic-fallback 2s infinite ease-in-out !important;
+  transition: box-shadow 0.08s ease, transform 0.08s ease !important;
+}
+
+@keyframes pulse-mic-fallback {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(6, 182, 212, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.6));
+  }
 }
 
 @keyframes pulse-mic {
