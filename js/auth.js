@@ -428,9 +428,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const playOfflineBtn = document.getElementById("play-offline-btn");
   const playAiBtn = document.getElementById("play-ai-btn");
 
-  // Helper to hide all main views
+  // Helper to hide all main views (including Barakatta screens)
   function hideAllViews() {
-    [loginView, signupView, forgotView, dashboardView, setupView, gameView].forEach(view => {
+    const allViews = [
+      loginView, signupView, forgotView, dashboardView, setupView, gameView,
+      document.getElementById("game-selection-screen"),
+      document.getElementById("barakatta-dashboard-screen"),
+      document.getElementById("barakatta-game-screen")
+    ];
+    allViews.forEach(view => {
       if (view) view.classList.add("hidden");
     });
   }
