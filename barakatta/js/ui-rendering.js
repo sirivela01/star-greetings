@@ -90,21 +90,21 @@
       const x = safe.col * cellSize;
       const y = safe.row * cellSize;
 
-      // Safe square backdrop highlight (subtle golden sheen)
-      ctx.fillStyle = "rgba(255, 224, 130, 0.08)";
+      // Safe square backdrop highlight (subtle silver/white sheen)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
       ctx.fillRect(x, y, cellSize, cellSize);
 
-      // Draw the X mark in shiny gold (like the SIRIVELA brand badge)
+      // Draw the X mark in shiny silver (chrome-style high contrast)
       const grad = ctx.createLinearGradient(x + 12, y + 12, x + cellSize - 12, y + cellSize - 12);
-      grad.addColorStop(0, "#FFE082");   // Light gold
+      grad.addColorStop(0, "#E0E0E0");   // Light silver
       grad.addColorStop(0.25, "#FFFFFF"); // White shiny highlight
-      grad.addColorStop(0.5, "#FFB300");  // Gold
+      grad.addColorStop(0.5, "#999999");  // Deep steel/chrome silver
       grad.addColorStop(0.75, "#FFFFFF"); // White shiny highlight
-      grad.addColorStop(1, "#FFE082");   // Light gold
+      grad.addColorStop(1, "#E0E0E0");   // Light silver
 
       ctx.strokeStyle = grad;
       ctx.lineWidth = 5;
-      ctx.shadowColor = "rgba(255, 179, 0, 0.95)"; // Golden shiny glow
+      ctx.shadowColor = "rgba(255, 255, 255, 0.95)"; // Shiny white/silver glow
       ctx.shadowBlur = 12;
 
       ctx.beginPath();
