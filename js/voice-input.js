@@ -49,7 +49,7 @@
       
       let lastSpeechTime = Date.now();
       const silenceVolumeThreshold = 12;
-      const silenceDurationLimit = 750;
+      const silenceDurationLimit = 400;
 
       function checkAudioSilence() {
         if (!activeRecorder || activeRecorder.state !== "recording" || activeRecorder !== recorder) {
