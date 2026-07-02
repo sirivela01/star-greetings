@@ -1203,7 +1203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (outcome.isGameOver) {
           triggerGameOver();
         } else {
-          startOfflineGuessingRound(outcome);
+          checkAndTriggerOfflineGuessingRound(outcome);
         }
       }, 300);
     }, 1800);
@@ -1263,7 +1263,7 @@ document.addEventListener("DOMContentLoaded", () => {
             wonCount: wonCount,
             isGameOver: game.isGameOver
           };
-          startOfflineGuessingRound(outcome);
+          checkAndTriggerOfflineGuessingRound(outcome);
         }
       }, 300);
     }, 1800);
@@ -3118,6 +3118,33 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
     observer.observe(themeSelectionScreen, { attributes: true });
+  }
+
+  function checkAndTriggerOfflineGuessingRound(outcome) {
+    game.matchWinsCount = (game.matchWinsCount || 0) + 1;
+    if (game.matchWinsCount % 3 === 0) {
+      startOfflineGuessingRound(outcome);
+    } else {
+      game.collectMatchEarnings();
+
+      renderPot();
+      renderSeats();
+      renderScoreboard();
+      renderLogs();
+
+      if (game.isGameOver) {
+        triggerGameOver();
+      } else {
+        const humanPlayer = game.players.find(p => !p.isBot) || game.players[0];
+        const humanLostRound = (outcome.hasMatch && outcome.playerIndex !== game.players.indexOf(humanPlayer));
+        
+        if (humanLostRound && !humanPlayer.isBot) {
+          showRoundLossModal(humanPlayer.stackCount);
+        } else {
+          resumeAfterRoundLoss();
+        }
+      }
+    }
   }
 
   let offlineGuessingState = {

@@ -979,6 +979,7 @@ class MultiplayerManager {
   serializeGameState(game) {
     return {
       currentPlayerIndex: game.currentPlayerIndex,
+      matchWinsCount: game.matchWinsCount || 0,
       pot: game.pot.map(c => this.serializeCard(c)),
       logs: game.logs || [],
       roundNumber: game.roundNumber,
@@ -1256,9 +1257,7 @@ class MultiplayerManager {
         if (outcome.isGameOver) {
           this.triggerGameOver();
         } else {
-          if (this.isHost) {
-            this.initializeOnlineGuessingRound(outcome);
-          }
+          this.checkAndTriggerOnlineGuessingRound(outcome);
         }
       }, 300);
     }, 1800);
@@ -1750,6 +1749,39 @@ class MultiplayerManager {
       }
     } catch (e) {
       console.error("Failed to update player offsets in DB:", e);
+    }
+  }
+
+  async checkAndTriggerOnlineGuessingRound(outcome) {
+    window.game.matchWinsCount = (window.game.matchWinsCount || 0) + 1;
+    if (window.game.matchWinsCount % 3 === 0) {
+      if (this.isHost) {
+        await this.initializeOnlineGuessingRound(outcome);
+      }
+    } else {
+      if (this.isHost) {
+        await this.skipOnlineGuessingRound();
+      }
+    }
+  }
+
+  async skipOnlineGuessingRound() {
+    if (!this.roomRef || !window.game) return;
+    window.game.collectMatchEarnings();
+    const serializedGameState = this.serializeGameState(window.game);
+    
+    try {
+      await this.roomRef.update({
+        gameState: serializedGameState,
+        lastAction: {
+          type: "guessingRoundContinue",
+          actionId: "guessing_continue_" + Math.random().toString(36).substring(2, 11),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        },
+        guessingRound: null
+      });
+    } catch (e) {
+      console.error("Failed to skip online guessing round:", e);
     }
   }
 
@@ -2530,6 +2562,7 @@ class MultiplayerManager {
 // Reconstruct game logic from deserialization helper
 GameState.prototype.deserialize = function(data) {
   this.currentPlayerIndex = data.currentPlayerIndex;
+  this.matchWinsCount = data.matchWinsCount || 0;
   this.pot = (data.pot || []).map(c => {
     const card = new CardInstance(c, c.instanceId);
     card.playedBy = c.playedBy;

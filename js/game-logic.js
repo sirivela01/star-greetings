@@ -45,6 +45,7 @@ class GameState {
     this.currentPotStarterIndex = 0;
     this.selectedCategory = "Tollywood";
     this.pendingMatchWinnings = null;
+    this.matchWinsCount = 0;
   }
 
   // Set up the game with player names and stack size
@@ -56,6 +57,7 @@ class GameState {
     this.isGameOver = false;
     this.globalInstanceCounter = 0;
     this.selectedCategory = selectedCategory;
+    this.matchWinsCount = 0;
 
     const roster = this.config.roster;
     if (!roster || roster.length === 0) {
