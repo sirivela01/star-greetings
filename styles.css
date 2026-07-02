@@ -151,13 +151,13 @@ h1, h2, h3, h4 {
 
 .logo-icon {
   font-size: 3rem;
-  background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #3b82f6 100%);
+  background: linear-gradient(90deg, #FFE082 0%, #FFFFFF 25%, #FFB300 50%, #FFFFFF 75%, #FFE082 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
   margin-bottom: 8px;
-  filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.65));
+  filter: drop-shadow(0 0 15px rgba(255, 179, 0, 0.65));
   animation: logoSpin 8s linear infinite, shineText 4s linear infinite;
 }
 
