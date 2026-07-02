@@ -315,12 +315,12 @@
           // Start Audio Silence / Voice Activity Detection (VAD)
           startSilenceDetection(stream, recorder);
 
-          // Auto-stop after 2.5 seconds (max limit)
+          // Auto-stop after 1.0 second (max limit)
           recordTimeout = setTimeout(() => {
             if (activeRecorder && activeRecorder.state === "recording") {
               activeRecorder.stop();
             }
-          }, 2500);
+          }, 1000);
 
         })
         .catch(err => {
