@@ -87,16 +87,14 @@
     document.head.appendChild(tag);
   }
 
-  /* YouTube calls this globally when the API script is ready */
   window.onYouTubeIframeAPIReady = function () {
     apiReady = true;
 
     /*
-     * KEY FIX: The player iframe must be VISIBLE (in the viewport) and not have 
+     * KEY FIX: The player element must be VISIBLE (in the viewport) and not have 
      * zero dimensions/opacity:0, otherwise Chrome/Edge will block audio output 
      * completely. We set width:320px, height:180px, opacity:0.01 (virtually invisible)
      * and zIndex:9999 with pointer-events:none so it is click-through.
-     * We also explicitly set the allow="autoplay; encrypted-media" attribute.
      */
     const wrap = document.createElement('div');
     wrap.id = 'yt-victory-wrap';
@@ -112,21 +110,25 @@
       overflow:      'hidden',
     });
 
-    // Create the iframe element directly with autoplay permission delegated
-    const playerIframe = document.createElement('iframe');
-    playerIframe.id = 'yt-victory-player';
-    playerIframe.width = '320';
-    playerIframe.height = '180';
-    playerIframe.setAttribute('allow', 'autoplay; encrypted-media');
-    
-    // Initialize with first song's videoId to establish proper API channel
-    const initialId = VICTORY_SONGS.allu_arjun.videoId;
-    playerIframe.src = `https://www.youtube.com/embed/${initialId}?enablejsapi=1&autoplay=0&controls=0&playsinline=1&mute=1&origin=${encodeURIComponent(window.location.origin)}`;
-
-    wrap.appendChild(playerIframe);
+    const playerDiv = document.createElement('div');
+    playerDiv.id = 'yt-victory-player';
+    wrap.appendChild(playerDiv);
     document.body.appendChild(wrap);
 
+    const initialId = VICTORY_SONGS.allu_arjun.videoId;
+
     ytPlayer = new YT.Player('yt-victory-player', {
+      width: '320',
+      height: '180',
+      videoId: initialId,
+      playerVars: {
+        enablejsapi: 1,
+        autoplay: 0,
+        controls: 0,
+        playsinline: 1,
+        mute: 1,
+        origin: window.location.origin
+      },
       events: {
         onReady: onPlayerReady,
         onStateChange: onPlayerStateChange,
