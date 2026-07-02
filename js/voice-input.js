@@ -6,6 +6,86 @@
   let activeChunks = [];
   let recordTimeout = null;
 
+  // Web Audio VAD / Silence Detection Contexts
+  let audioCtx = null;
+  let audioSource = null;
+  let audioAnalyser = null;
+  let vadAnimationFrame = null;
+
+  function cleanupAudioContext() {
+    if (vadAnimationFrame) {
+      cancelAnimationFrame(vadAnimationFrame);
+      vadAnimationFrame = null;
+    }
+    if (audioSource) {
+      try { audioSource.disconnect(); } catch(e) {}
+      audioSource = null;
+    }
+    if (audioCtx) {
+      try {
+        if (audioCtx.state !== "closed") {
+          audioCtx.close();
+        }
+      } catch(e) {}
+      audioCtx = null;
+    }
+    audioAnalyser = null;
+  }
+
+  function startSilenceDetection(stream, recorder) {
+    try {
+      window.AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!window.AudioContext) return;
+
+      audioCtx = new AudioContext();
+      audioAnalyser = audioCtx.createAnalyser();
+      audioAnalyser.fftSize = 256;
+      
+      audioSource = audioCtx.createMediaStreamSource(stream);
+      audioSource.connect(audioAnalyser);
+
+      const bufferLength = audioAnalyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      let lastSpeechTime = Date.now();
+      const silenceVolumeThreshold = 12;
+      const silenceDurationLimit = 750;
+
+      function checkAudioSilence() {
+        if (!activeRecorder || activeRecorder.state !== "recording" || activeRecorder !== recorder) {
+          cleanupAudioContext();
+          return;
+        }
+
+        audioAnalyser.getByteFrequencyData(dataArray);
+        
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const averageVolume = sum / bufferLength;
+
+        const currentTime = Date.now();
+        if (averageVolume > silenceVolumeThreshold) {
+          lastSpeechTime = currentTime;
+        } else if (currentTime - lastSpeechTime > silenceDurationLimit) {
+          VoiceSelfHealingEngine.log("SILENCE_AUTO_STOP", `No speech detected for ${silenceDurationLimit}ms. Stopping recording.`);
+          if (recorder && recorder.state === "recording") {
+            recorder.stop();
+          }
+          cleanupAudioContext();
+          return;
+        }
+
+        vadAnimationFrame = requestAnimationFrame(checkAudioSilence);
+      }
+
+      vadAnimationFrame = requestAnimationFrame(checkAudioSilence);
+    } catch(e) {
+      console.warn("VAD / Silence Detection failed to start:", e);
+    }
+  }
+
   // Voice Self-Healing & Diagnostic Recovery Engine
   const VoiceSelfHealingEngine = {
     diagnosticLog: [],
@@ -60,6 +140,7 @@
     },
 
     releaseStreams() {
+      cleanupAudioContext();
       if (activeStream) {
         try {
           activeStream.getTracks().forEach(track => track.stop());
@@ -230,13 +311,16 @@
           inputEl.placeholder = "Recording voice... Speak now!";
 
           recorder.start();
+          
+          // Start Audio Silence / Voice Activity Detection (VAD)
+          startSilenceDetection(stream, recorder);
 
-          // Auto-stop after 3.5 seconds
+          // Auto-stop after 2.5 seconds (max limit)
           recordTimeout = setTimeout(() => {
             if (activeRecorder && activeRecorder.state === "recording") {
               activeRecorder.stop();
             }
-          }, 3500);
+          }, 2500);
 
         })
         .catch(err => {
@@ -254,6 +338,7 @@
     }
 
     function cleanupStreamAndUI() {
+      cleanupAudioContext();
       btnEl.classList.remove("listening");
       btnEl.innerHTML = "🎙️";
       inputEl.placeholder = "Type Hero/Heroine Name...";
