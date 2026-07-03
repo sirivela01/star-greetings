@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=4.1.4">
-  <link rel="stylesheet" href="barakatta/css/styles.css?v=1.0.8">
+  <link rel="stylesheet" href="barakatta/css/styles.css?v=1.1.0">
 </head>
 <body>
   <script>
@@ -780,9 +780,11 @@
 
           <!-- Board & Control Panel Layout -->
           <div class="bk-game-layout" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; padding: 20px; max-width: 1200px; margin: 0 auto;">
-            <!-- Left/Center: Canvas Board -->
+            <!-- Left/Center: 3D Board -->
             <div class="bk-board-container" style="background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.2); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center;">
-              <canvas id="barakatta-board-canvas" width="560" height="560" style="max-width: 100%; height: auto; display: block; border-radius: 8px;"></canvas>
+              <div class="barakatta-board-scene">
+                <div class="barakatta-board" id="barakatta-board-3d"></div>
+              </div>
             </div>
 
             <!-- Right: Gameplay Control Panel -->
@@ -811,7 +813,38 @@
 
               <!-- Dice Roller Area -->
               <div class="bk-dice-container" style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 10px 0;">
-                <div class="bk-dice-box" id="bk-dice-element" style="width: 70px; height: 70px; background: linear-gradient(135deg, #f59e0b, #b45309); border-radius: 12px; border: 2px solid #fbbf24; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; color: #fff; cursor: pointer; user-select: none; transition: transform 0.15s ease;">🎲</div>
+                <div class="bk-dice-box-wrapper" style="width: 70px; height: 70px; background: linear-gradient(135deg, #f59e0b, #b45309); border-radius: 12px; border: 2px solid #fbbf24; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none;">
+                  <div class="dice-scene">
+                    <div class="dice-cube" id="bk-dice-element">
+                      <div class="dice-face face-1">
+                        <div class="pip middle"></div>
+                      </div>
+                      <div class="dice-face face-6">
+                        <div class="pip top-left"></div><div class="pip top-right"></div>
+                        <div class="pip mid-left"></div><div class="pip mid-right"></div>
+                        <div class="pip bot-left"></div><div class="pip bot-right"></div>
+                      </div>
+                      <div class="dice-face face-2">
+                        <div class="pip top-left"></div>
+                        <div class="pip bot-right"></div>
+                      </div>
+                      <div class="dice-face face-5">
+                        <div class="pip top-left"></div><div class="pip top-right"></div>
+                        <div class="pip middle"></div>
+                        <div class="pip bot-left"></div><div class="pip bot-right"></div>
+                      </div>
+                      <div class="dice-face face-3">
+                        <div class="pip top-left"></div>
+                        <div class="pip middle"></div>
+                        <div class="pip bot-right"></div>
+                      </div>
+                      <div class="dice-face face-4">
+                        <div class="pip top-left"></div><div class="pip top-right"></div>
+                        <div class="pip bot-left"></div><div class="pip bot-right"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <button type="button" id="bk-roll-btn" class="btn primary-btn bk-action-btn" style="width: 100%; padding: 12px; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #000; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); width: 100%; margin: 0;">Roll Dice</button>
               </div>
 
@@ -877,9 +910,9 @@
 
   <!-- Scripts -->
   <!-- Barakatta Scripts -->
-  <script src="barakatta/js/board-config.js?v=1.0.8"></script>
-  <script src="barakatta/js/game-logic.js?v=1.0.8"></script>
-  <script src="barakatta/js/ui-rendering.js?v=1.0.9"></script>
+  <script src="barakatta/js/board-config.js?v=1.1.0"></script>
+  <script src="barakatta/js/game-logic.js?v=1.1.0"></script>
+  <script src="barakatta/js/ui-rendering.js?v=1.1.0"></script>
 
   <script src="js/self-healing.js?v=1.36.3"></script>
   <script src="js/config.js?v=1.36.3"></script>
