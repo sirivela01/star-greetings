@@ -176,48 +176,47 @@
       const offset = playerOffsets[playerId];
       const paths = BARAKATTA_BOARD.playerPaths[playerId];
 
+      // 1. Draw the starting arrow leaving the start X mark on the outer ring (k=0)
+      const ring0 = paths[0];
+      if (ring0 && ring0.length > 1) {
+        const c1 = ring0[0];
+        const c2 = ring0[1];
+
+        const x1 = c1.col * 100 + 50 + offset.dx;
+        const y1 = c1.row * 100 + 50 + offset.dy;
+        const x2 = c2.col * 100 + 50 + offset.dx;
+        const y2 = c2.row * 100 + 50 + offset.dy;
+
+        // Thick background
+        const lineBg = document.createElementNS(svgNS, "line");
+        lineBg.setAttribute("x1", x1);
+        lineBg.setAttribute("y1", y1);
+        lineBg.setAttribute("x2", x2);
+        lineBg.setAttribute("y2", y2);
+        lineBg.setAttribute("stroke", color);
+        lineBg.setAttribute("stroke-width", "16");
+        lineBg.setAttribute("opacity", "0.15");
+        lineBg.setAttribute("stroke-linecap", "round");
+        svg.appendChild(lineBg);
+
+        // Foreground arrow
+        const lineFg = document.createElementNS(svgNS, "line");
+        lineFg.setAttribute("x1", x1);
+        lineFg.setAttribute("y1", y1);
+        lineFg.setAttribute("x2", x2);
+        lineFg.setAttribute("y2", y2);
+        lineFg.setAttribute("stroke", color);
+        lineFg.setAttribute("stroke-width", "2.2");
+        lineFg.setAttribute("opacity", "0.75");
+        lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
+        svg.appendChild(lineFg);
+      }
+
+      // 2. Draw the diagonal transition arrows pointing inward towards the center
       for (let k = 0; k < 3; k++) {
         const ringPath = paths[k];
-        if (!ringPath || ringPath.length === 0) continue;
-
-        // Draw connections inside current ring
-        for (let i = 0; i < ringPath.length - 1; i++) {
-          const c1 = ringPath[i];
-          const c2 = ringPath[i + 1];
-
-          const x1 = c1.col * 100 + 50 + offset.dx;
-          const y1 = c1.row * 100 + 50 + offset.dy;
-          const x2 = c2.col * 100 + 50 + offset.dx;
-          const y2 = c2.row * 100 + 50 + offset.dy;
-
-          // 1. Draw thick semi-transparent background ribbon
-          const lineBg = document.createElementNS(svgNS, "line");
-          lineBg.setAttribute("x1", x1);
-          lineBg.setAttribute("y1", y1);
-          lineBg.setAttribute("x2", x2);
-          lineBg.setAttribute("y2", y2);
-          lineBg.setAttribute("stroke", color);
-          lineBg.setAttribute("stroke-width", "16");
-          lineBg.setAttribute("opacity", "0.15");
-          lineBg.setAttribute("stroke-linecap", "round");
-          svg.appendChild(lineBg);
-
-          // 2. Draw thin foreground arrow line (upper layer)
-          const lineFg = document.createElementNS(svgNS, "line");
-          lineFg.setAttribute("x1", x1);
-          lineFg.setAttribute("y1", y1);
-          lineFg.setAttribute("x2", x2);
-          lineFg.setAttribute("y2", y2);
-          lineFg.setAttribute("stroke", color);
-          lineFg.setAttribute("stroke-width", "2.2");
-          lineFg.setAttribute("opacity", "0.75");
-          lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
-          svg.appendChild(lineFg);
-        }
-
-        // Draw diagonal transition to the next ring
         const nextRingPath = paths[k + 1];
-        if (nextRingPath && nextRingPath.length > 0) {
+        if (ringPath && ringPath.length > 0 && nextRingPath && nextRingPath.length > 0) {
           const lastCell = ringPath[ringPath.length - 1];
           const nextEntry = nextRingPath[0];
 
@@ -226,7 +225,7 @@
           const x2 = nextEntry.col * 100 + 50 + offset.dx;
           const y2 = nextEntry.row * 100 + 50 + offset.dy;
 
-          // 1. Draw thick semi-transparent background ribbon for transition
+          // Thick background for transition
           const lineBg = document.createElementNS(svgNS, "line");
           lineBg.setAttribute("x1", x1);
           lineBg.setAttribute("y1", y1);
@@ -238,7 +237,7 @@
           lineBg.setAttribute("stroke-linecap", "round");
           svg.appendChild(lineBg);
 
-          // 2. Draw foreground transition arrow line (upper layer)
+          // Foreground transition arrow
           const lineFg = document.createElementNS(svgNS, "line");
           lineFg.setAttribute("x1", x1);
           lineFg.setAttribute("y1", y1);
