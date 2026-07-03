@@ -105,6 +105,12 @@ All code and styling assets for Barakatta reside in the new, isolated `barakatta
   - **Extra Turn Rule on 6 or 1**: Updated the game state transition inside [game-logic.js](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/js/game-logic.js) so that both rolling a **6** and rolling a **1** grant the active player another roll chance. Any other roll switches the turn.
   - **Local Multiplayer Turn Switching**: Ensured that the turn transitions correctly in `"offline"` Pass & Play mode between player 1 (Red) and player 3 (Yellow).
   - **UI Freeze Bug Fix**: Removed obsolete `stepsMoved` math and redundant cell-by-cell intermediate loops from [ui-rendering.js](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/js/ui-rendering.js) which caused `NaN` calculations and hung the UI state transition. Rocks now move instantly using clean, hardware-accelerated 3D CSS hop transitions, allowing smooth turn handovers.
+  - **Ludo-Style Dynamic Path Highlights**: 
+    - Removed permanent static pathway lane lines to keep the 3D board grid clean and clear of clutter.
+    - Added `getRockStepPath` helper to [game-logic.js](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/js/game-logic.js) to trace the exact coordinate path a rock travels for a given roll.
+    - Implemented hover and click-select previews: hovering or tapping an active rock draws a glowing neon path representing its next steps with an arrowhead pointing at the destination cell, which flashes green with `.target-highlight` CSS keyframes.
+    - Tap/click once selects a rock and draws the path; tapping it again (or tapping the target cell) confirms and executes the move. Clicking elsewhere cancels the selection.
+    - Bots show their planned movement paths in yellow for 800ms before moving their piece to make CPU moves easy to follow.
 
 ## Verification Results
 - **Compile Success**: Code compiles cleanly: `python -m py_compile app.py`.
