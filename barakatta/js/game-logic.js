@@ -228,6 +228,42 @@ class BarakattaGame {
     return { ring, pos, hasCaptured, status, cell: finalCell };
   }
 
+  // Returns list of cell coordinates the rock will visit step-by-step
+  getRockStepPath(playerId, rockId, steps) {
+    if (!this.isValidMove(playerId, rockId, steps)) return null;
+
+    const rock = this.players[playerId].rocks[rockId];
+    let ring = rock.currentRing;
+    let pos = rock.positionInRing;
+    let hasCaptured = rock.hasCapturedThisRing;
+    const pathCells = [BARAKATTA_BOARD.playerPaths[playerId][ring][pos]];
+
+    for (let s = 1; s <= steps; s++) {
+      const pathL = BARAKATTA_BOARD.playerPaths[playerId][ring].length;
+      if (pos === pathL - 1) {
+        const nextRingIdx = ring + 1;
+        if (nextRingIdx >= BARAKATTA_BOARD.rings.length) break;
+
+        const nextEntryCell = BARAKATTA_BOARD.playerPaths[playerId][nextRingIdx][0];
+        const occupant = this.getOccupant(nextEntryCell);
+        const isSafe = this.isSafeSquare(nextEntryCell);
+        const wouldCaptureNow = occupant && occupant.playerId !== playerId && !isSafe;
+
+        if (hasCaptured || wouldCaptureNow) {
+          ring = nextRingIdx;
+          pos = 0;
+          hasCaptured = wouldCaptureNow;
+        } else {
+          break;
+        }
+      } else {
+        pos++;
+      }
+      pathCells.push(BARAKATTA_BOARD.playerPaths[playerId][ring][pos]);
+    }
+    return pathCells;
+  }
+
   // Validates if moving a specific rock by D steps is legal
   isValidMove(playerId, rockId, steps) {
     const rock = this.players[playerId].rocks[rockId];

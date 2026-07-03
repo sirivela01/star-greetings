@@ -4,6 +4,22 @@
   let isRolling = false;
   let tilesGrid = null;
   let currentRollCount = 0;
+  let selectedRockId = null;
+  let activeHighlightPath = null;
+
+  const playerConfig = {
+    player1: { color: "#ef4444" },
+    player2: { color: "#3b82f6" },
+    player3: { color: "#fbbf24" },
+    player4: { color: "#10b981" }
+  };
+
+  const playerOffsets = {
+    player1: { dx: -5, dy: 5 },
+    player2: { dx: 5, dy: 5 },
+    player3: { dx: 5, dy: -5 },
+    player4: { dx: -5, dy: -5 }
+  };
 
   const diceRotations = {
     1: { x: 0, y: 0 },
@@ -131,25 +147,11 @@
     // Generate counter-clockwise arrow overlay matching the drawing
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("id", "bk-dynamic-path-svg");
     svg.setAttribute("viewBox", "0 0 700 700");
     svg.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; transform: translateZ(10.2px); transform-style: preserve-3d;";
 
     const defs = document.createElementNS(svgNS, "defs");
-
-    // Player configuration for unique lane coloring (P1: Red, P2: Blue, P3: Yellow, P4: Green)
-    const playerConfig = {
-      player1: { color: "#ef4444" },
-      player2: { color: "#3b82f6" },
-      player3: { color: "#fbbf24" },
-      player4: { color: "#10b981" }
-    };
-
-    const playerOffsets = {
-      player1: { dx: -5, dy: 5 },
-      player2: { dx: 5, dy: 5 },
-      player3: { dx: 5, dy: -5 },
-      player4: { dx: -5, dy: -5 }
-    };
 
     // Create markers for each player
     Object.keys(playerConfig).forEach(playerId => {
@@ -170,94 +172,72 @@
     });
     svg.appendChild(defs);
 
-    // Draw paths for all 4 players
-    Object.keys(playerConfig).forEach(playerId => {
-      const color = playerConfig[playerId].color;
-      const offset = playerOffsets[playerId];
-      const paths = BARAKATTA_BOARD.playerPaths[playerId];
-
-      for (let k = 0; k < 3; k++) {
-        const ringPath = paths[k];
-        if (!ringPath || ringPath.length === 0) continue;
-
-        // Draw connections inside current ring (full loops)
-        for (let i = 0; i < ringPath.length - 1; i++) {
-          const c1 = ringPath[i];
-          const c2 = ringPath[i + 1];
-
-          const x1 = c1.col * 100 + 50 + offset.dx;
-          const y1 = c1.row * 100 + 50 + offset.dy;
-          const x2 = c2.col * 100 + 50 + offset.dx;
-          const y2 = c2.row * 100 + 50 + offset.dy;
-
-          // 1. Draw thick semi-transparent background ribbon
-          const lineBg = document.createElementNS(svgNS, "line");
-          lineBg.setAttribute("x1", x1);
-          lineBg.setAttribute("y1", y1);
-          lineBg.setAttribute("x2", x2);
-          lineBg.setAttribute("y2", y2);
-          lineBg.setAttribute("stroke", color);
-          lineBg.setAttribute("stroke-width", "16");
-          lineBg.setAttribute("opacity", "0.15");
-          lineBg.setAttribute("stroke-linecap", "round");
-          svg.appendChild(lineBg);
-
-          // 2. Draw thin foreground line
-          const lineFg = document.createElementNS(svgNS, "line");
-          lineFg.setAttribute("x1", x1);
-          lineFg.setAttribute("y1", y1);
-          lineFg.setAttribute("x2", x2);
-          lineFg.setAttribute("y2", y2);
-          lineFg.setAttribute("stroke", color);
-          lineFg.setAttribute("stroke-width", "2.2");
-          lineFg.setAttribute("opacity", "0.75");
-          
-          // Place arrowheads on the starting segment and every 6th segment of the loops to show direction
-          if ((k === 0 && i === 0) || i % 6 === 3) {
-            lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
-          }
-          svg.appendChild(lineFg);
-        }
-
-        // Draw diagonal transition to the next ring
-        const nextRingPath = paths[k + 1];
-        if (nextRingPath && nextRingPath.length > 0) {
-          const lastCell = ringPath[ringPath.length - 1];
-          const nextEntry = nextRingPath[0];
-
-          const x1 = lastCell.col * 100 + 50 + offset.dx;
-          const y1 = lastCell.row * 100 + 50 + offset.dy;
-          const x2 = nextEntry.col * 100 + 50 + offset.dx;
-          const y2 = nextEntry.row * 100 + 50 + offset.dy;
-
-          // 1. Draw thick semi-transparent background ribbon for transition
-          const lineBg = document.createElementNS(svgNS, "line");
-          lineBg.setAttribute("x1", x1);
-          lineBg.setAttribute("y1", y1);
-          lineBg.setAttribute("x2", x2);
-          lineBg.setAttribute("y2", y2);
-          lineBg.setAttribute("stroke", color);
-          lineBg.setAttribute("stroke-width", "16");
-          lineBg.setAttribute("opacity", "0.2");
-          lineBg.setAttribute("stroke-linecap", "round");
-          svg.appendChild(lineBg);
-
-          // 2. Draw foreground transition arrow line (upper layer)
-          const lineFg = document.createElementNS(svgNS, "line");
-          lineFg.setAttribute("x1", x1);
-          lineFg.setAttribute("y1", y1);
-          lineFg.setAttribute("x2", x2);
-          lineFg.setAttribute("y2", y2);
-          lineFg.setAttribute("stroke", color);
-          lineFg.setAttribute("stroke-width", "3.2");
-          lineFg.setAttribute("opacity", "0.85");
-          lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
-          svg.appendChild(lineFg);
-        }
-      }
-    });
+    // Create dynamic lines container
+    const dynamicLinesContainer = document.createElementNS(svgNS, "g");
+    dynamicLinesContainer.setAttribute("id", "bk-dynamic-lines-container");
+    svg.appendChild(dynamicLinesContainer);
 
     boardContainer.appendChild(svg);
+  }
+
+  // Draw highlight path for active preview
+  function drawHighlightPath(playerId, path) {
+    const dynamicLinesContainer = document.getElementById("bk-dynamic-lines-container");
+    if (!dynamicLinesContainer) return;
+    dynamicLinesContainer.innerHTML = "";
+
+    if (!path || path.length < 2) return;
+
+    const svgNS = "http://www.w3.org/2000/svg";
+    const color = playerConfig[playerId].color;
+    const offset = playerOffsets[playerId];
+
+    for (let i = 0; i < path.length - 1; i++) {
+      const c1 = path[i];
+      const c2 = path[i + 1];
+
+      const x1 = c1.col * 100 + 50 + offset.dx;
+      const y1 = c1.row * 100 + 50 + offset.dy;
+      const x2 = c2.col * 100 + 50 + offset.dx;
+      const y2 = c2.row * 100 + 50 + offset.dy;
+
+      // 1. Draw thick neon background ribbon (semi-transparent)
+      const lineBg = document.createElementNS(svgNS, "line");
+      lineBg.setAttribute("x1", x1);
+      lineBg.setAttribute("y1", y1);
+      lineBg.setAttribute("x2", x2);
+      lineBg.setAttribute("y2", y2);
+      lineBg.setAttribute("stroke", color);
+      lineBg.setAttribute("stroke-width", "16");
+      lineBg.setAttribute("opacity", "0.35");
+      lineBg.setAttribute("stroke-linecap", "round");
+      lineBg.style.filter = `drop-shadow(0 0 5px ${color})`;
+      dynamicLinesContainer.appendChild(lineBg);
+
+      // 2. Draw thin solid foreground arrow line
+      const lineFg = document.createElementNS(svgNS, "line");
+      lineFg.setAttribute("x1", x1);
+      lineFg.setAttribute("y1", y1);
+      lineFg.setAttribute("x2", x2);
+      lineFg.setAttribute("y2", y2);
+      lineFg.setAttribute("stroke", "#ffffff");
+      lineFg.setAttribute("stroke-width", "3");
+      lineFg.setAttribute("opacity", "0.95");
+      lineFg.setAttribute("stroke-linecap", "round");
+
+      // Place arrowhead only at the final segment (the target cell)
+      if (i === path.length - 2) {
+        lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
+      }
+      dynamicLinesContainer.appendChild(lineFg);
+    }
+  }
+
+  // Clear highlight path and tile target highlights
+  function clearHighlightPath() {
+    const dynamicLinesContainer = document.getElementById("bk-dynamic-lines-container");
+    if (dynamicLinesContainer) dynamicLinesContainer.innerHTML = "";
+    document.querySelectorAll(".tile-top").forEach(el => el.classList.remove("target-highlight"));
   }
 
   // Draw the complete board
@@ -412,6 +392,33 @@
 
         tileTop.appendChild(rockToken);
         rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 12px)`;
+
+        // Mouse hover preview path
+        rockToken.onmouseenter = () => {
+          const isHuman = (game.mode === "offline") || (game.currentTurn === "player1");
+          if (!isHuman || game.rollState !== "rolled") return;
+
+          // If no rock is selected, show path on hover
+          if (selectedRockId === null) {
+            const path = game.getRockStepPath(game.currentTurn, item.rockId, game.diceValue);
+            if (path) {
+              clearHighlightPath();
+              drawHighlightPath(game.currentTurn, path);
+              
+              const targetCell = path[path.length - 1];
+              if (tilesGrid[targetCell.row] && tilesGrid[targetCell.row][targetCell.col]) {
+                const targetTile = tilesGrid[targetCell.row][targetCell.col].querySelector(".tile-top");
+                if (targetTile) targetTile.classList.add("target-highlight");
+              }
+            }
+          }
+        };
+
+        rockToken.onmouseleave = () => {
+          if (selectedRockId === null) {
+            clearHighlightPath();
+          }
+        };
       });
     });
   }
@@ -577,6 +584,7 @@
 
     const actions = game.getLegalActions(game.currentTurn, game.diceValue);
     
+    // Find if a rock of the active player on this tile is clicked
     const clickedRockAction = actions.find(act => {
       if (act.type !== "MOVE_ROCK") return false;
       const rockCell = game.getRockCell(game.currentTurn, act.rockId);
@@ -584,13 +592,64 @@
     });
 
     if (clickedRockAction) {
-      const summary = game.executeAction(game.currentTurn, clickedRockAction);
-      document.getElementById("bk-status-desc").textContent = summary;
-      completeTurnSequence();
+      const rockId = clickedRockAction.rockId;
+      
+      // If this rock is already selected, execute the move!
+      if (selectedRockId === rockId) {
+        selectedRockId = null;
+        clearHighlightPath();
+        const summary = game.executeAction(game.currentTurn, clickedRockAction);
+        document.getElementById("bk-status-desc").textContent = summary;
+        completeTurnSequence();
+      } else {
+        // Otherwise, select this rock and show its step-by-step path
+        selectedRockId = rockId;
+        const path = game.getRockStepPath(game.currentTurn, rockId, game.diceValue);
+        activeHighlightPath = path;
+        
+        clearHighlightPath();
+        drawHighlightPath(game.currentTurn, path);
+        
+        // Highlight the target cell
+        if (path && path.length > 0) {
+          const targetCell = path[path.length - 1];
+          if (tilesGrid[targetCell.row] && tilesGrid[targetCell.row][targetCell.col]) {
+            const tileTop = tilesGrid[targetCell.row][targetCell.col].querySelector(".tile-top");
+            if (tileTop) tileTop.classList.add("target-highlight");
+          }
+        }
+        
+        document.getElementById("bk-status-desc").textContent = "Tap the selected rock again (or its green destination tile) to move it.";
+      }
+      return;
     }
+
+    // Alternatively, if they click the highlighted target cell, execute the move for the selected rock!
+    if (selectedRockId !== null && activeHighlightPath) {
+      const targetCell = activeHighlightPath[activeHighlightPath.length - 1];
+      if (row === targetCell.row && col === targetCell.col) {
+        const confirmAction = actions.find(act => act.type === "MOVE_ROCK" && act.rockId === selectedRockId);
+        if (confirmAction) {
+          selectedRockId = null;
+          clearHighlightPath();
+          const summary = game.executeAction(game.currentTurn, confirmAction);
+          document.getElementById("bk-status-desc").textContent = summary;
+          completeTurnSequence();
+          return;
+        }
+      }
+    }
+
+    // If they click anywhere else, clear selection
+    selectedRockId = null;
+    clearHighlightPath();
+    document.getElementById("bk-status-desc").textContent = `${game.currentTurn === 'player1' ? 'Select' : 'Player 2: Select'} one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
   }
 
   function completeTurnSequence() {
+    selectedRockId = null;
+    activeHighlightPath = null;
+    clearHighlightPath();
     drawBoard();
 
     if (game.status !== "in_progress") {
@@ -654,9 +713,30 @@
         
         if (chosenAction) {
           setTimeout(() => {
-            const summary = game.executeAction("player3", chosenAction);
-            document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
-            completeBotTurnSequence();
+            if (chosenAction.type === "MOVE_ROCK") {
+              const path = game.getRockStepPath("player3", chosenAction.rockId, chosenAction.steps);
+              if (path) {
+                clearHighlightPath();
+                drawHighlightPath("player3", path);
+                
+                const targetCell = path[path.length - 1];
+                if (tilesGrid[targetCell.row] && tilesGrid[targetCell.row][targetCell.col]) {
+                  const targetTile = tilesGrid[targetCell.row][targetCell.col].querySelector(".tile-top");
+                  if (targetTile) targetTile.classList.add("target-highlight");
+                }
+              }
+              
+              setTimeout(() => {
+                clearHighlightPath();
+                const summary = game.executeAction("player3", chosenAction);
+                document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
+                completeBotTurnSequence();
+              }, 800);
+            } else {
+              const summary = game.executeAction("player3", chosenAction);
+              document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
+              completeBotTurnSequence();
+            }
           }, 600);
         }
       }, prefersReducedMotion ? 0 : 500);
@@ -664,6 +744,7 @@
   }
 
   function completeBotTurnSequence() {
+    clearHighlightPath();
     drawBoard();
 
     if (game.status !== "in_progress") {
