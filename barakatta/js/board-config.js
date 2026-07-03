@@ -43,11 +43,11 @@ function getPlayerRingPath(ring, startIndex) {
   return [...ring.slice(startIndex), ...ring.slice(0, startIndex)];
 }
 
-// Player specific spiral path definitions matching the pen-and-paper drawing:
-// Player 1 (Bottom): Outer ring ends at (6,0), transitions to inner safe X mark (5,1), Ring 1 & 2 do full laps.
-// Player 3 (Top): Outer ring ends at (0,6), transitions to inner safe X mark (1,5), Ring 1 & 2 do full laps.
-// Player 4 (Left): Outer ring ends at (0,0), transitions to inner safe X mark (1,1), Ring 1 & 2 do full laps.
-// Player 2 (Right): Outer ring ends at (6,6), transitions to inner safe X mark (5,5), Ring 1 & 2 do full laps.
+// Player specific spiral path definitions matching the pen-and-paper drawing exactly:
+// Player 1 (Bottom): loops counter-clockwise, transitions from (6,2)->(5,1) and (5,3)->(4,2) and (4,3)->(3,3).
+// Player 3 (Top): loops counter-clockwise, transitions from (0,4)->(1,5) and (1,3)->(2,4) and (2,3)->(3,3).
+// Player 4 (Left): loops counter-clockwise, transitions from (2,0)->(1,1) and (3,1)->(2,2) and (3,2)->(3,3).
+// Player 2 (Right): loops counter-clockwise, transitions from (4,6)->(5,5) and (3,5)->(4,4) and (3,4)->(3,3).
 const playerPathsConfig = {
   player1: {
     startCells: [
@@ -57,9 +57,9 @@ const playerPathsConfig = {
       { row: 3, col: 3 }  // Ring 3 start (home center)
     ],
     endCells: [
-      { row: 6, col: 0 }, // Ring 0 end (bottom-left corner)
-      { row: 5, col: 1 }, // Ring 1 end (full lap)
-      { row: 4, col: 2 }, // Ring 2 end (full lap)
+      { row: 6, col: 2 }, // Ring 0 end
+      { row: 5, col: 3 }, // Ring 1 end
+      { row: 4, col: 3 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]
   },
@@ -71,9 +71,9 @@ const playerPathsConfig = {
       { row: 3, col: 3 }  // Ring 3 start (home center)
     ],
     endCells: [
-      { row: 0, col: 6 }, // Ring 0 end (top-right corner)
-      { row: 1, col: 5 }, // Ring 1 end (full lap)
-      { row: 2, col: 4 }, // Ring 2 end (full lap)
+      { row: 0, col: 4 }, // Ring 0 end
+      { row: 1, col: 3 }, // Ring 1 end
+      { row: 2, col: 3 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]
   },
@@ -85,9 +85,9 @@ const playerPathsConfig = {
       { row: 3, col: 3 }  // Ring 3 start (home center)
     ],
     endCells: [
-      { row: 0, col: 0 }, // Ring 0 end (top-left corner)
-      { row: 1, col: 1 }, // Ring 1 end (full lap)
-      { row: 2, col: 2 }, // Ring 2 end (full lap)
+      { row: 2, col: 0 }, // Ring 0 end
+      { row: 3, col: 1 }, // Ring 1 end
+      { row: 3, col: 2 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]
   },
@@ -99,9 +99,9 @@ const playerPathsConfig = {
       { row: 3, col: 3 }  // Ring 3 start (home center)
     ],
     endCells: [
-      { row: 6, col: 6 }, // Ring 0 end (bottom-right corner)
-      { row: 5, col: 5 }, // Ring 1 end (full lap)
-      { row: 4, col: 4 }, // Ring 2 end (full lap)
+      { row: 4, col: 6 }, // Ring 0 end
+      { row: 3, col: 5 }, // Ring 1 end
+      { row: 3, col: 4 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]
   }
@@ -109,8 +109,8 @@ const playerPathsConfig = {
 
 // Generate spiral rings
 BARAKATTA_BOARD.rings = generateRings(BARAKATTA_BOARD.rows, BARAKATTA_BOARD.cols);
-// Reverse each ring to make it counter-clockwise
-BARAKATTA_BOARD.rings.forEach(ring => ring.reverse());
+// Reverse ONLY Ring 0 to make it counter-clockwise. Ring 1 & Ring 2 remain clockwise as drawn in your path diagram.
+BARAKATTA_BOARD.rings[0].reverse();
 
 BARAKATTA_BOARD.playerPaths = {
   player1: [],
@@ -131,15 +131,12 @@ Object.keys(BARAKATTA_BOARD.playerPaths).forEach(playerId => {
     const rotated = getPlayerRingPath(ring, startIdx);
     const endIdx = rotated.findIndex(c => c.row === endCell.row && c.col === endCell.col);
 
-    if (k === 0) {
-      // Ring 0 ends at corner cell
-      BARAKATTA_BOARD.playerPaths[playerId][k] = rotated.slice(0, endIdx + 1);
-    } else if (k === 3) {
+    if (k === 3) {
       // Home center cell
       BARAKATTA_BOARD.playerPaths[playerId][k] = [startCell];
     } else {
-      // Ring 1 & 2 execute full laps ending back on start cell
-      BARAKATTA_BOARD.playerPaths[playerId][k] = [...rotated, rotated[0]];
+      // Slice from starting cell to ending cell (inclusive)
+      BARAKATTA_BOARD.playerPaths[playerId][k] = rotated.slice(0, endIdx + 1);
     }
   }
 });
