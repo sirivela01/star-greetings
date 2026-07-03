@@ -112,6 +112,7 @@ All code and styling assets for Barakatta reside in the new, isolated `barakatta
     - Tap/click once selects a rock and draws the path; tapping it again (or tapping the target cell) confirms and executes the move. Clicking elsewhere cancels the selection.
     - Bots show their planned movement paths in yellow for 800ms before moving their piece to make CPU moves easy to follow.
   - **Solo Mode Turn Transition Bug Fix**: Fixed a bug where the game mode string `"ai_bot"` was not handled in the turn transition check (`this.mode === "solo" || this.mode === "offline"`), which caused the turn to stay with Player 1 (Red) forever and prevented the Bot from playing. Added `"ai_bot"` to the nextTurn check so that solo matches transition correctly to the AI Bot.
+  - **Opponent Capture (Kill) Bug Fix**: Resolved a critical issue where landing on an opponent's rock on a non-safe cell did not trigger a capture (allowing red and yellow rocks to sit on the same space). The original `getOccupant` check returned the moving rock itself once its coordinates were updated, masking the opponent piece. Added the `getOpponentOccupant` helper to safely identify opponent rocks only, ensuring captures execute correctly and return opponent rocks to their respective yards.
 
 ## Verification Results
 - **Compile Success**: Code compiles cleanly: `python -m py_compile app.py`.

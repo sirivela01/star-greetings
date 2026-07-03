@@ -107,6 +107,23 @@ class BarakattaGame {
     return null;
   }
 
+  // Finds occupant of a cell belonging to any player EXCEPT the specified friendly player
+  getOpponentOccupant(cell, friendlyPlayerId) {
+    if (!cell) return null;
+    for (const playerId of Object.keys(this.players)) {
+      if (playerId === friendlyPlayerId) continue;
+      for (const rock of this.players[playerId].rocks) {
+        if (rock.status === "active" || rock.status === "blocked") {
+          const c = this.getRockCell(playerId, rock.id);
+          if (c && c.row === cell.row && c.col === cell.col) {
+            return { playerId, rockId: rock.id, rock };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   // Evaluates legal actions for the current turn and rolled dice value
   getLegalActions(playerId, diceValue) {
     const actions = [];
@@ -176,9 +193,9 @@ class BarakattaGame {
         }
 
         const nextEntryCell = BARAKATTA_BOARD.playerPaths[playerId][nextRingIdx][0];
-        const occupant = this.getOccupant(nextEntryCell);
+        const occupant = this.getOpponentOccupant(nextEntryCell, playerId);
         const isSafe = this.isSafeSquare(nextEntryCell);
-        const wouldCaptureNow = occupant && occupant.playerId !== playerId && !isSafe;
+        const wouldCaptureNow = occupant && !isSafe;
 
         if (hasCaptured || wouldCaptureNow) {
           // Allowed to transition!
@@ -198,9 +215,9 @@ class BarakattaGame {
         status = "active";
 
         const cell = BARAKATTA_BOARD.playerPaths[playerId][ring][pos];
-        const occupant = this.getOccupant(cell);
+        const occupant = this.getOpponentOccupant(cell, playerId);
         const isSafe = this.isSafeSquare(cell);
-        if (occupant && occupant.playerId !== playerId && !isSafe) {
+        if (occupant && !isSafe) {
           hasCaptured = true;
         }
       }
@@ -245,9 +262,9 @@ class BarakattaGame {
         if (nextRingIdx >= BARAKATTA_BOARD.rings.length) break;
 
         const nextEntryCell = BARAKATTA_BOARD.playerPaths[playerId][nextRingIdx][0];
-        const occupant = this.getOccupant(nextEntryCell);
+        const occupant = this.getOpponentOccupant(nextEntryCell, playerId);
         const isSafe = this.isSafeSquare(nextEntryCell);
-        const wouldCaptureNow = occupant && occupant.playerId !== playerId && !isSafe;
+        const wouldCaptureNow = occupant && !isSafe;
 
         if (hasCaptured || wouldCaptureNow) {
           ring = nextRingIdx;
@@ -320,8 +337,8 @@ class BarakattaGame {
 
         // Check for capture on target cell
         if (sim.status !== "home" && !this.isSafeSquare(sim.cell)) {
-          const opponent = this.getOccupant(sim.cell);
-          if (opponent && opponent.playerId !== playerId) {
+          const opponent = this.getOpponentOccupant(sim.cell, playerId);
+          if (opponent) {
             const oppRock = this.players[opponent.playerId].rocks[opponent.rockId];
             oppRock.status = "yard";
             oppRock.currentRing = 0;
@@ -407,8 +424,8 @@ class BarakattaGame {
       if (!sim || sim.status === "home") return false;
       if (this.isSafeSquare(sim.cell)) return false;
 
-      const opponent = this.getOccupant(sim.cell);
-      return opponent && opponent.playerId === "player1";
+      const opponent = this.getOpponentOccupant(sim.cell, "player3");
+      return !!opponent;
     };
 
     // Priority 1: Capture an opponent rock if possible (moves it or advances it)
