@@ -104,6 +104,7 @@ All code and styling assets for Barakatta reside in the new, isolated `barakatta
   - Adjusted the player rock tokens base translation to `translateZ(12px)` and aligned hop animations in [styles.css](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/css/styles.css) to ensure they always sit on top of the lane arrows.
   - **Extra Turn Rule on 6 or 1**: Updated the game state transition inside [game-logic.js](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/js/game-logic.js) so that both rolling a **6** and rolling a **1** grant the active player another roll chance. Any other roll switches the turn.
   - **Local Multiplayer Turn Switching**: Ensured that the turn transitions correctly in `"offline"` Pass & Play mode between player 1 (Red) and player 3 (Yellow).
+  - **UI Freeze Bug Fix**: Removed obsolete `stepsMoved` math and redundant cell-by-cell intermediate loops from [ui-rendering.js](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/js/ui-rendering.js) which caused `NaN` calculations and hung the UI state transition. Rocks now move instantly using clean, hardware-accelerated 3D CSS hop transitions, allowing smooth turn handovers.
 
 ## Verification Results
 - **Compile Success**: Code compiles cleanly: `python -m py_compile app.py`.
