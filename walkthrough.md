@@ -102,6 +102,8 @@ All code and styling assets for Barakatta reside in the new, isolated `barakatta
     - Parallel rotations are defined for the other three players.
   - Resolved Z-index overlapping in 3D CSS rendering by adding `transform: translateZ(10.2px)` to the SVG lane overlay so it floats above the 6px normal and 10px safe beveled tiles.
   - Adjusted the player rock tokens base translation to `translateZ(12px)` and aligned hop animations in [styles.css](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/css/styles.css) to ensure they always sit on top of the lane arrows.
+  - **Extra Turn Rule on 6 or 1**: Updated the game state transition inside [game-logic.js](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/js/game-logic.js) so that both rolling a **6** and rolling a **1** grant the active player another roll chance. Any other roll switches the turn.
+  - **Local Multiplayer Turn Switching**: Ensured that the turn transitions correctly in `"offline"` Pass & Play mode between player 1 (Red) and player 3 (Yellow).
 
 ## Verification Results
 - **Compile Success**: Code compiles cleanly: `python -m py_compile app.py`.
