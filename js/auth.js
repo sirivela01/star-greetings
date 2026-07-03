@@ -1069,6 +1069,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const bkPlayOfflineBtn = document.getElementById("barakatta-play-offline-btn");
+  if (bkPlayOfflineBtn) {
+    bkPlayOfflineBtn.addEventListener("click", () => {
+      if (window.startBarakattaGame) {
+        window.startBarakattaGame("offline");
+      } else {
+        alert("Barakatta game logic not loaded yet!");
+      }
+    });
+  }
+
   const bkExitGameBtn = document.getElementById("bk-exit-game-btn");
   if (bkExitGameBtn) {
     bkExitGameBtn.addEventListener("click", () => {

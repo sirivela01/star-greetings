@@ -147,14 +147,15 @@
       }
     }
 
-    // Highlight legal active moves on the tiles
-    const legalActions = (game.currentTurn === "player1" && game.rollState === "rolled")
-      ? game.getLegalActions("player1", game.diceValue)
+    // Highlight legal active moves on the tiles for the active player
+    const isHuman = (game.mode === "offline") || (game.currentTurn === "player1");
+    const legalActions = (isHuman && game.rollState === "rolled")
+      ? game.getLegalActions(game.currentTurn, game.diceValue)
       : [];
 
     legalActions.forEach(act => {
       if (act.type === "MOVE_ROCK") {
-        const cell = game.getRockCell("player1", act.rockId);
+        const cell = game.getRockCell(game.currentTurn, act.rockId);
         if (cell && tilesGrid[cell.row] && tilesGrid[cell.row][cell.col]) {
           const tileTop = tilesGrid[cell.row][cell.col].querySelector(".tile-top");
           if (tileTop) tileTop.classList.add("legal-highlight");
@@ -203,7 +204,7 @@
       const player = game.players[playerId];
       player.rocks.forEach(rock => {
         let cell = null;
-        if (rock.status === "board") {
+        if (rock.status === "active" || rock.status === "blocked") {
           cell = game.getRockCell(playerId, rock.id);
         } else if (rock.status === "home") {
           cell = { row: 3, col: 3 }; // Center tile
@@ -293,7 +294,6 @@
     const statusDesc = document.getElementById("bk-status-desc");
     const rollBtn = document.getElementById("bk-roll-btn");
 
-    // Sync UI elements
     if (game.currentTurn === "player1") {
       turnLabel.textContent = "You";
       statusTitle.textContent = "Your Turn";
@@ -304,20 +304,36 @@
         evaluateHumanActions();
       }
     } else {
-      turnLabel.textContent = "Bot";
-      statusTitle.textContent = "Bot's Turn";
-      statusDesc.textContent = "Bot is planning its move...";
-      rollBtn.setAttribute("disabled", "true");
+      // Player 3 Turn
+      if (game.mode === "offline") {
+        turnLabel.textContent = "Player 2";
+        statusTitle.textContent = "Player 2's Turn";
+        statusDesc.textContent = "Roll the dice to proceed.";
+        rollBtn.removeAttribute("disabled");
 
-      setTimeout(handleBotTurn, 800);
+        if (game.rollState === "rolled") {
+          evaluateHumanActions();
+        }
+      } else {
+        // AI BOT Turn
+        turnLabel.textContent = "Bot";
+        statusTitle.textContent = "Bot's Turn";
+        statusDesc.textContent = "Bot is planning its move...";
+        rollBtn.setAttribute("disabled", "true");
+
+        setTimeout(handleBotTurn, 800);
+      }
     }
 
     drawBoard();
   }
 
-  // Handle dice rolling event for human player
+  // Handle dice rolling event
   function handleHumanRoll() {
-    if (isRolling || game.currentTurn !== "player1" || game.rollState !== "idle") return;
+    if (isRolling || game.rollState !== "idle") return;
+
+    const isPlayerTurn = (game.mode === "offline") || (game.currentTurn === "player1");
+    if (!isPlayerTurn) return;
 
     isRolling = true;
     const diceElement = document.getElementById("bk-dice-element");
@@ -363,11 +379,11 @@
 
   // Evaluate action choices and auto-execute entries
   function evaluateHumanActions() {
-    const actions = game.getLegalActions("player1", game.diceValue);
+    const actions = game.getLegalActions(game.currentTurn, game.diceValue);
 
     if (actions.length === 0) {
-      document.getElementById("bk-status-title").textContent = "No Moves Available!";
-      document.getElementById("bk-status-desc").textContent = `You rolled a ${game.diceValue}. Turn is skipped.`;
+      document.getElementById("bk-status-title").textContent = game.currentTurn === "player1" ? "No Moves Available!" : "Player 2 Has No Moves!";
+      document.getElementById("bk-status-desc").textContent = `${game.currentTurn === "player1" ? 'You' : 'Player 2'} rolled a ${game.diceValue}. Turn is skipped.`;
       
       setTimeout(() => {
         game.nextTurn();
@@ -398,7 +414,7 @@
         game.rollState = "rolled";
 
         if (choiceType === "enter") {
-          const summary = game.executeAction("player1", { type: "ENTER_1_OPTIONAL" });
+          const summary = game.executeAction(game.currentTurn, { type: "ENTER_1_OPTIONAL" });
           document.getElementById("bk-status-desc").textContent = summary;
           completeTurnSequence();
         } else {
@@ -411,46 +427,47 @@
       moveBtn.onclick = () => handleChoice("move");
 
     } else if (actions.length === 1 && actions[0].type === "ENTER_ALL_6") {
-      const summary = game.executeAction("player1", actions[0]);
+      const summary = game.executeAction(game.currentTurn, actions[0]);
       document.getElementById("bk-status-desc").textContent = summary;
       completeTurnSequence();
     } else if (actions.length === 1 && actions[0].type === "ENTER_1_OPTIONAL") {
-      const summary = game.executeAction("player1", actions[0]);
+      const summary = game.executeAction(game.currentTurn, actions[0]);
       document.getElementById("bk-status-desc").textContent = summary;
       completeTurnSequence();
     } else {
-      document.getElementById("bk-status-desc").textContent = `Select one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
+      document.getElementById("bk-status-desc").textContent = `${game.currentTurn === 'player1' ? 'Select' : 'Player 2: Select'} one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
     }
   }
 
   // Handle board tile clicking directly
   function handleTileClick(row, col) {
-    if (game.currentTurn !== "player1" || game.rollState !== "rolled") return;
+    const isPlayerTurn = (game.mode === "offline") || (game.currentTurn === "player1");
+    if (!isPlayerTurn || game.rollState !== "rolled") return;
 
-    const actions = game.getLegalActions("player1", game.diceValue);
+    const actions = game.getLegalActions(game.currentTurn, game.diceValue);
     
     const clickedRockAction = actions.find(act => {
       if (act.type !== "MOVE_ROCK") return false;
-      const rockCell = game.getRockCell("player1", act.rockId);
+      const rockCell = game.getRockCell(game.currentTurn, act.rockId);
       return rockCell && rockCell.row === row && rockCell.col === col;
     });
 
     if (clickedRockAction) {
       const rockId = clickedRockAction.rockId;
-      const rock = game.players.player1.rocks[rockId];
+      const rock = game.players[game.currentTurn].rocks[rockId];
       const startSteps = rock.stepsMoved;
       
       const stepsCount = clickedRockAction.steps;
       let finalSteps = startSteps + stepsCount;
-      const hasCapture = !game.requireCaptureToEnterHome || game.hasCapturedAnOpponent["player1"];
+      const hasCapture = !game.requireCaptureToEnterHome || game.hasCapturedAnOpponent[game.currentTurn];
       if (!hasCapture && finalSteps >= 24) {
         finalSteps = finalSteps % 24;
       }
 
-      const summary = game.executeAction("player1", clickedRockAction);
+      const summary = game.executeAction(game.currentTurn, clickedRockAction);
       document.getElementById("bk-status-desc").textContent = summary;
 
-      animateRockMovement("player1", rockId, startSteps, finalSteps, () => {
+      animateRockMovement(game.currentTurn, rockId, startSteps, finalSteps, () => {
         completeTurnSequence();
       });
     }
@@ -601,10 +618,18 @@
     }
 
     setTimeout(() => {
-      if (isHumanWinner) {
-        alert("🎉 Congratulations! You got all 6 rocks home and won the match!");
+      if (game.mode === "offline") {
+        if (isHumanWinner) {
+          alert("🎉 Congratulations! Player 1 won the match!");
+        } else {
+          alert("🎉 Congratulations! Player 2 won the match!");
+        }
       } else {
-        alert("🤖 Bot wins! Better luck next time.");
+        if (isHumanWinner) {
+          alert("🎉 Congratulations! You got all 6 rocks home and won the match!");
+        } else {
+          alert("🤖 Bot wins! Better luck next time.");
+        }
       }
 
       const auth = window.auth;
