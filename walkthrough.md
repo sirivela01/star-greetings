@@ -97,6 +97,8 @@ All code and styling assets for Barakatta reside in the new, isolated `barakatta
   - Dynamically rendered color-coded pathway lanes with arrowheads pointing counter-clockwise around the board, plus solid diagonal transition arrow lines for all players matching the exact positions from your pen-and-paper drawing.
   - Assigned distinct colors and markers to all 4 players (Red for Player 1, Blue for Player 2, Yellow for Player 3/Bot, and Green for Player 4) with offsets to separate them into parallel lanes so they don't overlap.
   - Implemented **Multi-Layered Path Rendering** matching your Ludo reference image: draws a thick, semi-transparent colored background ribbon (`stroke-width="16" opacity="0.15"`) to show the path's color while letting the board's wooden texture show through from underneath, with a bright, solid foreground arrow line (`opacity="0.75"`) on the upper layer.
+  - Resolved Z-index overlapping in 3D CSS rendering by adding `transform: translateZ(10.2px)` to the SVG lane overlay so it floats above the 6px normal and 10px safe beveled tiles.
+  - Adjusted the player rock tokens base translation to `translateZ(12px)` and aligned hop animations in [styles.css](file:///c:/Users/syash/Downloads/python/star-greetings/barakatta/css/styles.css) to ensure they always sit on top of the lane arrows.
 
 ## Verification Results
 - **Compile Success**: Code compiles cleanly: `python -m py_compile app.py`.
