@@ -1,4 +1,5 @@
 // Barakatta Core Game Logic Engine
+console.log("Barakatta Core Logic Engine Loaded - Version 1.2.5");
 class BarakattaGame {
   constructor(mode = "solo") {
     this.mode = mode;
