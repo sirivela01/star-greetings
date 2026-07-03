@@ -111,6 +111,7 @@ All code and styling assets for Barakatta reside in the new, isolated `barakatta
     - Implemented hover and click-select previews: hovering or tapping an active rock draws a glowing neon path representing its next steps with an arrowhead pointing at the destination cell, which flashes green with `.target-highlight` CSS keyframes.
     - Tap/click once selects a rock and draws the path; tapping it again (or tapping the target cell) confirms and executes the move. Clicking elsewhere cancels the selection.
     - Bots show their planned movement paths in yellow for 800ms before moving their piece to make CPU moves easy to follow.
+  - **Solo Mode Turn Transition Bug Fix**: Fixed a bug where the game mode string `"ai_bot"` was not handled in the turn transition check (`this.mode === "solo" || this.mode === "offline"`), which caused the turn to stay with Player 1 (Red) forever and prevented the Bot from playing. Added `"ai_bot"` to the nextTurn check so that solo matches transition correctly to the AI Bot.
 
 ## Verification Results
 - **Compile Success**: Code compiles cleanly: `python -m py_compile app.py`.

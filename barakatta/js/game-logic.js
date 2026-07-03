@@ -362,7 +362,7 @@ class BarakattaGame {
     }
 
     // Otherwise transition turns
-    if (this.mode === "solo" || this.mode === "offline") {
+    if (this.mode === "solo" || this.mode === "offline" || this.mode === "ai_bot") {
       this.currentTurn = (this.currentTurn === "player1") ? "player3" : "player1";
     }
     
