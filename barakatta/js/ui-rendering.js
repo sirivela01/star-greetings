@@ -584,55 +584,10 @@
     });
 
     if (clickedRockAction) {
-      const rockId = clickedRockAction.rockId;
-      const rock = game.players[game.currentTurn].rocks[rockId];
-      const startSteps = rock.stepsMoved;
-      
-      const stepsCount = clickedRockAction.steps;
-      let finalSteps = startSteps + stepsCount;
-      const hasCapture = !game.requireCaptureToEnterHome || game.hasCapturedAnOpponent[game.currentTurn];
-      if (!hasCapture && finalSteps >= 24) {
-        finalSteps = finalSteps % 24;
-      }
-
       const summary = game.executeAction(game.currentTurn, clickedRockAction);
       document.getElementById("bk-status-desc").textContent = summary;
-
-      animateRockMovement(game.currentTurn, rockId, startSteps, finalSteps, () => {
-        completeTurnSequence();
-      });
+      completeTurnSequence();
     }
-  }
-
-  // Cell-by-cell path traversal animation
-  function animateRockMovement(playerId, rockId, startSteps, finalSteps, callback) {
-    let currentStep = startSteps;
-    const totalSteps = (finalSteps >= startSteps) 
-      ? (finalSteps - startSteps) 
-      : (24 - startSteps + finalSteps);
-
-    if (totalSteps <= 0) {
-      callback();
-      return;
-    }
-
-    let stepsCompleted = 0;
-    
-    function stepAnimation() {
-      if (stepsCompleted >= totalSteps) {
-        callback();
-        return;
-      }
-
-      currentStep = (currentStep + 1);
-      game.players[playerId].rocks[rockId].stepsMoved = currentStep;
-      drawBoard();
-
-      stepsCompleted++;
-      setTimeout(stepAnimation, 250);
-    }
-
-    stepAnimation();
   }
 
   function completeTurnSequence() {
@@ -699,29 +654,9 @@
         
         if (chosenAction) {
           setTimeout(() => {
-            if (chosenAction.type === "MOVE_ROCK") {
-              const rockId = chosenAction.rockId;
-              const rock = game.players.player3.rocks[rockId];
-              const startSteps = rock.stepsMoved;
-              
-              const stepsCount = chosenAction.steps;
-              let finalSteps = startSteps + stepsCount;
-              const hasCapture = !game.requireCaptureToEnterHome || game.hasCapturedAnOpponent["player3"];
-              if (!hasCapture && finalSteps >= 24) {
-                finalSteps = finalSteps % 24;
-              }
-
-              const summary = game.executeAction("player3", chosenAction);
-              document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
-
-              animateRockMovement("player3", rockId, startSteps, finalSteps, () => {
-                completeBotTurnSequence();
-              });
-            } else {
-              const summary = game.executeAction("player3", chosenAction);
-              document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
-              completeBotTurnSequence();
-            }
+            const summary = game.executeAction("player3", chosenAction);
+            document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
+            completeBotTurnSequence();
           }, 600);
         }
       }, prefersReducedMotion ? 0 : 500);
