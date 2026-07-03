@@ -14,8 +14,10 @@ class BarakattaGame {
         color: "red",
         rocks: Array.from({ length: 6 }, (_, i) => ({
           id: i,
-          status: "yard", // 'yard' | 'board' | 'home'
-          stepsMoved: 0
+          status: "yard", // 'yard' | 'active' | 'blocked' | 'home'
+          currentRing: 0,
+          positionInRing: 0,
+          hasCapturedThisRing: false
         }))
       },
       player3: {
@@ -25,7 +27,9 @@ class BarakattaGame {
         rocks: Array.from({ length: 6 }, (_, i) => ({
           id: i,
           status: "yard",
-          stepsMoved: 0
+          currentRing: 0,
+          positionInRing: 0,
+          hasCapturedThisRing: false
         }))
       }
     };
@@ -49,25 +53,20 @@ class BarakattaGame {
 
   // Returns list of rocks currently on board
   getBoardRocks(playerId) {
-    return this.players[playerId].rocks.filter(r => r.status === "board");
+    return this.players[playerId].rocks.filter(r => r.status === "active" || r.status === "blocked");
   }
 
-  // Returns the coordinate cell of a rock given player start index and stepsMoved
+  // Returns the coordinate cell of a rock
   getRockCell(playerId, rockIndex, stepsOffset = 0) {
     const rock = this.players[playerId].rocks[rockIndex];
-    if (!rock || rock.status === "yard") return null;
+    if (!rock || rock.status === "yard" || rock.status === "home") return null;
 
-    const steps = rock.stepsMoved + stepsOffset;
-    if (steps < 24) {
-      const startIdx = BARAKATTA_BOARD.playerStartIndex[playerId];
-      const pathIdx = (startIdx + steps) % 24;
-      return BARAKATTA_BOARD.path[pathIdx];
-    } else if (steps <= 26) {
-      const stretch = BARAKATTA_BOARD.homeStretches[playerId];
-      const idx = steps - 24;
-      return stretch[idx];
+    if (stepsOffset === 0) {
+      return BARAKATTA_BOARD.playerPaths[playerId][rock.currentRing][rock.positionInRing];
     }
-    return null; // reached home
+
+    const sim = this.simulateMove(playerId, rockIndex, stepsOffset);
+    return sim ? sim.cell : null;
   }
 
   // Returns if cell coordinates match a Safe Square (X)
@@ -76,6 +75,36 @@ class BarakattaGame {
     return BARAKATTA_BOARD.safeSquares.some(
       s => s.row === cell.row && s.col === cell.col
     );
+  }
+
+  // Finds occupant of a cell (any active rock of any player)
+  getOccupant(cell) {
+    if (!cell) return null;
+    for (const playerId of Object.keys(this.players)) {
+      for (const rock of this.players[playerId].rocks) {
+        if (rock.status === "active" || rock.status === "blocked") {
+          const c = this.getRockCell(playerId, rock.id);
+          if (c && c.row === cell.row && c.col === cell.col) {
+            return { playerId, rockId: rock.id, rock };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // Finds occupant of a cell belonging to a specific player
+  getOccupantOfPlayer(cell, playerId) {
+    if (!cell) return null;
+    for (const rock of this.players[playerId].rocks) {
+      if (rock.status === "active" || rock.status === "blocked") {
+        const c = this.getRockCell(playerId, rock.id);
+        if (c && c.row === cell.row && c.col === cell.col) {
+          return { playerId, rockId: rock.id, rock };
+        }
+      }
+    }
+    return null;
   }
 
   // Evaluates legal actions for the current turn and rolled dice value
@@ -119,22 +148,97 @@ class BarakattaGame {
     return actions;
   }
 
+  // Simulates moving a specific rock by D steps along the spiral rings path
+  simulateMove(playerId, rockId, steps) {
+    const rock = this.players[playerId].rocks[rockId];
+    if (!rock || rock.status === "yard" || rock.status === "home") {
+      return null;
+    }
+
+    let ring = rock.currentRing;
+    let pos = rock.positionInRing;
+    let hasCaptured = rock.hasCapturedThisRing;
+    let status = rock.status;
+
+    if (steps === 0) {
+      const cell = BARAKATTA_BOARD.playerPaths[playerId][ring][pos];
+      return { ring, pos, hasCaptured, status, cell };
+    }
+
+    for (let s = 1; s <= steps; s++) {
+      const pathL = BARAKATTA_BOARD.playerPaths[playerId][ring].length;
+      if (pos === pathL - 1) {
+        // Last cell of current ring - try to transition to the next ring inward
+        const nextRingIdx = ring + 1;
+        if (nextRingIdx >= BARAKATTA_BOARD.rings.length) {
+          // Overshoot (past the final HOME zone ring)
+          return null;
+        }
+
+        const nextEntryCell = BARAKATTA_BOARD.playerPaths[playerId][nextRingIdx][0];
+        const occupant = this.getOccupant(nextEntryCell);
+        const isSafe = this.isSafeSquare(nextEntryCell);
+        const wouldCaptureNow = occupant && occupant.playerId !== playerId && !isSafe;
+
+        if (hasCaptured || wouldCaptureNow) {
+          // Allowed to transition!
+          ring = nextRingIdx;
+          pos = 0;
+          hasCaptured = wouldCaptureNow; // reset capture flag for the new ring layer
+          status = "active";
+        } else {
+          // Blocked! Must stop at the end of the current ring in a blocked state
+          pos = pathL - 1;
+          status = "blocked";
+          break; // Stop movement
+        }
+      } else {
+        // Normal move along current ring
+        pos++;
+        status = "active";
+
+        const cell = BARAKATTA_BOARD.playerPaths[playerId][ring][pos];
+        const occupant = this.getOccupant(cell);
+        const isSafe = this.isSafeSquare(cell);
+        if (occupant && occupant.playerId !== playerId && !isSafe) {
+          hasCaptured = true;
+        }
+      }
+    }
+
+    const finalCell = BARAKATTA_BOARD.playerPaths[playerId][ring][pos];
+
+    // Same-player stacking rule check:
+    // Own rocks can never stack on non-start non-safe cells
+    const friendlyOccupant = this.getOccupantOfPlayer(finalCell, playerId);
+    if (friendlyOccupant && friendlyOccupant.rockId !== rockId) {
+      const startCell = BARAKATTA_BOARD.playerPaths[playerId][0][0];
+      const isStart = (finalCell.row === startCell.row && finalCell.col === startCell.col);
+      const isSafe = this.isSafeSquare(finalCell);
+      if (!isStart && !isSafe) {
+        return null; // Illegal stack
+      }
+    }
+
+    // Check if reached HOME ring (final ring)
+    if (ring === BARAKATTA_BOARD.rings.length - 1) {
+      status = "home";
+    }
+
+    return { ring, pos, hasCaptured, status, cell: finalCell };
+  }
+
   // Validates if moving a specific rock by D steps is legal
   isValidMove(playerId, rockId, steps) {
     const rock = this.players[playerId].rocks[rockId];
-    if (!rock || rock.status !== "board") return false;
+    if (!rock || (rock.status !== "active" && rock.status !== "blocked")) return false;
 
-    const currentSteps = rock.stepsMoved;
-    const targetSteps = currentSteps + steps;
+    const sim = this.simulateMove(playerId, rockId, steps);
+    if (!sim) return false;
 
-    // A rock reaches home exactly at step 26. Overshoot is illegal.
-    if (targetSteps > 26) return false;
-
-    // Check capture lock for entering the home stretch
-    const hasCapture = !this.requireCaptureToEnterHome || this.hasCapturedAnOpponent[playerId];
-    if (!hasCapture && targetSteps >= 24) {
-      // Without capture, rock cannot enter home stretch, but it can cycle outer loop
-      return true; 
+    // If it is blocked and couldn't move/advance, it is invalid
+    if (sim.ring === rock.currentRing && sim.pos === rock.positionInRing) {
+      return false;
     }
 
     return true;
@@ -148,88 +252,66 @@ class BarakattaGame {
     if (action.type === "ENTER_ALL_6") {
       const yardRocks = this.getYardRocks(playerId);
       yardRocks.forEach(rock => {
-        rock.status = "board";
-        rock.stepsMoved = 0;
+        rock.status = "active";
+        rock.currentRing = 0;
+        rock.positionInRing = 0;
+        rock.hasCapturedThisRing = false;
       });
       actionSummary = `Entered all ${yardRocks.length} rocks onto starting cell.`;
+      this.extraTurn = true; // Roll of 6 gets another turn
     } else if (action.type === "ENTER_1_OPTIONAL") {
       const yardRocks = this.getYardRocks(playerId);
       if (yardRocks.length > 0) {
-        yardRocks[0].status = "board";
-        yardRocks[0].stepsMoved = 0;
+        yardRocks[0].status = "active";
+        yardRocks[0].currentRing = 0;
+        yardRocks[0].positionInRing = 0;
+        yardRocks[0].hasCapturedThisRing = false;
         actionSummary = `Entered 1 rock onto starting cell.`;
       }
     } else if (action.type === "MOVE_ROCK") {
       const rock = player.rocks[action.rockId];
       const steps = action.steps;
-      const initialCell = this.getRockCell(playerId, action.rockId);
       
-      const hasCapture = !this.requireCaptureToEnterHome || this.hasCapturedAnOpponent[playerId];
-      
-      if (!hasCapture && rock.stepsMoved + steps >= 24) {
-        // Without capture, wrap around outer perimeter
-        rock.stepsMoved = (rock.stepsMoved + steps) % 24;
-      } else {
-        rock.stepsMoved += steps;
-      }
+      const sim = this.simulateMove(playerId, action.rockId, steps);
+      if (sim) {
+        // Update rock positions
+        rock.currentRing = sim.ring;
+        rock.positionInRing = sim.pos;
+        rock.status = sim.status;
+        rock.hasCapturedThisRing = sim.hasCaptured;
 
-      // Check if it reached home
-      if (rock.stepsMoved === 26) {
-        rock.status = "home";
-        actionSummary = `Moved rock #${rock.id + 1} home!`;
-      } else {
-        actionSummary = `Moved rock #${rock.id + 1} by ${steps} steps.`;
-      }
+        actionSummary = `Moved rock #${rock.id + 1} to ring ${rock.currentRing}, cell ${rock.positionInRing}.`;
 
-      // Check for capture on target cell
-      const targetCell = this.getRockCell(playerId, action.rockId);
-      if (targetCell && rock.status === "board") {
-        this.checkForCapture(playerId, targetCell);
+        // Check for capture on target cell
+        if (sim.status !== "home" && !this.isSafeSquare(sim.cell)) {
+          const opponent = this.getOccupant(sim.cell);
+          if (opponent && opponent.playerId !== playerId) {
+            const oppRock = this.players[opponent.playerId].rocks[opponent.rockId];
+            oppRock.status = "yard";
+            oppRock.currentRing = 0;
+            oppRock.positionInRing = 0;
+            oppRock.hasCapturedThisRing = false;
+
+            rock.hasCapturedThisRing = true;
+            this.hasCapturedAnOpponent[playerId] = true;
+            this.extraTurn = true; // Capture grants extra turn
+            actionSummary += ` Captured opponent rock at row ${sim.cell.row}, col ${sim.cell.col}!`;
+          }
+        }
+
+        if (sim.status === "home") {
+          actionSummary = `Moved rock #${rock.id + 1} home!`;
+        }
       }
     }
 
-    // Check if player won
-    if (this.checkWinCondition(playerId)) {
+    // Check if player won (all 6 rocks home)
+    const allHome = player.rocks.every(r => r.status === "home");
+    if (allHome) {
       this.status = (playerId === "player1") ? "player1_won" : "player3_won";
     }
 
     return actionSummary;
-  }
-
-  // Captures any single opponent rock on target cell if not a Safe Square
-  checkForCapture(attackerId, cell) {
-    if (this.isSafeSquare(cell)) return;
-
-    // Scan all opponent players
-    Object.keys(this.players).forEach(opponentId => {
-      if (opponentId === attackerId) return;
-
-      const opponent = this.players[opponentId];
-      // Find active opponent rocks on this cell
-      const matchingRocks = opponent.rocks.filter(rock => {
-        if (rock.status !== "board") return false;
-        const oCell = this.getRockCell(opponentId, rock.id);
-        return oCell && oCell.row === cell.row && oCell.col === cell.col;
-      });
-
-      // Capture only if there is exactly 1 opponent rock (no capture for doubles/stacks)
-      if (matchingRocks.length === 1) {
-        const capturedRock = matchingRocks[0];
-        capturedRock.status = "yard";
-        capturedRock.stepsMoved = 0;
-        
-        // Grant attacker capture unlocking and extra turn
-        this.hasCapturedAnOpponent[attackerId] = true;
-        this.extraTurn = true;
-        
-        console.log(`💥 Capture! Player ${attackerId} captured Player ${opponentId}'s rock #${capturedRock.id + 1}`);
-      }
-    });
-  }
-
-  // Checks if all 6 rocks of a player are home
-  checkWinCondition(playerId) {
-    return this.players[playerId].rocks.every(r => r.status === "home");
   }
 
   // Transitions the active turn
@@ -282,52 +364,82 @@ class BarakattaGame {
   getBotDecision(legalActions) {
     if (!legalActions || legalActions.length === 0) return null;
 
-    // 1. Capture an opponent rock if possible
-    const captureAction = legalActions.find(act => {
+    // Helper to evaluate if a MOVE_ROCK action results in a capture
+    const getActionCapture = (act) => {
       if (act.type !== "MOVE_ROCK") return false;
-      const cell = this.getRockCell("player3", act.rockId, act.steps);
-      if (!cell || this.isSafeSquare(cell)) return false;
-      
-      const player1 = this.players.player1;
-      const matchingRocks = player1.rocks.filter(rock => {
-        if (rock.status !== "board") return false;
-        const oCell = this.getRockCell("player1", rock.id);
-        return oCell && oCell.row === cell.row && oCell.col === cell.col;
-      });
-      return matchingRocks.length === 1;
-    });
+      const sim = this.simulateMove("player3", act.rockId, act.steps);
+      if (!sim || sim.status === "home") return false;
+      if (this.isSafeSquare(sim.cell)) return false;
+
+      const opponent = this.getOccupant(sim.cell);
+      return opponent && opponent.playerId === "player1";
+    };
+
+    // Priority 1: Capture an opponent rock if possible (moves it or advances it)
+    const captureAction = legalActions.find(act => getActionCapture(act));
     if (captureAction) return captureAction;
 
-    // 2. Enter all rocks if 6 was rolled
+    // Priority 2: Unblock a blocked rock by capturing an opponent sitting on the next ring's entry cell
+    const unblockAction = legalActions.find(act => {
+      if (act.type !== "MOVE_ROCK") return false;
+      const rock = this.players.player3.rocks[act.rockId];
+      if (rock.status !== "blocked") return false;
+      return getActionCapture(act);
+    });
+    if (unblockAction) return unblockAction;
+
+    // Priority 3: If a bot rock has hasCapturedThisRing = true and is nearing the end of its ring -> prioritize moving it onward
+    const pathNearEndActions = legalActions.filter(act => {
+      if (act.type !== "MOVE_ROCK") return false;
+      const rock = this.players.player3.rocks[act.rockId];
+      if (!rock.hasCapturedThisRing) return false;
+      const ringL = BARAKATTA_BOARD.playerPaths["player3"][rock.currentRing].length;
+      const distToLast = ringL - 1 - rock.positionInRing;
+      return distToLast <= 6 && distToLast >= 0; // Nearing the end
+    });
+    if (pathNearEndActions.length > 0) {
+      return pathNearEndActions.reduce((best, curr) => {
+        const bestRock = this.players.player3.rocks[best.rockId];
+        const currRock = this.players.player3.rocks[curr.rockId];
+        const bestDist = BARAKATTA_BOARD.playerPaths["player3"][bestRock.currentRing].length - 1 - bestRock.positionInRing;
+        const currDist = BARAKATTA_BOARD.playerPaths["player3"][currRock.currentRing].length - 1 - currRock.positionInRing;
+        return (currDist < bestDist) ? curr : best;
+      });
+    }
+
+    // Priority 4: Enter all rocks if 6 was rolled
     const enterAll6Action = legalActions.find(act => act.type === "ENTER_ALL_6");
     if (enterAll6Action) return enterAll6Action;
 
-    // 3. Move the rock closest to landing exactly home (step 26)
+    // Priority 5: Move the rock closest to landing exactly home (final HOME ring)
     const moveHomeActions = legalActions.filter(act => {
       if (act.type !== "MOVE_ROCK") return false;
-      const rock = this.players.player3.rocks[act.rockId];
-      return (rock.stepsMoved + act.steps === 26);
+      const sim = this.simulateMove("player3", act.rockId, act.steps);
+      return sim && sim.status === "home";
     });
     if (moveHomeActions.length > 0) {
       return moveHomeActions.reduce((prev, curr) => {
         const prevRock = this.players.player3.rocks[prev.rockId];
         const currRock = this.players.player3.rocks[curr.rockId];
-        return (currRock.stepsMoved > prevRock.stepsMoved) ? curr : prev;
+        return (currRock.currentRing > prevRock.currentRing || 
+                (currRock.currentRing === prevRock.currentRing && currRock.positionInRing > prevRock.positionInRing)) 
+               ? curr : prev;
       });
     }
 
-    // 4. Otherwise move the rock closest to home, favoring active board rocks
+    // Priority 6: Otherwise move the rock closest to home, favoring active board rocks
     const moveActions = legalActions.filter(act => act.type === "MOVE_ROCK");
     if (moveActions.length > 0) {
-      // Find the rock that is furthest along (closest to home)
       return moveActions.reduce((prev, curr) => {
         const prevRock = this.players.player3.rocks[prev.rockId];
         const currRock = this.players.player3.rocks[curr.rockId];
-        return (currRock.stepsMoved > prevRock.stepsMoved) ? curr : prev;
+        const prevProgress = prevRock.currentRing * 100 + prevRock.positionInRing;
+        const currProgress = currRock.currentRing * 100 + currRock.positionInRing;
+        return (currProgress > prevProgress) ? curr : prev;
       });
     }
 
-    // 5. Fallback to any remaining action (like optional entry)
+    // Priority 7: Fallback to any remaining action
     return legalActions[Math.floor(Math.random() * legalActions.length)];
   }
 }
