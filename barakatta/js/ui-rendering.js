@@ -135,83 +135,96 @@
     svg.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;";
 
     const defs = document.createElementNS(svgNS, "defs");
-    const marker = document.createElementNS(svgNS, "marker");
-    marker.setAttribute("id", "bk-arrow");
-    marker.setAttribute("viewBox", "0 0 10 10");
-    marker.setAttribute("refX", "6");
-    marker.setAttribute("refY", "5");
-    marker.setAttribute("markerWidth", "5");
-    marker.setAttribute("markerHeight", "5");
-    marker.setAttribute("orient", "auto-start-reverse");
 
-    const markerPath = document.createElementNS(svgNS, "path");
-    markerPath.setAttribute("d", "M 0 1.5 L 8 5 L 0 8.5 z");
-    markerPath.setAttribute("fill", "#eab308"); // Warm gold arrowheads
-    marker.appendChild(markerPath);
-    defs.appendChild(marker);
+    // Player configuration for unique lane coloring (P1: Red, P2: Blue, P3: Yellow, P4: Green)
+    const playerConfig = {
+      player1: { color: "#ef4444" },
+      player2: { color: "#3b82f6" },
+      player3: { color: "#fbbf24" },
+      player4: { color: "#10b981" }
+    };
+
+    const playerOffsets = {
+      player1: { dx: -5, dy: 5 },
+      player2: { dx: 5, dy: 5 },
+      player3: { dx: 5, dy: -5 },
+      player4: { dx: -5, dy: -5 }
+    };
+
+    // Create markers for each player
+    Object.keys(playerConfig).forEach(playerId => {
+      const marker = document.createElementNS(svgNS, "marker");
+      marker.setAttribute("id", `bk-arrow-${playerId}`);
+      marker.setAttribute("viewBox", "0 0 10 10");
+      marker.setAttribute("refX", "6");
+      marker.setAttribute("refY", "5");
+      marker.setAttribute("markerWidth", "5");
+      marker.setAttribute("markerHeight", "5");
+      marker.setAttribute("orient", "auto-start-reverse");
+
+      const markerPath = document.createElementNS(svgNS, "path");
+      markerPath.setAttribute("d", "M 0 1.5 L 8 5 L 0 8.5 z");
+      markerPath.setAttribute("fill", playerConfig[playerId].color);
+      marker.appendChild(markerPath);
+      defs.appendChild(marker);
+    });
     svg.appendChild(defs);
 
-    // 1. Draw counter-clockwise loop arrows along the ring tracks
-    BARAKATTA_BOARD.rings.forEach((ring, ringIdx) => {
-      // k=3 is just the center home cell (3,3), no loop needed
-      if (ringIdx >= 3) return;
-      const len = ring.length;
-      for (let i = 0; i < len; i++) {
-        const cell1 = ring[i];
-        const cell2 = ring[(i + 1) % len];
+    // Draw paths for all 4 players
+    Object.keys(playerConfig).forEach(playerId => {
+      const color = playerConfig[playerId].color;
+      const offset = playerOffsets[playerId];
+      const paths = BARAKATTA_BOARD.playerPaths[playerId];
 
-        const x1 = cell1.col * 100 + 50;
-        const y1 = cell1.row * 100 + 50;
-        const x2 = cell2.col * 100 + 50;
-        const y2 = cell2.row * 100 + 50;
+      for (let k = 0; k < 3; k++) {
+        const ringPath = paths[k];
+        if (!ringPath || ringPath.length === 0) continue;
 
-        const line = document.createElementNS(svgNS, "line");
-        line.setAttribute("x1", x1);
-        line.setAttribute("y1", y1);
-        line.setAttribute("x2", x2);
-        line.setAttribute("y2", y2);
-        line.setAttribute("stroke", "#fbbf24");
-        line.setAttribute("stroke-width", "2");
-        line.setAttribute("opacity", "0.22");
-        line.setAttribute("marker-end", "url(#bk-arrow)");
-        svg.appendChild(line);
+        // Draw connections inside current ring
+        for (let i = 0; i < ringPath.length - 1; i++) {
+          const c1 = ringPath[i];
+          const c2 = ringPath[i + 1];
+
+          const x1 = c1.col * 100 + 50 + offset.dx;
+          const y1 = c1.row * 100 + 50 + offset.dy;
+          const x2 = c2.col * 100 + 50 + offset.dx;
+          const y2 = c2.row * 100 + 50 + offset.dy;
+
+          const line = document.createElementNS(svgNS, "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", color);
+          line.setAttribute("stroke-width", "2");
+          line.setAttribute("opacity", "0.3");
+          line.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
+          svg.appendChild(line);
+        }
+
+        // Draw diagonal transition to the next ring
+        const nextRingPath = paths[k + 1];
+        if (nextRingPath && nextRingPath.length > 0) {
+          const lastCell = ringPath[ringPath.length - 1];
+          const nextEntry = nextRingPath[0];
+
+          const x1 = lastCell.col * 100 + 50 + offset.dx;
+          const y1 = lastCell.row * 100 + 50 + offset.dy;
+          const x2 = nextEntry.col * 100 + 50 + offset.dx;
+          const y2 = nextEntry.row * 100 + 50 + offset.dy;
+
+          const line = document.createElementNS(svgNS, "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", color);
+          line.setAttribute("stroke-width", "3.2");
+          line.setAttribute("opacity", "0.65");
+          line.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
+          svg.appendChild(line);
+        }
       }
-    });
-
-    // 2. Draw diagonal inward transition arrows matching the pen-and-paper drawing
-    const transitionArrows = [
-      // Player 1 (Bottom): loops counter-clockwise, transitions at the bottom left-center cells
-      { x1: 250, y1: 650, x2: 350, y2: 550 }, // (6,2) -> (5,3)
-      { x1: 250, y1: 550, x2: 350, y2: 450 }, // (5,2) -> (4,3)
-      { x1: 250, y1: 450, x2: 350, y2: 350 }, // (4,2) -> (3,3)
-
-      // Player 3 (Top): transitions at the top right-center cells
-      { x1: 450, y1: 50, x2: 350, y2: 150 },  // (0,4) -> (1,3)
-      { x1: 450, y1: 150, x2: 350, y2: 250 }, // (1,4) -> (2,3)
-      { x1: 450, y1: 250, x2: 350, y2: 350 }, // (2,4) -> (3,3)
-
-      // Player 4 (Left): transitions at the left top-center cells
-      { x1: 50, y1: 250, x2: 150, y2: 350 },  // (2,0) -> (3,1)
-      { x1: 150, y1: 250, x2: 250, y2: 350 }, // (2,1) -> (3,2)
-      { x1: 250, y1: 250, x2: 350, y2: 350 }, // (2,2) -> (3,3)
-
-      // Player 2 (Right): transitions at the right bottom-center cells
-      { x1: 650, y1: 450, x2: 550, y2: 350 }, // (4,6) -> (3,5)
-      { x1: 550, y1: 450, x2: 450, y2: 350 }, // (4,5) -> (3,4)
-      { x1: 450, y1: 450, x2: 350, y2: 350 }  // (4,4) -> (3,3)
-    ];
-
-    transitionArrows.forEach(arrow => {
-      const line = document.createElementNS(svgNS, "line");
-      line.setAttribute("x1", arrow.x1);
-      line.setAttribute("y1", arrow.y1);
-      line.setAttribute("x2", arrow.x2);
-      line.setAttribute("y2", arrow.y2);
-      line.setAttribute("stroke", "#fbbf24");
-      line.setAttribute("stroke-width", "3.2");
-      line.setAttribute("opacity", "0.55");
-      line.setAttribute("marker-end", "url(#bk-arrow)");
-      svg.appendChild(line);
     });
 
     boardContainer.appendChild(svg);
