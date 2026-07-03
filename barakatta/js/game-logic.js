@@ -318,15 +318,15 @@ class BarakattaGame {
   nextTurn() {
     this.rollState = "idle";
     
-    // Check if extra turn is granted
-    if (this.diceValue === 6 || this.extraTurn) {
+    // Check if extra turn is granted (roll of 6 or 1, or capture)
+    if (this.diceValue === 6 || this.diceValue === 1 || this.extraTurn) {
       this.extraTurn = false; // Reset flag
       // Keep turn, player rolls again
       return this.currentTurn;
     }
 
     // Otherwise transition turns
-    if (this.mode === "solo") {
+    if (this.mode === "solo" || this.mode === "offline") {
       this.currentTurn = (this.currentTurn === "player1") ? "player3" : "player1";
     }
     
