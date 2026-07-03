@@ -132,7 +132,7 @@
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("viewBox", "0 0 700 700");
-    svg.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;";
+    svg.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; transform: translateZ(10.2px); transform-style: preserve-3d;";
 
     const defs = document.createElementNS(svgNS, "defs");
 
@@ -407,7 +407,7 @@
         }
 
         tileTop.appendChild(rockToken);
-        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 2px)`;
+        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 12px)`;
       });
     });
   }
