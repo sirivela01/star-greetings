@@ -190,16 +190,29 @@
           const x2 = c2.col * 100 + 50 + offset.dx;
           const y2 = c2.row * 100 + 50 + offset.dy;
 
-          const line = document.createElementNS(svgNS, "line");
-          line.setAttribute("x1", x1);
-          line.setAttribute("y1", y1);
-          line.setAttribute("x2", x2);
-          line.setAttribute("y2", y2);
-          line.setAttribute("stroke", color);
-          line.setAttribute("stroke-width", "2");
-          line.setAttribute("opacity", "0.3");
-          line.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
-          svg.appendChild(line);
+          // 1. Draw thick semi-transparent background ribbon
+          const lineBg = document.createElementNS(svgNS, "line");
+          lineBg.setAttribute("x1", x1);
+          lineBg.setAttribute("y1", y1);
+          lineBg.setAttribute("x2", x2);
+          lineBg.setAttribute("y2", y2);
+          lineBg.setAttribute("stroke", color);
+          lineBg.setAttribute("stroke-width", "16");
+          lineBg.setAttribute("opacity", "0.15");
+          lineBg.setAttribute("stroke-linecap", "round");
+          svg.appendChild(lineBg);
+
+          // 2. Draw thin foreground arrow line (upper layer)
+          const lineFg = document.createElementNS(svgNS, "line");
+          lineFg.setAttribute("x1", x1);
+          lineFg.setAttribute("y1", y1);
+          lineFg.setAttribute("x2", x2);
+          lineFg.setAttribute("y2", y2);
+          lineFg.setAttribute("stroke", color);
+          lineFg.setAttribute("stroke-width", "2.2");
+          lineFg.setAttribute("opacity", "0.75");
+          lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
+          svg.appendChild(lineFg);
         }
 
         // Draw diagonal transition to the next ring
@@ -213,16 +226,29 @@
           const x2 = nextEntry.col * 100 + 50 + offset.dx;
           const y2 = nextEntry.row * 100 + 50 + offset.dy;
 
-          const line = document.createElementNS(svgNS, "line");
-          line.setAttribute("x1", x1);
-          line.setAttribute("y1", y1);
-          line.setAttribute("x2", x2);
-          line.setAttribute("y2", y2);
-          line.setAttribute("stroke", color);
-          line.setAttribute("stroke-width", "3.2");
-          line.setAttribute("opacity", "0.65");
-          line.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
-          svg.appendChild(line);
+          // 1. Draw thick semi-transparent background ribbon for transition
+          const lineBg = document.createElementNS(svgNS, "line");
+          lineBg.setAttribute("x1", x1);
+          lineBg.setAttribute("y1", y1);
+          lineBg.setAttribute("x2", x2);
+          lineBg.setAttribute("y2", y2);
+          lineBg.setAttribute("stroke", color);
+          lineBg.setAttribute("stroke-width", "16");
+          lineBg.setAttribute("opacity", "0.2");
+          lineBg.setAttribute("stroke-linecap", "round");
+          svg.appendChild(lineBg);
+
+          // 2. Draw foreground transition arrow line (upper layer)
+          const lineFg = document.createElementNS(svgNS, "line");
+          lineFg.setAttribute("x1", x1);
+          lineFg.setAttribute("y1", y1);
+          lineFg.setAttribute("x2", x2);
+          lineFg.setAttribute("y2", y2);
+          lineFg.setAttribute("stroke", color);
+          lineFg.setAttribute("stroke-width", "3.2");
+          lineFg.setAttribute("opacity", "0.85");
+          lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
+          svg.appendChild(lineFg);
         }
       }
     });
