@@ -136,8 +136,8 @@ class BarakattaGame {
     const boardRocks = this.getBoardRocks(playerId);
 
     if (diceValue === 6) {
-      // 1. Enter all rocks from yard at once
-      if (yardCount > 0) {
+      // 1. Enter all rocks from yard at once (only allowed if all 6 are in the yard)
+      if (yardCount === 6) {
         actions.push({ type: "ENTER_ALL_6" });
       }
       // 2. Move any active rock on board by 6

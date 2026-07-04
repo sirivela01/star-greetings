@@ -568,3 +568,24 @@
     transition: none !important;
   }
 }
+
+/* Clickable Yard Glow Highlight */
+.bk-yard-box.bk-yard-clickable-highlight {
+  cursor: pointer;
+  animation: bk-yard-pulse-glow 1.5s infinite alternate;
+  border-width: 2px !important;
+  transition: all 0.3s ease;
+}
+
+@keyframes bk-yard-pulse-glow {
+  from {
+    box-shadow: 0 0 5px var(--glow-color, #fbbf24);
+    border-color: var(--glow-color, #fbbf24) !important;
+    background: rgba(251, 191, 36, 0.05);
+  }
+  to {
+    box-shadow: 0 0 20px var(--glow-color, #fbbf24), inset 0 0 10px var(--glow-color, #fbbf24);
+    border-color: var(--glow-color, #fbbf24) !important;
+    background: rgba(251, 191, 36, 0.15);
+  }
+}

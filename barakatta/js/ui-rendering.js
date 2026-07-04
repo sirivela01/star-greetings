@@ -311,6 +311,18 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     });
   }
 
+  // Clear clickable highlights and event listeners from all yards
+  function clearYardClickListeners() {
+    const fullOrder = ["player1", "player2", "player3", "player4"];
+    fullOrder.forEach(pId => {
+      const yBox = document.getElementById(`bk-${pId}-yard`);
+      if (yBox) {
+        yBox.classList.remove("bk-yard-clickable-highlight");
+        yBox.onclick = null;
+      }
+    });
+  }
+
   // Render and animate 3D rock tokens on board
   function renderRocksOnBoard() {
     if (!game || !tilesGrid) return;
@@ -515,6 +527,9 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   function evaluateHumanActions() {
     const actions = game.getLegalActions(game.currentTurn, game.diceValue);
 
+    // Clean up any previous yard listeners/glowing classes
+    clearYardClickListeners();
+
     if (actions.length === 0) {
       const activeName = game.players[game.currentTurn].name;
       document.getElementById("bk-status-title").textContent = `${activeName} Has No Moves!`;
@@ -530,45 +545,37 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     drawBoard();
 
     const hasEnter1 = actions.some(act => act.type === "ENTER_1_OPTIONAL");
+    const hasEnterAll = actions.some(act => act.type === "ENTER_ALL_6");
     const hasMoves = actions.some(act => act.type === "MOVE_ROCK");
 
-    if (hasEnter1 && hasMoves) {
-      game.rollState = "waiting_choice";
-      const choiceSelector = document.getElementById("bk-choice-selector");
-      choiceSelector.style.display = "block";
-      choiceSelector.classList.remove("hidden");
+    if (hasEnter1 || hasEnterAll) {
+      const yardBox = document.getElementById(`bk-${game.currentTurn}-yard`);
+      if (yardBox) {
+        yardBox.classList.add("bk-yard-clickable-highlight");
+        const pColor = game.players[game.currentTurn].color === "red" ? "#ef4444" : 
+                       (game.players[game.currentTurn].color === "yellow" ? "#eab308" : 
+                       (game.players[game.currentTurn].color === "green" ? "#10b981" : "#3b82f6"));
+        yardBox.style.setProperty("--glow-color", pColor);
 
-      document.getElementById("bk-status-desc").textContent = "Choose whether to enter a new rock or move an existing one.";
+        yardBox.onclick = () => {
+          clearYardClickListeners();
+          clearHighlightPath();
+          selectedRockId = null;
 
-      const enterBtn = document.getElementById("bk-choice-enter-btn");
-      const moveBtn = document.getElementById("bk-choice-move-btn");
+          const action = actions.find(act => act.type === "ENTER_1_OPTIONAL" || act.type === "ENTER_ALL_6");
+          if (action) {
+            const summary = game.executeAction(game.currentTurn, action);
+            document.getElementById("bk-status-desc").textContent = summary;
+            completeTurnSequence();
+          }
+        };
+      }
 
-      const handleChoice = (choiceType) => {
-        choiceSelector.style.display = "none";
-        choiceSelector.classList.add("hidden");
-        game.rollState = "rolled";
-
-        if (choiceType === "enter") {
-          const summary = game.executeAction(game.currentTurn, { type: "ENTER_1_OPTIONAL" });
-          document.getElementById("bk-status-desc").textContent = summary;
-          completeTurnSequence();
-        } else {
-          document.getElementById("bk-status-desc").textContent = "Click on one of your glowing rocks on the board to move it.";
-          drawBoard();
-        }
-      };
-
-      enterBtn.onclick = () => handleChoice("enter");
-      moveBtn.onclick = () => handleChoice("move");
-
-    } else if (actions.length === 1 && actions[0].type === "ENTER_ALL_6") {
-      const summary = game.executeAction(game.currentTurn, actions[0]);
-      document.getElementById("bk-status-desc").textContent = summary;
-      completeTurnSequence();
-    } else if (actions.length === 1 && actions[0].type === "ENTER_1_OPTIONAL") {
-      const summary = game.executeAction(game.currentTurn, actions[0]);
-      document.getElementById("bk-status-desc").textContent = summary;
-      completeTurnSequence();
+      if (hasMoves) {
+        document.getElementById("bk-status-desc").textContent = "Click your glowing Yard to enter a demon, or click a board piece to move.";
+      } else {
+        document.getElementById("bk-status-desc").textContent = "Click your glowing Yard to enter a demon.";
+      }
     } else {
       const activeName = game.players[game.currentTurn].name;
       document.getElementById("bk-status-desc").textContent = `${activeName}: Select one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
@@ -596,6 +603,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
       if (selectedRockId === rockId) {
         selectedRockId = null;
         clearHighlightPath();
+        clearYardClickListeners();
         const summary = game.executeAction(game.currentTurn, clickedRockAction);
         document.getElementById("bk-status-desc").textContent = summary;
         completeTurnSequence();
@@ -630,6 +638,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
         if (confirmAction) {
           selectedRockId = null;
           clearHighlightPath();
+          clearYardClickListeners();
           const summary = game.executeAction(game.currentTurn, confirmAction);
           document.getElementById("bk-status-desc").textContent = summary;
           completeTurnSequence();
@@ -649,6 +658,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     selectedRockId = null;
     activeHighlightPath = null;
     clearHighlightPath();
+    clearYardClickListeners();
     drawBoard();
 
     if (game.status !== "in_progress") {
