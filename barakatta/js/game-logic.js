@@ -178,7 +178,7 @@ class BarakattaGame {
 
     let ring = rock.currentRing;
     let pos = rock.positionInRing;
-    let hasCaptured = rock.hasCapturedThisRing;
+    let hasCaptured = this.hasCapturedAnOpponent[playerId];
     let status = rock.status;
 
     if (steps === 0) {
@@ -256,7 +256,7 @@ class BarakattaGame {
     const rock = this.players[playerId].rocks[rockId];
     let ring = rock.currentRing;
     let pos = rock.positionInRing;
-    let hasCaptured = rock.hasCapturedThisRing;
+    let hasCaptured = this.hasCapturedAnOpponent[playerId];
     const pathCells = [BARAKATTA_BOARD.playerPaths[playerId][ring][pos]];
 
     for (let s = 1; s <= steps; s++) {
