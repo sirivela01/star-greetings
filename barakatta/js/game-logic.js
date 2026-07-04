@@ -1,5 +1,5 @@
 // Barakatta Core Game Logic Engine
-console.log("Barakatta Core Logic Engine Loaded - Version 1.2.7");
+console.log("Barakatta Core Logic Engine Loaded - Version 1.2.8");
 class BarakattaGame {
   constructor(mode = "solo") {
     this.mode = mode;
@@ -414,86 +414,174 @@ class BarakattaGame {
     };
   }
 
-  // AI Heuristics decision-making for the opponent Bot (player3)
-  getBotDecision(legalActions) {
-    if (!legalActions || legalActions.length === 0) return null;
+  // Deep-clone the game state for Expectiminimax tree search lookahead
+  clone() {
+    const copy = new BarakattaGame(this.mode);
+    copy.players = JSON.parse(JSON.stringify(this.players));
+    copy.currentTurn = this.currentTurn;
+    copy.diceValue = this.diceValue;
+    copy.rollState = this.rollState;
+    copy.extraTurn = this.extraTurn;
+    copy.hasCapturedAnOpponent = JSON.parse(JSON.stringify(this.hasCapturedAnOpponent));
+    copy.requireCaptureToEnterHome = this.requireCaptureToEnterHome;
+    return copy;
+  }
 
-    // Helper to evaluate if a MOVE_ROCK action results in a capture
-    const getActionCapture = (act) => {
-      if (act.type !== "MOVE_ROCK") return false;
-      const sim = this.simulateMove("player3", act.rockId, act.steps);
-      if (!sim || sim.status === "home") return false;
-      if (this.isSafeSquare(sim.cell)) return false;
+  // Evaluate the board state from the perspective of a playerId (positive is good for them, negative is bad)
+  evaluateBoard(playerId) {
+    const opponentId = (playerId === "player1") ? "player3" : "player1";
+    let score = 0;
 
-      const opponent = this.getOpponentOccupant(sim.cell, "player3");
-      return !!opponent;
+    // 1. Progress score based on ring index and position inside each ring
+    const getRockScore = (rock) => {
+      if (rock.status === "yard") return 0;
+      if (rock.status === "home") return 1000;
+      
+      let base = 0;
+      if (rock.currentRing === 0) {
+        base = rock.positionInRing * 2;
+      } else if (rock.currentRing === 1) {
+        base = 50 + rock.positionInRing * 4;
+      } else if (rock.currentRing === 2) {
+        base = 120 + rock.positionInRing * 6;
+      }
+      if (rock.status === "blocked") {
+        base -= 15; // Penalty for blocked rocks
+      }
+      return base;
     };
 
-    // Priority 1: Capture an opponent rock if possible (moves it or advances it)
-    const captureAction = legalActions.find(act => getActionCapture(act));
-    if (captureAction) return captureAction;
-
-    // Priority 2: Unblock a blocked rock by capturing an opponent sitting on the next ring's entry cell
-    const unblockAction = legalActions.find(act => {
-      if (act.type !== "MOVE_ROCK") return false;
-      const rock = this.players.player3.rocks[act.rockId];
-      if (rock.status !== "blocked") return false;
-      return getActionCapture(act);
+    this.players[playerId].rocks.forEach(rock => {
+      score += getRockScore(rock);
+      if (rock.status === "yard") score -= 50; // Heavy penalty for rocks in yard
     });
-    if (unblockAction) return unblockAction;
 
-    const pathNearEndActions = legalActions.filter(act => {
-      if (act.type !== "MOVE_ROCK") return false;
-      const rock = this.players.player3.rocks[act.rockId];
-      if (!this.hasCapturedAnOpponent["player3"]) return false;
-      const ringL = BARAKATTA_BOARD.playerPaths["player3"][rock.currentRing].length;
-      const distToLast = ringL - 1 - rock.positionInRing;
-      return distToLast <= 6 && distToLast >= 0; // Nearing the end
+    this.players[opponentId].rocks.forEach(rock => {
+      score -= getRockScore(rock);
+      if (rock.status === "yard") score += 50; // Advantage if opponent is stuck in yard
     });
-    if (pathNearEndActions.length > 0) {
-      return pathNearEndActions.reduce((best, curr) => {
-        const bestRock = this.players.player3.rocks[best.rockId];
-        const currRock = this.players.player3.rocks[curr.rockId];
-        const bestDist = BARAKATTA_BOARD.playerPaths["player3"][bestRock.currentRing].length - 1 - bestRock.positionInRing;
-        const currDist = BARAKATTA_BOARD.playerPaths["player3"][currRock.currentRing].length - 1 - currRock.positionInRing;
-        return (currDist < bestDist) ? curr : best;
-      });
+
+    // 2. Safety vs Vulnerability check (penalize if opponent can capture us next turn)
+    this.players[playerId].rocks.forEach(rock => {
+      if (rock.status === "active") {
+        const cell = BARAKATTA_BOARD.playerPaths[playerId][rock.currentRing][rock.positionInRing];
+        if (!this.isSafeSquare(cell)) {
+          this.players[opponentId].rocks.forEach(oppRock => {
+            if (oppRock.status === "active" || oppRock.status === "blocked") {
+              for (let roll = 1; roll <= 6; roll++) {
+                const sim = this.simulateMove(opponentId, oppRock.id, roll);
+                if (sim && sim.cell.row === cell.row && sim.cell.col === cell.col) {
+                  score -= 30; // Vulnerable to capture!
+                  break;
+                }
+              }
+            }
+          });
+        } else {
+          score += 15; // Bonus for landing/sitting on safe cell
+        }
+      }
+    });
+
+    // 3. Threatening opportunities (bonus if we can capture opponent next turn)
+    this.players[opponentId].rocks.forEach(oppRock => {
+      if (oppRock.status === "active") {
+        const cell = BARAKATTA_BOARD.playerPaths[opponentId][oppRock.currentRing][oppRock.positionInRing];
+        if (!this.isSafeSquare(cell)) {
+          this.players[playerId].rocks.forEach(rock => {
+            if (rock.status === "active" || rock.status === "blocked") {
+              for (let roll = 1; roll <= 6; roll++) {
+                const sim = this.simulateMove(playerId, rock.id, roll);
+                if (sim && sim.cell.row === cell.row && sim.cell.col === cell.col) {
+                  score += 20; // Threatening opponent rock
+                  break;
+                }
+              }
+            }
+          });
+        }
+      }
+    });
+
+    return score;
+  }
+
+  // Expectiminimax-based game playing AI for the opponent Bot (player3)
+  getBotDecision(legalActions) {
+    if (!legalActions || legalActions.length === 0) return null;
+    if (legalActions.length === 1) return legalActions[0];
+
+    let bestAction = null;
+    let bestScore = -Infinity;
+
+    for (const act of legalActions) {
+      const simGame = this.clone();
+      simGame.executeAction("player3", act);
+
+      let expectedScore = 0;
+
+      if (simGame.currentTurn === "player3") {
+        // Bot gets another turn: maximize expected score across all possible next dice rolls (1-6)
+        let sum = 0;
+        for (let roll = 1; roll <= 6; roll++) {
+          const nextActions = simGame.getLegalActions("player3", roll);
+          if (nextActions.length === 0) {
+            const tempGame = simGame.clone();
+            tempGame.nextTurn();
+            sum += tempGame.evaluateBoard("player3");
+          } else {
+            let maxScore = -Infinity;
+            for (const nextAct of nextActions) {
+              const tempGame = simGame.clone();
+              tempGame.executeAction("player3", nextAct);
+              const score = tempGame.evaluateBoard("player3");
+              if (score > maxScore) maxScore = score;
+            }
+            sum += maxScore;
+          }
+        }
+        expectedScore = sum / 6;
+      } else {
+        // Turn goes to player1 (Human): minimize expected score across all possible next dice rolls (1-6)
+        let sum = 0;
+        for (let roll = 1; roll <= 6; roll++) {
+          const oppActions = simGame.getLegalActions("player1", roll);
+          if (oppActions.length === 0) {
+            const tempGame = simGame.clone();
+            tempGame.nextTurn();
+            sum += tempGame.evaluateBoard("player3");
+          } else {
+            let minScore = Infinity;
+            for (const oppAct of oppActions) {
+              const tempGame = simGame.clone();
+              tempGame.executeAction("player1", oppAct);
+              const score = tempGame.evaluateBoard("player3");
+              if (score < minScore) minScore = score;
+            }
+            sum += minScore;
+          }
+        }
+        expectedScore = sum / 6;
+      }
+
+      // Large reward for immediate captures on the current turn
+      if (act.type === "MOVE_ROCK") {
+        const sim = this.simulateMove("player3", act.rockId, act.steps);
+        if (sim && sim.status !== "home" && !this.isSafeSquare(sim.cell)) {
+          const opponent = this.getOpponentOccupant(sim.cell, "player3");
+          if (opponent) {
+            expectedScore += 150;
+          }
+        }
+      }
+
+      if (expectedScore > bestScore) {
+        bestScore = expectedScore;
+        bestAction = act;
+      }
     }
 
-    // Priority 4: Enter all rocks if 6 was rolled
-    const enterAll6Action = legalActions.find(act => act.type === "ENTER_ALL_6");
-    if (enterAll6Action) return enterAll6Action;
-
-    // Priority 5: Move the rock closest to landing exactly home (final HOME ring)
-    const moveHomeActions = legalActions.filter(act => {
-      if (act.type !== "MOVE_ROCK") return false;
-      const sim = this.simulateMove("player3", act.rockId, act.steps);
-      return sim && sim.status === "home";
-    });
-    if (moveHomeActions.length > 0) {
-      return moveHomeActions.reduce((prev, curr) => {
-        const prevRock = this.players.player3.rocks[prev.rockId];
-        const currRock = this.players.player3.rocks[curr.rockId];
-        return (currRock.currentRing > prevRock.currentRing || 
-                (currRock.currentRing === prevRock.currentRing && currRock.positionInRing > prevRock.positionInRing)) 
-               ? curr : prev;
-      });
-    }
-
-    // Priority 6: Otherwise move the rock closest to home, favoring active board rocks
-    const moveActions = legalActions.filter(act => act.type === "MOVE_ROCK");
-    if (moveActions.length > 0) {
-      return moveActions.reduce((prev, curr) => {
-        const prevRock = this.players.player3.rocks[prev.rockId];
-        const currRock = this.players.player3.rocks[curr.rockId];
-        const prevProgress = prevRock.currentRing * 100 + prevRock.positionInRing;
-        const currProgress = currRock.currentRing * 100 + currRock.positionInRing;
-        return (currProgress > prevProgress) ? curr : prev;
-      });
-    }
-
-    // Priority 7: Fallback to any remaining action
-    return legalActions[Math.floor(Math.random() * legalActions.length)];
+    return bestAction;
   }
 }
 window.BarakattaGame = BarakattaGame;

@@ -1,5 +1,5 @@
 // Barakatta UI Rendering, Animations & Event Controller
-console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.7");
+console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 (function () {
   let game = null;
   let isRolling = false;
