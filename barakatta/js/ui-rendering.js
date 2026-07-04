@@ -45,8 +45,11 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
       bkGameView.classList.remove("hidden");
     }
 
+    const countSelect = document.getElementById("barakatta-player-count");
+    const playerCount = countSelect ? parseInt(countSelect.value) : 4;
+
     // Instantiation
-    game = new BarakattaGame(mode);
+    game = new BarakattaGame(mode, playerCount);
     window.bkGame = game;
 
     // Reset grid reference to force recreation
@@ -284,48 +287,33 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
   // Update rock displays in player yards
   function updateYardDisplay() {
-    const player1Yard = document.getElementById("bk-player1-yard-rocks");
-    const player2Yard = document.getElementById("bk-player2-yard-rocks");
-    const player3Yard = document.getElementById("bk-player3-yard-rocks");
-    const player4Yard = document.getElementById("bk-player4-yard-rocks");
+    const fullOrder = ["player1", "player2", "player3", "player4"];
+    fullOrder.forEach(pId => {
+      const yardBox = document.getElementById(`bk-${pId}-yard`);
+      const yardRocks = document.getElementById(`bk-${pId}-yard-rocks`);
+      const homeSpan = document.getElementById(`bk-${pId}-home-count`);
 
-    player1Yard.innerHTML = "";
-    player2Yard.innerHTML = "";
-    player3Yard.innerHTML = "";
-    player4Yard.innerHTML = "";
-
-    const p1YardCount = game.getYardRocks("player1").length;
-    for (let i = 0; i < p1YardCount; i++) {
-      const rock = document.createElement("div");
-      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_red.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
-      player1Yard.appendChild(rock);
-    }
-
-    const p2YardCount = game.getYardRocks("player2").length;
-    for (let i = 0; i < p2YardCount; i++) {
-      const rock = document.createElement("div");
-      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_green.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
-      player2Yard.appendChild(rock);
-    }
-
-    const p3YardCount = game.getYardRocks("player3").length;
-    for (let i = 0; i < p3YardCount; i++) {
-      const rock = document.createElement("div");
-      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_yellow.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
-      player3Yard.appendChild(rock);
-    }
-
-    const p4YardCount = game.getYardRocks("player4").length;
-    for (let i = 0; i < p4YardCount; i++) {
-      const rock = document.createElement("div");
-      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_blue.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
-      player4Yard.appendChild(rock);
-    }
-
-    document.getElementById("bk-player1-home-count").textContent = `${game.players.player1.rocks.filter(r => r.status === "home").length}/6`;
-    document.getElementById("bk-player2-home-count").textContent = `${game.players.player2.rocks.filter(r => r.status === "home").length}/6`;
-    document.getElementById("bk-player3-home-count").textContent = `${game.players.player3.rocks.filter(r => r.status === "home").length}/6`;
-    document.getElementById("bk-player4-home-count").textContent = `${game.players.player4.rocks.filter(r => r.status === "home").length}/6`;
+      if (game.players[pId]) {
+        if (yardBox) yardBox.style.display = "block";
+        if (yardRocks) {
+          yardRocks.innerHTML = "";
+          const yardCount = game.getYardRocks(pId).length;
+          for (let i = 0; i < yardCount; i++) {
+            const rock = document.createElement("div");
+            const imgColor = pId === "player1" ? "red" : (pId === "player2" ? "green" : (pId === "player3" ? "yellow" : "blue"));
+            rock.style.cssText = `width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_${imgColor}.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);`;
+            yardRocks.appendChild(rock);
+          }
+        }
+        if (homeSpan) {
+          homeSpan.parentNode.style.display = "block";
+          homeSpan.textContent = `${game.players[pId].rocks.filter(r => r.status === "home").length}/6`;
+        }
+      } else {
+        if (yardBox) yardBox.style.display = "none";
+        if (homeSpan) homeSpan.parentNode.style.display = "none";
+      }
+    });
   }
 
   // Render and animate 3D rock tokens on board

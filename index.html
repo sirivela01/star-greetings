@@ -221,11 +221,21 @@
 
         <!-- PLAY BUTTONS -->
         <div class="dashboard-actions" style="display: flex; flex-direction: column; gap: 15px;">
+          <!-- PLAYER COUNT SELECTOR -->
+          <div style="text-align: left; display: flex; flex-direction: column; gap: 6px; margin-bottom: 5px;">
+            <label for="barakatta-player-count" style="font-size: 0.85rem; color: #fbbf24; font-weight: 600;">Match Player Count:</label>
+            <select id="barakatta-player-count" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #fff; font-size: 0.9rem; cursor: pointer; outline: none;">
+              <option value="2">2 Players (Red vs Yellow)</option>
+              <option value="3">3 Players (Red vs Yellow vs Blue)</option>
+              <option value="4" selected>4 Players (Red vs Green vs Yellow vs Blue)</option>
+            </select>
+          </div>
+
           <button type="button" id="barakatta-play-ai-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
-            Play with AI BOT<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Quick 1v1 match against Computer AI</span>
+            Play with AI BOT<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Quick match against Computer Bots</span>
           </button>
           <button type="button" id="barakatta-play-offline-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
-            Play Offline (Pass & Play)<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Local 1v1 match on the same device</span>
+            Play Offline (Pass & Play)<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Local match on the same device</span>
           </button>
           <button type="button" id="barakatta-play-online-btn" class="btn secondary-btn play-mode-btn" disabled style="opacity: 0.5; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: var(--text-muted); width: 100%;">
             Play Online Game<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Coming Soon</span>
