@@ -58,7 +58,7 @@ const playerPathsConfig = {
     ],
     endCells: [
       { row: 6, col: 2 }, // Ring 0 end
-      { row: 5, col: 3 }, // Ring 1 end
+      { row: 5, col: 2 }, // Ring 1 end
       { row: 4, col: 3 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]
@@ -72,7 +72,7 @@ const playerPathsConfig = {
     ],
     endCells: [
       { row: 0, col: 4 }, // Ring 0 end
-      { row: 1, col: 3 }, // Ring 1 end
+      { row: 1, col: 4 }, // Ring 1 end
       { row: 2, col: 3 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]
@@ -86,7 +86,7 @@ const playerPathsConfig = {
     ],
     endCells: [
       { row: 2, col: 0 }, // Ring 0 end
-      { row: 3, col: 1 }, // Ring 1 end
+      { row: 2, col: 1 }, // Ring 1 end
       { row: 3, col: 2 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]
@@ -100,7 +100,7 @@ const playerPathsConfig = {
     ],
     endCells: [
       { row: 4, col: 6 }, // Ring 0 end
-      { row: 3, col: 5 }, // Ring 1 end
+      { row: 4, col: 5 }, // Ring 1 end
       { row: 3, col: 4 }, // Ring 2 end
       { row: 3, col: 3 }  // Ring 3 end
     ]

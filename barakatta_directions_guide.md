@@ -26,10 +26,11 @@ Player 1 seats at the **Bottom** of the board and moves in a counter-clockwise d
   ` (5,1) [Entry] -> (4,1) -> (3,1) -> (2,1) -> (1,1) [Top-Left Inner Corner] `
   ` -> (1,2) -> (1,3) -> (1,4) -> (1,5) [Top-Right Inner Corner] `
   ` -> (2,5) -> (3,5) -> (4,5) -> (5,5) [Bottom-Right Inner Corner] `
-  ` -> (5,4) -> (5,3) [End] `
-- **Transition 1 ➔ 2**: From `(5,3)`, moves diagonally up-left to `(4, 2)`.
+  ` -> (5,4) -> (5,3) -> (5,2) [End] `
+- **Transition 1 ➔ 2**: From `(5,2)`, moves vertically up to `(4, 2)`.
   > [!IMPORTANT]
   > Requires a fresh capture during the Ring 1 lap.
+  > This path transition is now direct (moving vertically without skipping any boxes).
 
 ### 3. Ring 2 (Inner Loop - 8 Cells)
 - **Entry Cell**: `(4, 2)`
@@ -57,14 +58,14 @@ The Bot starts at the **Top** of the board and moves in a counter-clockwise dire
   > [!IMPORTANT]
   > **Kill-to-Advance Rule**: A rock cannot transition and is "blocked" at `(0,4)` unless it has captured at least one opponent rock during its Ring 0 lap.
 
-### 2. Ring 1 (Middle Loop - 15 Cells)
+### 2. Ring 1 (Middle Loop - 16 Cells)
 - **Entry Cell (Inner X Mark)**: `(1, 5)` (Top-Right Inner X Mark)
 - **Pathway**: Loops counter-clockwise and ends at the top edge left-center cell of the middle ring:
   ` (1,5) [Entry] -> (2,5) -> (3,5) -> (4,5) -> (5,5) [Bottom-Right Inner Corner] `
   ` -> (5,4) -> (5,3) -> (5,2) -> (5,1) [Bottom-Left Inner Corner] `
   ` -> (4,1) -> (3,1) -> (2,1) -> (1,1) [Top-Left Inner Corner] `
-  ` -> (1,2) -> (1,3) [End] `
-- **Transition 1 ➔ 2**: From `(1,3)`, moves diagonally down-right to `(2, 4)`.
+  ` -> (1,2) -> (1,3) -> (1,4) [End] `
+- **Transition 1 ➔ 2**: From `(1,4)`, moves vertically down to `(2, 4)`.
   > [!IMPORTANT]
   > Requires a fresh capture during the Ring 1 lap.
 
