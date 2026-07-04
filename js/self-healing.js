@@ -155,6 +155,80 @@
       }
     }
 
+    // --- HEAL CORRUPT BARAKATTA GAME LOOP STATES ---
+    if (window.bkGame) {
+      const bkGame = window.bkGame;
+      
+      // Recovery 8: Verify active players configuration
+      if (!bkGame.players || typeof bkGame.players !== "object") {
+        bkGame.players = {};
+        healingMessages.push("Re-initialized corrupted Barakatta player configuration.");
+      }
+
+      // Recovery 9: Repair player IDs, names, and rocks array
+      Object.keys(bkGame.players).forEach(pId => {
+        const player = bkGame.players[pId];
+        if (!player || typeof player !== "object") return;
+
+        if (!Array.isArray(player.rocks)) {
+          player.rocks = Array.from({ length: 6 }, (_, i) => ({
+            id: i,
+            status: "yard",
+            currentRing: 0,
+            positionInRing: 0,
+            hasCapturedThisRing: false
+          }));
+          healingMessages.push(`Re-initialized missing rocks array for Barakatta player ${pId}.`);
+        } else if (player.rocks.length !== 6) {
+          while (player.rocks.length < 6) {
+            player.rocks.push({
+              id: player.rocks.length,
+              status: "yard",
+              currentRing: 0,
+              positionInRing: 0,
+              hasCapturedThisRing: false
+            });
+          }
+          player.rocks = player.rocks.slice(0, 6);
+          healingMessages.push(`Corrected rock count to exactly 6 for Barakatta player ${pId}.`);
+        }
+
+        // Recovery 10: Validate rock status and position bounds
+        player.rocks.forEach(rock => {
+          const validStatuses = ["yard", "active", "blocked", "home"];
+          if (!validStatuses.includes(rock.status)) {
+            rock.status = "yard";
+            rock.currentRing = 0;
+            rock.positionInRing = 0;
+            rock.hasCapturedThisRing = false;
+            healingMessages.push(`Reset Barakatta rock #${rock.id + 1} with invalid status to Yard.`);
+          }
+          
+          if (rock.status === "active" || rock.status === "blocked") {
+            if (rock.currentRing < 0 || rock.currentRing > 2) {
+              rock.status = "yard";
+              rock.currentRing = 0;
+              rock.positionInRing = 0;
+              healingMessages.push(`Reset out-of-bounds Barakatta rock #${rock.id + 1} (Ring ${rock.currentRing}) to Yard.`);
+            }
+          }
+        });
+      });
+
+      // Recovery 11: Correct invalid active turn
+      const validTurns = Object.keys(bkGame.players);
+      if (validTurns.length > 0 && !validTurns.includes(bkGame.currentTurn)) {
+        bkGame.currentTurn = validTurns[0];
+        healingMessages.push(`Corrected invalid active turn to ${bkGame.currentTurn}.`);
+      }
+
+      // Recovery 12: Heal stuck roll state
+      if (!["idle", "rolled", "waiting_choice"].includes(bkGame.rollState)) {
+        bkGame.rollState = "idle";
+        healingMessages.push("Reset invalid Barakatta dice roll state.");
+      }
+    }
+
     // --- RE-RENDER STABLE VIEW IF RECOVERY ACTIONS WERE TAKEN ---
     if (healingMessages.length > 0) {
       console.log("🔧 Self-Healing Engine successfully applied corrections:", healingMessages);
@@ -163,6 +237,7 @@
       if (window.renderSeats) window.renderSeats();
       if (window.renderPot) window.renderPot();
       if (window.renderScoreboard) window.renderScoreboard();
+      if (window.bkDrawBoard) window.bkDrawBoard();
 
       // Notify the player
       showHealingAlert(err.message, healingMessages);

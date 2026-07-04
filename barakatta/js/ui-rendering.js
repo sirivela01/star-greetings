@@ -243,6 +243,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
   // Draw the complete board
   function drawBoard() {
+    window.bkDrawBoard = drawBoard; // Expose for self-healing
     if (!game) return;
 
     if (!tilesGrid) {
