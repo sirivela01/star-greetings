@@ -1,5 +1,5 @@
 // Barakatta Core Game Logic Engine
-console.log("Barakatta Core Logic Engine Loaded - Version 1.2.6");
+console.log("Barakatta Core Logic Engine Loaded - Version 1.2.7");
 class BarakattaGame {
   constructor(mode = "solo") {
     this.mode = mode;
@@ -175,7 +175,7 @@ class BarakattaGame {
 
     let ring = rock.currentRing;
     let pos = rock.positionInRing;
-    let hasCaptured = rock.hasCapturedThisRing;
+    let hasCaptured = this.hasCapturedAnOpponent[playerId];
     let status = rock.status;
 
     if (steps === 0) {
@@ -202,7 +202,7 @@ class BarakattaGame {
           // Allowed to transition!
           ring = nextRingIdx;
           pos = 0;
-          hasCaptured = wouldCaptureNow; // reset capture flag for the new ring layer
+          hasCaptured = true; // Remains unlocked
           status = "active";
         } else {
           // Blocked! Must stop at the end of the current ring in a blocked state
@@ -253,7 +253,7 @@ class BarakattaGame {
     const rock = this.players[playerId].rocks[rockId];
     let ring = rock.currentRing;
     let pos = rock.positionInRing;
-    let hasCaptured = rock.hasCapturedThisRing;
+    let hasCaptured = this.hasCapturedAnOpponent[playerId];
     const pathCells = [BARAKATTA_BOARD.playerPaths[playerId][ring][pos]];
 
     for (let s = 1; s <= steps; s++) {
@@ -270,7 +270,7 @@ class BarakattaGame {
         if (hasCaptured || wouldCaptureNow) {
           ring = nextRingIdx;
           pos = 0;
-          hasCaptured = wouldCaptureNow;
+          hasCaptured = true;
         } else {
           break;
         }
@@ -442,11 +442,10 @@ class BarakattaGame {
     });
     if (unblockAction) return unblockAction;
 
-    // Priority 3: If a bot rock has hasCapturedThisRing = true and is nearing the end of its ring -> prioritize moving it onward
     const pathNearEndActions = legalActions.filter(act => {
       if (act.type !== "MOVE_ROCK") return false;
       const rock = this.players.player3.rocks[act.rockId];
-      if (!rock.hasCapturedThisRing) return false;
+      if (!this.hasCapturedAnOpponent["player3"]) return false;
       const ringL = BARAKATTA_BOARD.playerPaths["player3"][rock.currentRing].length;
       const distToLast = ringL - 1 - rock.positionInRing;
       return distToLast <= 6 && distToLast >= 0; // Nearing the end
