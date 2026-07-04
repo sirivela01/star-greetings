@@ -323,6 +323,76 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     });
   }
 
+  // Synthesize a realistic dice rolling/tumbling sound effect using the Web Audio API
+  function playDiceRollSound() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+
+      // Number of tumbles/bounces
+      const numBounces = 5 + Math.floor(Math.random() * 3); // 5 to 7 tumbles
+      let time = now;
+
+      for (let i = 0; i < numBounces; i++) {
+        // Schedule each bounce with a slight progressive delay
+        const bounceDelay = 0.10 + i * 0.08 + Math.random() * 0.05;
+        time += bounceDelay;
+
+        // Volume decays slightly as the dice slows down
+        const volume = 0.12 * (1 - (i / numBounces) * 0.4);
+
+        // 1. Low impact thud (Triangle wave)
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = "triangle";
+        
+        // Pitch sweeps down to simulate impact on a wooden/plastic surface
+        osc.frequency.setValueAtTime(140 + Math.random() * 30, time);
+        osc.frequency.exponentialRampToValueAtTime(35, time + 0.07);
+
+        gainNode.gain.setValueAtTime(0, time);
+        gainNode.gain.linearRampToValueAtTime(volume, time + 0.008);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.07);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start(time);
+        osc.stop(time + 0.08);
+
+        // 2. Plastic rattle noise (Filtered White Noise)
+        const bufferSize = audioCtx.sampleRate * 0.04; // 40ms noise burst
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let j = 0; j < bufferSize; j++) {
+          data[j] = Math.random() * 2 - 1;
+        }
+
+        const noiseNode = audioCtx.createBufferSource();
+        noiseNode.buffer = buffer;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(700 + Math.random() * 200, time);
+        filter.Q.setValueAtTime(3.5, time);
+
+        const noiseGain = audioCtx.createGain();
+        noiseGain.gain.setValueAtTime(0, time);
+        noiseGain.gain.linearRampToValueAtTime(volume * 0.5, time + 0.004);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
+
+        noiseNode.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(audioCtx.destination);
+
+        noiseNode.start(time);
+        noiseNode.stop(time + 0.04);
+      }
+    } catch (e) {
+      console.warn("Dice AudioContext playback failed:", e);
+    }
+  }
+
   // Render and animate 3D rock tokens on board
   function renderRocksOnBoard() {
     if (!game || !tilesGrid) return;
@@ -482,6 +552,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     if (!isPlayerTurn) return;
 
     isRolling = true;
+    playDiceRollSound();
     const diceElement = document.getElementById("bk-dice-element");
     const rollBtn = document.getElementById("bk-roll-btn");
     
@@ -677,6 +748,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     if (game.status !== "in_progress" || activeBotId === "player1") return;
 
     const diceElement = document.getElementById("bk-dice-element");
+    playDiceRollSound();
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let duration = prefersReducedMotion ? 0 : 1000;
 
