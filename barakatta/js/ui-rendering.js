@@ -532,6 +532,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   function evaluateHumanActions() {
     const actions = game.getLegalActions(game.currentTurn, game.diceValue);
 
+    if (actions.length === 0) {
       const activeName = game.players[game.currentTurn].name;
       document.getElementById("bk-status-title").textContent = `${activeName} Has No Moves!`;
       document.getElementById("bk-status-desc").textContent = `${activeName} rolled a ${game.diceValue}. Turn is skipped.`;
