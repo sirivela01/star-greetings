@@ -710,7 +710,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
           return;
         }
 
-        const chosenAction = game.getBotDecision(activeBotId, actions);
+        const chosenAction = game.getBotDecision(actions);
         
         if (chosenAction) {
           setTimeout(() => {
