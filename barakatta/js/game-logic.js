@@ -205,7 +205,7 @@ class BarakattaGame {
           // Allowed to transition!
           ring = nextRingIdx;
           pos = 0;
-          hasCaptured = false; // Reset for the new ring!
+          hasCaptured = true; // Remains unlocked once captured
           status = "active";
         } else {
           // Blocked! Must stop at the end of the current ring in a blocked state
@@ -273,7 +273,7 @@ class BarakattaGame {
         if (hasCaptured || wouldCaptureNow) {
           ring = nextRingIdx;
           pos = 0;
-          hasCaptured = false; // Reset for the new ring!
+          hasCaptured = true; // Remains unlocked once captured
         } else {
           break;
         }
