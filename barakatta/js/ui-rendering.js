@@ -9,10 +9,10 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   let activeHighlightPath = null;
 
   const playerConfig = {
-    player1: { color: "#ef4444" },
-    player2: { color: "#3b82f6" },
-    player3: { color: "#fbbf24" },
-    player4: { color: "#10b981" }
+    player1: { color: "#ef4444" }, // Red
+    player2: { color: "#10b981" }, // Green
+    player3: { color: "#fbbf24" }, // Yellow
+    player4: { color: "#3b82f6" }  // Blue
   };
 
   const playerOffsets = {
@@ -104,7 +104,9 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
         if (isSafe) {
           // Add player starting location highlight rims
           if (r === 6 && c === 3) topDiv.classList.add("rim-p1");
+          else if (r === 3 && c === 6) topDiv.classList.add("rim-p2");
           else if (r === 0 && c === 3) topDiv.classList.add("rim-p3");
+          else if (r === 3 && c === 0) topDiv.classList.add("rim-p4");
 
           // Render Extruded Chrome-Tube X Mark vector SVG
           topDiv.innerHTML = `
@@ -282,28 +284,48 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
   // Update rock displays in player yards
   function updateYardDisplay() {
-    const playerYard = document.getElementById("bk-player-yard-rocks");
-    const botYard = document.getElementById("bk-bot-yard-rocks");
+    const player1Yard = document.getElementById("bk-player1-yard-rocks");
+    const player2Yard = document.getElementById("bk-player2-yard-rocks");
+    const player3Yard = document.getElementById("bk-player3-yard-rocks");
+    const player4Yard = document.getElementById("bk-player4-yard-rocks");
 
-    playerYard.innerHTML = "";
-    botYard.innerHTML = "";
+    player1Yard.innerHTML = "";
+    player2Yard.innerHTML = "";
+    player3Yard.innerHTML = "";
+    player4Yard.innerHTML = "";
 
     const p1YardCount = game.getYardRocks("player1").length;
     for (let i = 0; i < p1YardCount; i++) {
       const rock = document.createElement("div");
-      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background: #ef4444; border: 1px solid rgba(0,0,0,0.2);";
-      playerYard.appendChild(rock);
+      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_red.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
+      player1Yard.appendChild(rock);
+    }
+
+    const p2YardCount = game.getYardRocks("player2").length;
+    for (let i = 0; i < p2YardCount; i++) {
+      const rock = document.createElement("div");
+      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_green.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
+      player2Yard.appendChild(rock);
     }
 
     const p3YardCount = game.getYardRocks("player3").length;
     for (let i = 0; i < p3YardCount; i++) {
       const rock = document.createElement("div");
-      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background: #eab308; border: 1px solid rgba(0,0,0,0.2);";
-      botYard.appendChild(rock);
+      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_yellow.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
+      player3Yard.appendChild(rock);
     }
 
-    document.getElementById("bk-player-home-count").textContent = `${game.players.player1.rocks.filter(r => r.status === "home").length}/6`;
-    document.getElementById("bk-bot-home-count").textContent = `${game.players.player3.rocks.filter(r => r.status === "home").length}/6`;
+    const p4YardCount = game.getYardRocks("player4").length;
+    for (let i = 0; i < p4YardCount; i++) {
+      const rock = document.createElement("div");
+      rock.style.cssText = "width: 14px; height: 14px; border-radius: 50%; background-image: url('assets/barakatta/demon_blue.jpg'); background-size: cover; border: 1px solid rgba(0,0,0,0.2);";
+      player4Yard.appendChild(rock);
+    }
+
+    document.getElementById("bk-player1-home-count").textContent = `${game.players.player1.rocks.filter(r => r.status === "home").length}/6`;
+    document.getElementById("bk-player2-home-count").textContent = `${game.players.player2.rocks.filter(r => r.status === "home").length}/6`;
+    document.getElementById("bk-player3-home-count").textContent = `${game.players.player3.rocks.filter(r => r.status === "home").length}/6`;
+    document.getElementById("bk-player4-home-count").textContent = `${game.players.player4.rocks.filter(r => r.status === "home").length}/6`;
   }
 
   // Render and animate 3D rock tokens on board
@@ -344,8 +366,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
         const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (!prefersReducedMotion) {
           document.getElementById("barakatta-board-3d").appendChild(token);
-          const isPlayer1 = token.classList.contains("player1");
-          token.className = `rock-token ${isPlayer1 ? 'player1' : 'player3'} rock-captured`;
+          token.classList.add("rock-captured");
           setTimeout(() => token.remove(), 600);
         } else {
           token.remove();
@@ -433,9 +454,14 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     const statusDesc = document.getElementById("bk-status-desc");
     const rollBtn = document.getElementById("bk-roll-btn");
 
-    if (game.currentTurn === "player1") {
-      turnLabel.textContent = "You";
-      statusTitle.textContent = "Your Turn";
+    const activePlayer = game.players[game.currentTurn];
+    const isBotTurn = (game.mode === "solo" || game.mode === "ai_bot") && game.currentTurn !== "player1";
+
+    turnLabel.textContent = activePlayer.name;
+    turnLabel.style.color = playerConfig[game.currentTurn].color;
+
+    if (!isBotTurn) {
+      statusTitle.textContent = game.currentTurn === "player1" ? "Your Turn" : `${activePlayer.name}'s Turn`;
       statusDesc.textContent = "Roll the dice to proceed.";
       rollBtn.removeAttribute("disabled");
 
@@ -443,25 +469,11 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
         evaluateHumanActions();
       }
     } else {
-      // Player 3 Turn
-      if (game.mode === "offline") {
-        turnLabel.textContent = "Player 2";
-        statusTitle.textContent = "Player 2's Turn";
-        statusDesc.textContent = "Roll the dice to proceed.";
-        rollBtn.removeAttribute("disabled");
+      statusTitle.textContent = `${activePlayer.name}'s Turn`;
+      statusDesc.textContent = `${activePlayer.name} is planning its move...`;
+      rollBtn.setAttribute("disabled", "true");
 
-        if (game.rollState === "rolled") {
-          evaluateHumanActions();
-        }
-      } else {
-        // AI BOT Turn
-        turnLabel.textContent = "Bot";
-        statusTitle.textContent = "Bot's Turn";
-        statusDesc.textContent = "Bot is planning its move...";
-        rollBtn.setAttribute("disabled", "true");
-
-        setTimeout(handleBotTurn, 800);
-      }
+      setTimeout(handleBotTurn, 800);
     }
 
     drawBoard();
@@ -520,9 +532,9 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   function evaluateHumanActions() {
     const actions = game.getLegalActions(game.currentTurn, game.diceValue);
 
-    if (actions.length === 0) {
-      document.getElementById("bk-status-title").textContent = game.currentTurn === "player1" ? "No Moves Available!" : "Player 2 Has No Moves!";
-      document.getElementById("bk-status-desc").textContent = `${game.currentTurn === "player1" ? 'You' : 'Player 2'} rolled a ${game.diceValue}. Turn is skipped.`;
+      const activeName = game.players[game.currentTurn].name;
+      document.getElementById("bk-status-title").textContent = `${activeName} Has No Moves!`;
+      document.getElementById("bk-status-desc").textContent = `${activeName} rolled a ${game.diceValue}. Turn is skipped.`;
       
       setTimeout(() => {
         game.nextTurn();
@@ -574,7 +586,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
       document.getElementById("bk-status-desc").textContent = summary;
       completeTurnSequence();
     } else {
-      document.getElementById("bk-status-desc").textContent = `${game.currentTurn === 'player1' ? 'Select' : 'Player 2: Select'} one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
+      const activeName = game.players[game.currentTurn].name;
+      document.getElementById("bk-status-desc").textContent = `${activeName}: Select one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
     }
   }
 
@@ -644,7 +657,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     // If they click anywhere else, clear selection
     selectedRockId = null;
     clearHighlightPath();
-    document.getElementById("bk-status-desc").textContent = `${game.currentTurn === 'player1' ? 'Select' : 'Player 2: Select'} one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
+    const activeName = game.players[game.currentTurn].name;
+    document.getElementById("bk-status-desc").textContent = `${activeName}: Select one of your glowing rocks on the board to move it ${game.diceValue} spaces.`;
   }
 
   function completeTurnSequence() {
@@ -665,7 +679,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
   // Bot Turn Handler
   function handleBotTurn() {
-    if (game.status !== "in_progress" || game.currentTurn !== "player3") return;
+    const activeBotId = game.currentTurn;
+    if (game.status !== "in_progress" || activeBotId === "player1") return;
 
     const diceElement = document.getElementById("bk-dice-element");
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -697,11 +712,12 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
       diceElement.style.transform = `rotateX(${spinX}deg) rotateY(${spinY}deg)`;
 
       setTimeout(() => {
-        const actions = game.getLegalActions("player3", roll);
+        const actions = game.getLegalActions(activeBotId, roll);
         
         if (actions.length === 0) {
-          document.getElementById("bk-status-title").textContent = "Bot Has No Moves!";
-          document.getElementById("bk-status-desc").textContent = `Bot rolled a ${roll}. Skips turn.`;
+          const activeBotName = game.players[activeBotId].name;
+          document.getElementById("bk-status-title").textContent = `${activeBotName} Has No Moves!`;
+          document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a ${roll}. Skips turn.`;
           
           setTimeout(() => {
             game.nextTurn();
@@ -710,15 +726,15 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
           return;
         }
 
-        const chosenAction = game.getBotDecision(actions);
+        const chosenAction = game.getBotDecision(activeBotId, actions);
         
         if (chosenAction) {
           setTimeout(() => {
             if (chosenAction.type === "MOVE_ROCK") {
-              const path = game.getRockStepPath("player3", chosenAction.rockId, chosenAction.steps);
+              const path = game.getRockStepPath(activeBotId, chosenAction.rockId, chosenAction.steps);
               if (path) {
                 clearHighlightPath();
-                drawHighlightPath("player3", path);
+                drawHighlightPath(activeBotId, path);
                 
                 const targetCell = path[path.length - 1];
                 if (tilesGrid[targetCell.row] && tilesGrid[targetCell.row][targetCell.col]) {
@@ -729,13 +745,13 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
               
               setTimeout(() => {
                 clearHighlightPath();
-                const summary = game.executeAction("player3", chosenAction);
-                document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
+                const summary = game.executeAction(activeBotId, chosenAction);
+                document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
                 completeBotTurnSequence();
               }, 800);
             } else {
-              const summary = game.executeAction("player3", chosenAction);
-              document.getElementById("bk-status-desc").textContent = `Bot: ${summary}`;
+              const summary = game.executeAction(activeBotId, chosenAction);
+              document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
               completeBotTurnSequence();
             }
           }, 600);
@@ -759,26 +775,16 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   }
 
   function handleGameOver() {
-    const isHumanWinner = (game.status === "player1_won");
+    const winnerId = game.status.split("_")[0];
+    const winnerName = game.players[winnerId] ? game.players[winnerId].name : "Unknown Player";
+    const isHumanWinner = (winnerId === "player1");
     const currentUser = window.currentUser;
     if (currentUser) {
       updateMatchHistoryStats(isHumanWinner);
     }
 
     setTimeout(() => {
-      if (game.mode === "offline") {
-        if (isHumanWinner) {
-          alert("🎉 Congratulations! Player 1 won the match!");
-        } else {
-          alert("🎉 Congratulations! Player 2 won the match!");
-        }
-      } else {
-        if (isHumanWinner) {
-          alert("🎉 Congratulations! You got all 6 rocks home and won the match!");
-        } else {
-          alert("🤖 Bot wins! Better luck next time.");
-        }
-      }
+      alert(`🎉 Congratulations! ${winnerName} won the match!`);
 
       const auth = window.auth;
       if (auth && window.currentUser) {
@@ -817,13 +823,20 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
       const matchId = `match_${Date.now()}`;
       const matchRef = firebase.database().ref(`barakatta/matches/${matchId}`);
+      
+      const playersData = {};
+      Object.keys(game.players).forEach(pId => {
+        playersData[pId] = {
+          name: game.players[pId].name,
+          color: game.players[pId].color,
+          rocksHome: game.players[pId].rocks.filter(r => r.status === "home").length
+        };
+      });
+
       matchRef.set({
-        mode: "solo",
-        players: {
-          player1: { uid: user.uid, color: "red", rocksHome: game.players.player1.rocks.filter(r => r.status === "home").length },
-          bot: { color: "yellow", rocksHome: game.players.player3.rocks.filter(r => r.status === "home").length }
-        },
-        status: isWin ? "player1_won" : "bot_won",
+        mode: game.mode,
+        players: playersData,
+        status: game.status,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });

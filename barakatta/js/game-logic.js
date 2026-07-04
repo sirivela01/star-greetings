@@ -8,10 +8,12 @@ class BarakattaGame {
   }
 
   initializeGame() {
+    const isSolo = (this.mode === "solo" || this.mode === "ai_bot");
+
     this.players = {
       player1: {
         id: "player1",
-        name: "You",
+        name: isSolo ? "You" : "Player 1",
         color: "red",
         rocks: Array.from({ length: 6 }, (_, i) => ({
           id: i,
@@ -21,10 +23,34 @@ class BarakattaGame {
           hasCapturedThisRing: false
         }))
       },
+      player2: {
+        id: "player2",
+        name: isSolo ? "Green Bot" : "Player 2",
+        color: "green",
+        rocks: Array.from({ length: 6 }, (_, i) => ({
+          id: i,
+          status: "yard",
+          currentRing: 0,
+          positionInRing: 0,
+          hasCapturedThisRing: false
+        }))
+      },
       player3: {
         id: "player3",
-        name: "Bot",
+        name: isSolo ? "Yellow Bot" : "Player 3",
         color: "yellow",
+        rocks: Array.from({ length: 6 }, (_, i) => ({
+          id: i,
+          status: "yard",
+          currentRing: 0,
+          positionInRing: 0,
+          hasCapturedThisRing: false
+        }))
+      },
+      player4: {
+        id: "player4",
+        name: isSolo ? "Blue Bot" : "Player 4",
+        color: "blue",
         rocks: Array.from({ length: 6 }, (_, i) => ({
           id: i,
           status: "yard",
@@ -37,10 +63,12 @@ class BarakattaGame {
 
     this.currentTurn = "player1";
     this.diceValue = 0;
-    this.status = "in_progress"; // 'in_progress' | 'player1_won' | 'player3_won'
+    this.status = "in_progress";
     this.hasCapturedAnOpponent = {
       player1: false,
-      player3: false
+      player2: false,
+      player3: false,
+      player4: false
     };
 
     this.extraTurn = false;
@@ -362,7 +390,7 @@ class BarakattaGame {
     // Check if player won (all 6 rocks home)
     const allHome = player.rocks.every(r => r.status === "home");
     if (allHome) {
-      this.status = (playerId === "player1") ? "player1_won" : "player3_won";
+      this.status = `${playerId}_won`;
     }
 
     return actionSummary;
@@ -381,7 +409,9 @@ class BarakattaGame {
 
     // Otherwise transition turns
     if (this.mode === "solo" || this.mode === "offline" || this.mode === "ai_bot") {
-      this.currentTurn = (this.currentTurn === "player1") ? "player3" : "player1";
+      const turnOrder = ["player1", "player4", "player3", "player2"];
+      const idx = turnOrder.indexOf(this.currentTurn);
+      this.currentTurn = turnOrder[(idx + 1) % 4];
     }
     
     this.extraTurn = false;
@@ -390,22 +420,18 @@ class BarakattaGame {
 
   // Serializes state to save in Firebase Realtime Database
   serializeState() {
+    const serializedPlayers = {};
+    Object.keys(this.players).forEach(pId => {
+      serializedPlayers[pId] = {
+        name: this.players[pId].name,
+        color: this.players[pId].color,
+        rocksHome: this.players[pId].rocks.filter(r => r.status === "home").length,
+        rocks: this.players[pId].rocks
+      };
+    });
     return {
       mode: this.mode,
-      players: {
-        player1: {
-          name: this.players.player1.name,
-          color: this.players.player1.color,
-          rocksHome: this.players.player1.rocks.filter(r => r.status === "home").length,
-          rocks: this.players.player1.rocks
-        },
-        bot: {
-          name: this.players.player3.name,
-          color: this.players.player3.color,
-          rocksHome: this.players.player3.rocks.filter(r => r.status === "home").length,
-          rocks: this.players.player3.rocks
-        }
-      },
+      players: serializedPlayers,
       currentTurn: this.currentTurn,
       diceValue: this.diceValue,
       status: this.status,
