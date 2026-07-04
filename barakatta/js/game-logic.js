@@ -46,8 +46,44 @@ class BarakattaGame {
       player3: false
     };
 
+    this.consecutiveFailedYardRolls = {
+      player1: 0,
+      player3: 0
+    };
+
     this.extraTurn = false;
     this.rollState = "idle"; // 'idle' | 'rolled' | 'waiting_choice'
+  }
+
+  // Generates a dice roll with a pity mechanism (guarantees a 1 or 6 if stuck in Yard for 3 turns)
+  generatePityRoll(playerId) {
+    const yardCount = this.getYardRocks(playerId).length;
+    const boardCount = this.getBoardRocks(playerId).length;
+
+    // If they have any active rocks on the board, they are not stuck in the yard
+    if (boardCount > 0 || yardCount === 0) {
+      this.consecutiveFailedYardRolls[playerId] = 0;
+      return Math.floor(Math.random() * 6) + 1;
+    }
+
+    // Roll normally
+    let roll = Math.floor(Math.random() * 6) + 1;
+    
+    if (roll === 1 || roll === 6) {
+      // Successfully got out or rolled a 6! Reset pity count
+      this.consecutiveFailedYardRolls[playerId] = 0;
+    } else {
+      // Failed to get a 1 or 6
+      this.consecutiveFailedYardRolls[playerId] = (this.consecutiveFailedYardRolls[playerId] || 0) + 1;
+      
+      // Pity Rule: If failed 3 consecutive times, force a 1 or 6 on the 4th roll
+      if (this.consecutiveFailedYardRolls[playerId] >= 3) {
+        roll = Math.random() < 0.7 ? 1 : 6; // 70% chance of 1, 30% chance of 6
+        this.consecutiveFailedYardRolls[playerId] = 0; // Reset pity
+        console.log(`🛡️ Pity mechanism triggered for ${playerId}: Forced roll to ${roll}`);
+      }
+    }
+    return roll;
   }
 
   // Returns list of rocks currently in yard

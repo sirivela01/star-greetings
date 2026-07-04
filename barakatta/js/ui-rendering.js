@@ -579,7 +579,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
     function finalizeRoll() {
       isRolling = false;
-      const roll = Math.floor(Math.random() * 6) + 1;
+      const roll = game.generatePityRoll(game.currentTurn);
       game.diceValue = roll;
       game.rollState = "rolled";
 
@@ -769,7 +769,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     }
 
     function finalizeBotRoll() {
-      const roll = Math.floor(Math.random() * 6) + 1;
+      const roll = game.generatePityRoll(activeBotId);
       game.diceValue = roll;
 
       currentRollCount++;
