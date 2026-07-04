@@ -178,7 +178,7 @@ class BarakattaGame {
 
     let ring = rock.currentRing;
     let pos = rock.positionInRing;
-    let hasCaptured = this.hasCapturedAnOpponent[playerId];
+    let hasCaptured = rock.hasCapturedThisRing;
     let status = rock.status;
 
     if (steps === 0) {
@@ -205,7 +205,7 @@ class BarakattaGame {
           // Allowed to transition!
           ring = nextRingIdx;
           pos = 0;
-          hasCaptured = true; // Remains unlocked
+          hasCaptured = false; // Reset for the new ring!
           status = "active";
         } else {
           // Blocked! Must stop at the end of the current ring in a blocked state
@@ -256,7 +256,7 @@ class BarakattaGame {
     const rock = this.players[playerId].rocks[rockId];
     let ring = rock.currentRing;
     let pos = rock.positionInRing;
-    let hasCaptured = this.hasCapturedAnOpponent[playerId];
+    let hasCaptured = rock.hasCapturedThisRing;
     const pathCells = [BARAKATTA_BOARD.playerPaths[playerId][ring][pos]];
 
     for (let s = 1; s <= steps; s++) {
@@ -273,12 +273,18 @@ class BarakattaGame {
         if (hasCaptured || wouldCaptureNow) {
           ring = nextRingIdx;
           pos = 0;
-          hasCaptured = true;
+          hasCaptured = false; // Reset for the new ring!
         } else {
           break;
         }
       } else {
         pos++;
+        const cell = BARAKATTA_BOARD.playerPaths[playerId][ring][pos];
+        const occupant = this.getOpponentOccupant(cell, playerId);
+        const isSafe = this.isSafeSquare(cell);
+        if (occupant && !isSafe) {
+          hasCaptured = true;
+        }
       }
       pathCells.push(BARAKATTA_BOARD.playerPaths[playerId][ring][pos]);
     }
