@@ -1,5 +1,5 @@
 // Barakatta UI Rendering, Animations & Event Controller
-console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.5");
+console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.6");
 (function () {
   let game = null;
   let isRolling = false;
@@ -27,8 +27,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.5");
     6: { x: 180, y: 0 },
     2: { x: 0, y: -90 },
     5: { x: 0, y: 90 },
-    3: { x: 90, y: 0 },
-    4: { x: -90, y: 0 }
+    3: { x: -90, y: 0 },
+    4: { x: 90, y: 0 }
   };
 
   // Initialize Barakatta Game Screen
