@@ -221,21 +221,11 @@
 
         <!-- PLAY BUTTONS -->
         <div class="dashboard-actions" style="display: flex; flex-direction: column; gap: 15px;">
-          <!-- PLAYER COUNT SELECTOR -->
-          <div style="text-align: left; display: flex; flex-direction: column; gap: 6px; margin-bottom: 5px;">
-            <label for="barakatta-player-count" style="font-size: 0.85rem; color: #fbbf24; font-weight: 600;">Match Player Count:</label>
-            <select id="barakatta-player-count" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; color: #fff; font-size: 0.9rem; cursor: pointer; outline: none;">
-              <option value="2">2 Players (Red vs Yellow)</option>
-              <option value="3">3 Players (Red vs Yellow vs Blue)</option>
-              <option value="4" selected>4 Players (Red vs Green vs Yellow vs Blue)</option>
-            </select>
-          </div>
-
           <button type="button" id="barakatta-play-ai-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
-            Play with AI BOT<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Quick match against Computer Bots</span>
+            Play with AI BOT<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Quick 1v1 match against Computer AI</span>
           </button>
           <button type="button" id="barakatta-play-offline-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
-            Play Offline (Pass & Play)<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Local match on the same device</span>
+            Play Offline (Pass & Play)<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Local 1v1 match on the same device</span>
           </button>
           <button type="button" id="barakatta-play-online-btn" class="btn secondary-btn play-mode-btn" disabled style="opacity: 0.5; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: var(--text-muted); width: 100%;">
             Play Online Game<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Coming Soon</span>
@@ -806,26 +796,14 @@
               </div>
 
               <!-- Yard Displays -->
-              <div class="bk-yards-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <!-- Player 1 (Red) -->
-                <div class="bk-yard-box" id="bk-player1-yard" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 8px; border-radius: 8px; text-align: center;">
-                  <h4 style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #f87171; letter-spacing: 0.05em;">Red Yard</h4>
-                  <div class="bk-yard-rocks" id="bk-player1-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
+              <div class="bk-yards-container" style="display: flex; gap: 15px;">
+                <div class="bk-yard-box" id="bk-player1-yard" style="flex: 1; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 10px; border-radius: 8px; text-align: center;">
+                  <h4 id="bk-player-yard-title" style="margin: 0 0 8px 0; font-size: 0.8rem; text-transform: uppercase; color: #f87171; letter-spacing: 0.05em;">Your Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-player1-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 24px;"></div>
                 </div>
-                <!-- Player 2 (Green) -->
-                <div class="bk-yard-box" id="bk-player2-yard" style="background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.15); padding: 8px; border-radius: 8px; text-align: center;">
-                  <h4 style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #4ade80; letter-spacing: 0.05em;">Green Yard</h4>
-                  <div class="bk-yard-rocks" id="bk-player2-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
-                </div>
-                <!-- Player 3 (Yellow) -->
-                <div class="bk-yard-box" id="bk-player3-yard" style="background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.15); padding: 8px; border-radius: 8px; text-align: center;">
-                  <h4 style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #facc15; letter-spacing: 0.05em;">Yellow Yard</h4>
-                  <div class="bk-yard-rocks" id="bk-player3-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
-                </div>
-                <!-- Player 4 (Blue) -->
-                <div class="bk-yard-box" id="bk-player4-yard" style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15); padding: 8px; border-radius: 8px; text-align: center;">
-                  <h4 style="margin: 0 0 6px 0; font-size: 0.7rem; text-transform: uppercase; color: #60a5fa; letter-spacing: 0.05em;">Blue Yard</h4>
-                  <div class="bk-yard-rocks" id="bk-player4-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
+                <div class="bk-yard-box" id="bk-player3-yard" style="flex: 1; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.15); padding: 10px; border-radius: 8px; text-align: center;">
+                  <h4 id="bk-bot-yard-title" style="margin: 0 0 8px 0; font-size: 0.8rem; text-transform: uppercase; color: #fbbf24; letter-spacing: 0.05em;">Bot's Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-player3-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 24px;"></div>
                 </div>
               </div>
 
@@ -876,11 +854,15 @@
               </div>
 
               <!-- Home statistics -->
-              <div class="bk-home-stats" style="background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.8rem; line-height: 1.4; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div><span style="color: #f87171; font-weight: 600;">Red:</span> <strong id="bk-player1-home-count" style="color: #fff;">0/6</strong></div>
-                <div><span style="color: #4ade80; font-weight: 600;">Green:</span> <strong id="bk-player2-home-count" style="color: #fff;">0/6</strong></div>
-                <div><span style="color: #facc15; font-weight: 600;">Yellow:</span> <strong id="bk-player3-home-count" style="color: #fff;">0/6</strong></div>
-                <div><span style="color: #60a5fa; font-weight: 600;">Blue:</span> <strong id="bk-player4-home-count" style="color: #fff;">0/6</strong></div>
+              <div class="bk-home-stats" style="background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.85rem; line-height: 1.4;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                  <span id="bk-player-home-label" style="color: #f87171; font-weight: 600;">Your Rocks Home:</span>
+                  <strong id="bk-player1-home-count" style="color: #fff;">0/6</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span id="bk-bot-home-label" style="color: #fbbf24; font-weight: 600;">Bot Rocks Home:</span>
+                  <strong id="bk-player3-home-count" style="color: #fff;">0/6</strong>
+                </div>
               </div>
             </div>
           </div>

@@ -11,29 +11,23 @@ class BarakattaGame {
   initializeGame() {
     const isSolo = (this.mode === "solo" || this.mode === "ai_bot");
 
-    const allPlayersConfig = {
-      player1: { id: "player1", name: isSolo ? "You" : "Player 1", color: "red" },
-      player2: { id: "player2", name: isSolo ? "Green Bot" : "Player 2", color: "green" },
-      player3: { id: "player3", name: isSolo ? "Yellow Bot" : "Player 3", color: "yellow" },
-      player4: { id: "player4", name: isSolo ? "Blue Bot" : "Player 4", color: "blue" }
-    };
-
-    let activeIds = [];
-    if (this.playerCount === 2) {
-      activeIds = ["player1", "player3"];
-    } else if (this.playerCount === 3) {
-      activeIds = ["player1", "player4", "player3"];
-    } else {
-      activeIds = ["player1", "player4", "player3", "player2"];
-    }
-
-    this.players = {};
-    activeIds.forEach(pId => {
-      const conf = allPlayersConfig[pId];
-      this.players[pId] = {
-        id: conf.id,
-        name: conf.name,
-        color: conf.color,
+    this.players = {
+      player1: {
+        id: "player1",
+        name: isSolo ? "You" : "Player 1",
+        color: "red",
+        rocks: Array.from({ length: 6 }, (_, i) => ({
+          id: i,
+          status: "yard", // 'yard' | 'active' | 'blocked' | 'home'
+          currentRing: 0,
+          positionInRing: 0,
+          hasCapturedThisRing: false
+        }))
+      },
+      player3: {
+        id: "player3",
+        name: isSolo ? "Bot" : "Player 2",
+        color: "yellow",
         rocks: Array.from({ length: 6 }, (_, i) => ({
           id: i,
           status: "yard",
@@ -41,16 +35,16 @@ class BarakattaGame {
           positionInRing: 0,
           hasCapturedThisRing: false
         }))
-      };
-    });
+      }
+    };
 
     this.currentTurn = "player1";
     this.diceValue = 0;
     this.status = "in_progress";
-    this.hasCapturedAnOpponent = {};
-    activeIds.forEach(pId => {
-      this.hasCapturedAnOpponent[pId] = false;
-    });
+    this.hasCapturedAnOpponent = {
+      player1: false,
+      player3: false
+    };
 
     this.extraTurn = false;
     this.rollState = "idle"; // 'idle' | 'rolled' | 'waiting_choice'
@@ -390,17 +384,13 @@ class BarakattaGame {
 
     // Otherwise transition turns
     if (this.mode === "solo" || this.mode === "offline" || this.mode === "ai_bot") {
-      const fullOrder = ["player1", "player4", "player3", "player2"];
-      const activeOrder = fullOrder.filter(pId => this.players[pId]);
-      const idx = activeOrder.indexOf(this.currentTurn);
-      this.currentTurn = activeOrder[(idx + 1) % activeOrder.length];
+      this.currentTurn = (this.currentTurn === "player1") ? "player3" : "player1";
     }
     
     this.extraTurn = false;
     return this.currentTurn;
   }
 
-  // Serializes state to save in Firebase Realtime Database
   serializeState() {
     const serializedPlayers = {};
     Object.keys(this.players).forEach(pId => {
@@ -413,7 +403,6 @@ class BarakattaGame {
     });
     return {
       mode: this.mode,
-      playerCount: this.playerCount,
       players: serializedPlayers,
       currentTurn: this.currentTurn,
       diceValue: this.diceValue,
@@ -425,7 +414,7 @@ class BarakattaGame {
 
   // Deep-clone the game state for Expectiminimax tree search lookahead
   clone() {
-    const copy = new BarakattaGame(this.mode, this.playerCount);
+    const copy = new BarakattaGame(this.mode);
     copy.players = JSON.parse(JSON.stringify(this.players));
     copy.currentTurn = this.currentTurn;
     copy.diceValue = this.diceValue;
@@ -438,7 +427,7 @@ class BarakattaGame {
 
   // Evaluate the board state from the perspective of a playerId (positive is good for them, negative is bad)
   evaluateBoard(playerId) {
-    const opponentIds = Object.keys(this.players).filter(id => id !== playerId);
+    const opponentId = (playerId === "player1") ? "player3" : "player1";
     let score = 0;
 
     // 1. Progress score based on ring index and position inside each ring
@@ -465,11 +454,9 @@ class BarakattaGame {
       if (rock.status === "yard") score -= 50; // Heavy penalty for rocks in yard
     });
 
-    opponentIds.forEach(oppId => {
-      this.players[oppId].rocks.forEach(rock => {
-        score -= getRockScore(rock) * 0.33; // Scale opponent progress
-        if (rock.status === "yard") score += 15;
-      });
+    this.players[opponentId].rocks.forEach(rock => {
+      score -= getRockScore(rock);
+      if (rock.status === "yard") score += 50; // Advantage if opponent is stuck in yard
     });
 
     // 2. Safety vs Vulnerability check (penalize if opponent can capture us next turn)
@@ -477,18 +464,16 @@ class BarakattaGame {
       if (rock.status === "active") {
         const cell = BARAKATTA_BOARD.playerPaths[playerId][rock.currentRing][rock.positionInRing];
         if (!this.isSafeSquare(cell)) {
-          opponentIds.forEach(oppId => {
-            this.players[oppId].rocks.forEach(oppRock => {
-              if (oppRock.status === "active" || oppRock.status === "blocked") {
-                for (let roll = 1; roll <= 6; roll++) {
-                  const sim = this.simulateMove(oppId, oppRock.id, roll);
-                  if (sim && sim.cell.row === cell.row && sim.cell.col === cell.col) {
-                    score -= 30; // Vulnerable to capture!
-                    break;
-                  }
+          this.players[opponentId].rocks.forEach(oppRock => {
+            if (oppRock.status === "active" || oppRock.status === "blocked") {
+              for (let roll = 1; roll <= 6; roll++) {
+                const sim = this.simulateMove(opponentId, oppRock.id, roll);
+                if (sim && sim.cell.row === cell.row && sim.cell.col === cell.col) {
+                  score -= 30; // Vulnerable to capture!
+                  break;
                 }
               }
-            });
+            }
           });
         } else {
           score += 15; // Bonus for landing/sitting on safe cell
@@ -497,25 +482,23 @@ class BarakattaGame {
     });
 
     // 3. Threatening opportunities (bonus if we can capture opponent next turn)
-    opponentIds.forEach(oppId => {
-      this.players[oppId].rocks.forEach(oppRock => {
-        if (oppRock.status === "active") {
-          const cell = BARAKATTA_BOARD.playerPaths[oppId][oppRock.currentRing][oppRock.positionInRing];
-          if (!this.isSafeSquare(cell)) {
-            this.players[playerId].rocks.forEach(rock => {
-              if (rock.status === "active" || rock.status === "blocked") {
-                for (let roll = 1; roll <= 6; roll++) {
-                  const sim = this.simulateMove(playerId, rock.id, roll);
-                  if (sim && sim.cell.row === cell.row && sim.cell.col === cell.col) {
-                    score += 20; // Threatening opponent rock
-                    break;
-                  }
+    this.players[opponentId].rocks.forEach(oppRock => {
+      if (oppRock.status === "active") {
+        const cell = BARAKATTA_BOARD.playerPaths[opponentId][oppRock.currentRing][oppRock.positionInRing];
+        if (!this.isSafeSquare(cell)) {
+          this.players[playerId].rocks.forEach(rock => {
+            if (rock.status === "active" || rock.status === "blocked") {
+              for (let roll = 1; roll <= 6; roll++) {
+                const sim = this.simulateMove(playerId, rock.id, roll);
+                if (sim && sim.cell.row === cell.row && sim.cell.col === cell.col) {
+                  score += 20; // Threatening opponent rock
+                  break;
                 }
               }
-            });
-          }
+            }
+          });
         }
-      });
+      }
     });
 
     return score;

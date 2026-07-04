@@ -45,11 +45,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
       bkGameView.classList.remove("hidden");
     }
 
-    const countSelect = document.getElementById("barakatta-player-count");
-    const playerCount = countSelect ? parseInt(countSelect.value) : 4;
-
     // Instantiation
-    game = new BarakattaGame(mode, playerCount);
+    game = new BarakattaGame(mode, 2);
     window.bkGame = game;
 
     // Reset grid reference to force recreation
@@ -107,9 +104,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
         if (isSafe) {
           // Add player starting location highlight rims
           if (r === 6 && c === 3) topDiv.classList.add("rim-p1");
-          else if (r === 3 && c === 6) topDiv.classList.add("rim-p2");
           else if (r === 0 && c === 3) topDiv.classList.add("rim-p3");
-          else if (r === 3 && c === 0) topDiv.classList.add("rim-p4");
 
           // Render Extruded Chrome-Tube X Mark vector SVG
           topDiv.innerHTML = `
