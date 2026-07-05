@@ -1,58 +1,106 @@
 // Barakatta Core Game Logic Engine
 console.log("Barakatta Core Logic Engine Loaded - Version 1.2.8");
 class BarakattaGame {
-  constructor(mode = "solo", playerCount = 4) {
+  constructor(mode = "solo", playerCount = 4, customPlayers = null) {
     this.mode = mode;
     this.playerCount = playerCount;
+    this.customPlayers = customPlayers;
     this.requireCaptureToEnterHome = true; // Traditional capture lock toggle
     this.initializeGame();
   }
 
   initializeGame() {
-    const isSolo = (this.mode === "solo" || this.mode === "ai_bot");
+    this.players = {};
 
-    this.players = {
-      player1: {
-        id: "player1",
-        name: isSolo ? "You" : "Player 1",
-        color: "red",
-        rocks: Array.from({ length: 6 }, (_, i) => ({
-          id: i,
-          status: "yard", // 'yard' | 'active' | 'blocked' | 'home'
-          currentRing: 0,
-          positionInRing: 0,
-          hasCapturedThisRing: false
-        }))
-      },
-      player3: {
-        id: "player3",
-        name: isSolo ? "Bot" : "Player 2",
-        color: "yellow",
-        rocks: Array.from({ length: 6 }, (_, i) => ({
-          id: i,
-          status: "yard",
-          currentRing: 0,
-          positionInRing: 0,
-          hasCapturedThisRing: false
-        }))
-      }
+    const defaultNames = {
+      player1: "Player 1",
+      player2: "Player 2",
+      player3: "Player 3",
+      player4: "Player 4"
     };
 
-    this.currentTurn = "player1";
+    const slotColors = {
+      player1: "red",
+      player2: "green",
+      player3: "yellow",
+      player4: "blue"
+    };
+
+    const slotMapping = {
+      2: ["player1", "player3"],
+      3: ["player1", "player2", "player3"],
+      4: ["player1", "player2", "player3", "player4"]
+    };
+
+    const slots = slotMapping[this.playerCount] || ["player1", "player3"];
+
+    if (this.customPlayers && this.customPlayers.length === this.playerCount) {
+      slots.forEach((pId, idx) => {
+        const custom = this.customPlayers[idx];
+        this.players[pId] = {
+          id: pId,
+          name: custom.name,
+          avatar: custom.avatar,
+          isBot: custom.isBot,
+          color: slotColors[pId],
+          rocks: Array.from({ length: 6 }, (_, rId) => ({
+            id: rId,
+            status: "yard",
+            currentRing: 0,
+            positionInRing: 0,
+            hasCapturedThisRing: false
+          }))
+        };
+      });
+    } else {
+      // Fallback to legacy default behavior
+      const isSolo = (this.mode === "solo" || this.mode === "ai_bot");
+      slots.forEach((pId, idx) => {
+        let name = defaultNames[pId];
+        let isBot = false;
+        if (isSolo) {
+          if (pId === "player1") {
+            name = "You";
+            isBot = false;
+          } else {
+            name = "Bot";
+            isBot = true;
+          }
+        } else {
+          name = `Player ${idx + 1}`;
+          isBot = false;
+        }
+
+        this.players[pId] = {
+          id: pId,
+          name: name,
+          isBot: isBot,
+          color: slotColors[pId],
+          rocks: Array.from({ length: 6 }, (_, rId) => ({
+            id: rId,
+            status: "yard",
+            currentRing: 0,
+            positionInRing: 0,
+            hasCapturedThisRing: false
+          }))
+        };
+      });
+    }
+
+    this.activePlayerIds = Object.keys(this.players);
+    this.currentTurn = this.activePlayerIds[0];
     this.diceValue = 0;
     this.status = "in_progress";
-    this.hasCapturedAnOpponent = {
-      player1: false,
-      player3: false
-    };
 
-    this.consecutiveFailedYardRolls = {
-      player1: 0,
-      player3: 0
-    };
+    this.hasCapturedAnOpponent = {};
+    this.consecutiveFailedYardRolls = {};
+    this.activePlayerIds.forEach(pId => {
+      this.hasCapturedAnOpponent[pId] = false;
+      this.consecutiveFailedYardRolls[pId] = 0;
+    });
 
     this.extraTurn = false;
-    this.rollState = "idle"; // 'idle' | 'rolled' | 'waiting_choice'
+    this.rollState = "idle";
   }
 
   // Generates a dice roll with a pity mechanism (guarantees a 1 or 6 if stuck in Yard for 3 turns)
@@ -425,9 +473,9 @@ class BarakattaGame {
     }
 
     // Otherwise transition turns
-    if (this.mode === "solo" || this.mode === "offline" || this.mode === "ai_bot") {
-      this.currentTurn = (this.currentTurn === "player1") ? "player3" : "player1";
-    }
+    const currentIndex = this.activePlayerIds.indexOf(this.currentTurn);
+    const nextIndex = (currentIndex + 1) % this.activePlayerIds.length;
+    this.currentTurn = this.activePlayerIds[nextIndex];
     
     this.extraTurn = false;
     return this.currentTurn;

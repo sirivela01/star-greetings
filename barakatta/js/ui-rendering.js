@@ -8,6 +8,27 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   let selectedRockId = null;
   let activeHighlightPath = null;
 
+  // Custom player setup configuration variables
+  let bkSetupPlayerCount = 2;
+  let bkSetupNames = {
+    1: "Allu",
+    2: "Ranbir",
+    3: "Zendaya",
+    4: "Prabhas"
+  };
+  let bkSetupAvatars = {
+    1: 0,
+    2: 1,
+    3: 2,
+    4: 3
+  };
+  let bkSetupTypes = {
+    1: "human",
+    2: "bot",
+    3: "bot",
+    4: "bot"
+  };
+
   const playerConfig = {
     player1: { color: "#ef4444" }, // Red
     player2: { color: "#10b981" }, // Green
@@ -31,10 +52,264 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     4: { x: 90, y: 0 }
   };
 
-  // Initialize Barakatta Game Screen
+  // Synthesizers for Touch and cycle sounds
+  function playTouchSound() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(750, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(250, audioCtx.currentTime + 0.08);
+      gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.08);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch (e) {}
+  }
+
+  function playCycleSound() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(1100, audioCtx.currentTime + 0.05);
+      gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.06);
+    } catch (e) {}
+  }
+
+  const AVATARS = [
+    "assets/avatars/avatar_1.png",
+    "assets/avatars/avatar_2.png",
+    "assets/avatars/avatar_3.png",
+    "assets/avatars/avatar_4.png",
+    "assets/avatars/avatar_5.png",
+    "assets/avatars/avatar_6.png"
+  ];
+
+  // Dynamic player setup rows for Barakatta setup screen
+  function renderBkSetupFields() {
+    const container = document.getElementById("bk-players-setup-container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const defaultNames = ["Allu", "Ranbir", "Zendaya", "Prabhas"];
+
+    for (let i = 1; i <= bkSetupPlayerCount; i++) {
+      const fieldRow = document.createElement("div");
+      fieldRow.className = "player-setup-row";
+
+      let defaultVal = bkSetupNames[i] || defaultNames[i - 1] || `Player ${i}`;
+      if (bkSetupTypes[i] === "bot" && !defaultVal.startsWith("Bot ")) {
+        defaultVal = `Bot ${defaultVal}`;
+      }
+
+      fieldRow.innerHTML = `
+        <label for="bk-setup-name-${i}">Player ${i}:</label>
+        <div class="input-with-action">
+          <button type="button" class="avatar-cycler-btn" id="bk-setup-avatar-btn-${i}" data-row="${i}">
+            <img src="${AVATARS[bkSetupAvatars[i]]}" id="bk-setup-avatar-img-${i}" alt="Avatar">
+            <span class="avatar-cycler-badge">Cycle</span>
+          </button>
+          
+          <div class="input-row-main" style="flex: 1;">
+            <div style="display: flex; gap: 8px; width: 100%;">
+              <input type="text" id="bk-setup-name-${i}" class="player-name-input" value="${defaultVal}" placeholder="Enter Name" maxlength="15" required style="flex: 1;">
+              ${i > 1 ? `<button type="button" class="player-type-toggle-btn ${bkSetupTypes[i] === "bot" ? "bot" : ""}" id="bk-setup-type-btn-${i}" data-row="${i}">${bkSetupTypes[i] === "bot" ? "🤖 Bot" : "👤 Human"}</button>` : ""}
+            </div>
+          </div>
+          
+          ${i > 2 ? `<button type="button" class="remove-player-btn" id="bk-setup-remove-btn-${i}" data-index="${i}">&times;</button>` : ""}
+        </div>
+      `;
+      container.appendChild(fieldRow);
+
+      // Bind avatar cycle event
+      const avatarBtn = document.getElementById(`bk-setup-avatar-btn-${i}`);
+      if (avatarBtn) {
+        avatarBtn.addEventListener("click", () => {
+          playCycleSound();
+          bkSetupAvatars[i] = (bkSetupAvatars[i] + 1) % AVATARS.length;
+          const img = document.getElementById(`bk-setup-avatar-img-${i}`);
+          if (img) img.src = AVATARS[bkSetupAvatars[i]];
+        });
+      }
+
+      // Bind type toggle (only Player 2 and up)
+      if (i > 1) {
+        const typeBtn = document.getElementById(`bk-setup-type-btn-${i}`);
+        if (typeBtn) {
+          typeBtn.addEventListener("click", () => {
+            playTouchSound();
+            const nameInput = document.getElementById(`bk-setup-name-${i}`);
+            if (bkSetupTypes[i] === "bot") {
+              bkSetupTypes[i] = "human";
+              typeBtn.textContent = "👤 Human";
+              typeBtn.classList.remove("bot");
+              if (nameInput && nameInput.value.startsWith("Bot ")) {
+                nameInput.value = nameInput.value.replace("Bot ", "");
+              }
+            } else {
+              bkSetupTypes[i] = "bot";
+              typeBtn.textContent = "🤖 Bot";
+              typeBtn.classList.add("bot");
+              if (nameInput && !nameInput.value.startsWith("Bot ")) {
+                nameInput.value = `Bot ${nameInput.value}`;
+              }
+            }
+          });
+        }
+      }
+
+      // Bind remove player
+      if (i > 2) {
+        const removeBtn = document.getElementById(`bk-setup-remove-btn-${i}`);
+        if (removeBtn) {
+          removeBtn.addEventListener("click", () => {
+            playTouchSound();
+            // Pull name inputs first to save edits
+            for (let k = 1; k <= bkSetupPlayerCount; k++) {
+              const inp = document.getElementById(`bk-setup-name-${k}`);
+              if (inp) bkSetupNames[k] = inp.value;
+            }
+            // Shift values up
+            for (let k = i; k < bkSetupPlayerCount; k++) {
+              bkSetupNames[k] = bkSetupNames[k + 1];
+              bkSetupAvatars[k] = bkSetupAvatars[k + 1];
+              bkSetupTypes[k] = bkSetupTypes[k + 1];
+            }
+            delete bkSetupNames[bkSetupPlayerCount];
+            delete bkSetupAvatars[bkSetupPlayerCount];
+            delete bkSetupTypes[bkSetupPlayerCount];
+
+            bkSetupPlayerCount--;
+            renderBkSetupFields();
+          });
+        }
+      }
+    }
+
+    // Toggle Add Player button
+    const addBtn = document.getElementById("bk-setup-add-btn");
+    if (addBtn) {
+      if (bkSetupPlayerCount >= 4) {
+        addBtn.style.opacity = "0.5";
+        addBtn.style.pointerEvents = "none";
+      } else {
+        addBtn.style.opacity = "1";
+        addBtn.style.pointerEvents = "auto";
+      }
+    }
+  }
+
+  // Show setup screen with configuration options
+  window.showBarakattaSetup = function (defaultMode) {
+    const screens = ["login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen", "setup-screen", "game-screen", "game-selection-screen", "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen"];
+    screens.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add("hidden");
+    });
+
+    const bkSetupView = document.getElementById("barakatta-setup-screen");
+    if (bkSetupView) {
+      bkSetupView.classList.remove("hidden");
+    }
+
+    const defaultNames = ["Allu", "Ranbir", "Zendaya", "Prabhas"];
+
+    // Reset setup configuration
+    bkSetupPlayerCount = 2;
+    bkSetupNames = {
+      1: "Allu",
+      2: "Ranbir",
+      3: "Zendaya",
+      4: "Prabhas"
+    };
+    bkSetupAvatars = {
+      1: 0,
+      2: 1,
+      3: 2,
+      4: 3
+    };
+    bkSetupTypes = {
+      1: "human",
+      2: defaultMode === "ai_bot" ? "bot" : "human",
+      3: "bot",
+      4: "bot"
+    };
+
+    renderBkSetupFields();
+
+    // Wire buttons once on setup load
+    const addBtn = document.getElementById("bk-setup-add-btn");
+    if (addBtn) {
+      addBtn.onclick = () => {
+        if (bkSetupPlayerCount >= 4) return;
+        playTouchSound();
+        for (let k = 1; k <= bkSetupPlayerCount; k++) {
+          const inp = document.getElementById(`bk-setup-name-${k}`);
+          if (inp) bkSetupNames[k] = inp.value;
+        }
+
+        bkSetupPlayerCount++;
+        bkSetupNames[bkSetupPlayerCount] = defaultNames[bkSetupPlayerCount - 1] || `Player ${bkSetupPlayerCount}`;
+        bkSetupAvatars[bkSetupPlayerCount] = (bkSetupPlayerCount - 1) % AVATARS.length;
+        bkSetupTypes[bkSetupPlayerCount] = "bot"; // Default additional slots to Bot
+
+        renderBkSetupFields();
+      };
+    }
+
+    const backBtn = document.getElementById("bk-setup-back-btn");
+    if (backBtn) {
+      backBtn.onclick = () => {
+        playTouchSound();
+        if (window.showBarakattaDashboard) {
+          window.showBarakattaDashboard(window.currentUser);
+        }
+      };
+    }
+
+    const startBtn = document.getElementById("bk-setup-start-btn");
+    if (startBtn) {
+      startBtn.onclick = () => {
+        playTouchSound();
+        const customPlayers = [];
+        for (let i = 1; i <= bkSetupPlayerCount; i++) {
+          const nameInput = document.getElementById(`bk-setup-name-${i}`);
+          const name = nameInput ? nameInput.value.trim() : `Player ${i}`;
+          customPlayers.push({
+            name: name || `Player ${i}`,
+            avatar: AVATARS[bkSetupAvatars[i]],
+            isBot: bkSetupTypes[i] === "bot"
+          });
+        }
+
+        const hasBots = customPlayers.some(p => p.isBot);
+        const mode = hasBots ? "ai_bot" : "offline";
+
+        window.startBarakattaGameCustom(mode, bkSetupPlayerCount, customPlayers);
+      };
+    }
+  };
+
+  // Legacy initializer fallback
   window.startBarakattaGame = function (mode) {
-    // Hide all views and show Barakatta board screen
-    const screens = ["login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen", "setup-screen", "game-screen", "game-selection-screen", "barakatta-dashboard-screen", "barakatta-game-screen"];
+    window.showBarakattaSetup(mode);
+  };
+
+  // Initialize Barakatta Game Screen with dynamic config
+  window.startBarakattaGameCustom = function (mode, playerCount, customPlayers) {
+    const screens = ["login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen", "setup-screen", "game-screen", "game-selection-screen", "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen"];
     screens.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add("hidden");
@@ -46,7 +321,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     }
 
     // Instantiation
-    game = new BarakattaGame(mode, 2);
+    game = new BarakattaGame(mode, playerCount, customPlayers);
     window.bkGame = game;
 
     // Reset grid reference to force recreation
@@ -271,7 +546,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     }
 
     // Highlight legal active moves on the tiles for the active player
-    const isHuman = (game.mode === "offline") || (game.currentTurn === "player1");
+    const isHuman = !game.players[game.currentTurn].isBot;
     const legalActions = (isHuman && game.rollState === "rolled")
       ? game.getLegalActions(game.currentTurn, game.diceValue)
       : [];
@@ -300,7 +575,12 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
       const homeSpan = document.getElementById(`bk-${pId}-home-count`);
 
       if (game.players[pId]) {
-        if (yardBox) yardBox.style.display = "block";
+        const player = game.players[pId];
+        if (yardBox) {
+          yardBox.style.display = "block";
+          const title = yardBox.querySelector("h4");
+          if (title) title.textContent = `${player.name}'s Yard`;
+        }
         if (yardRocks) {
           yardRocks.innerHTML = "";
           const yardCount = game.getYardRocks(pId).length;
@@ -312,8 +592,10 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
           }
         }
         if (homeSpan) {
-          homeSpan.parentNode.style.display = "block";
-          homeSpan.textContent = `${game.players[pId].rocks.filter(r => r.status === "home").length}/6`;
+          homeSpan.parentNode.style.display = "flex";
+          const labelSpan = homeSpan.parentNode.querySelector("span");
+          if (labelSpan) labelSpan.textContent = `${player.name} Home:`;
+          homeSpan.textContent = `${player.rocks.filter(r => r.status === "home").length}/6`;
         }
       } else {
         if (yardBox) yardBox.style.display = "none";
@@ -493,7 +775,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
         // Mouse hover preview path
         rockToken.onmouseenter = () => {
-          const isHuman = (game.mode === "offline") || (game.currentTurn === "player1");
+          const isHuman = !game.players[game.currentTurn].isBot;
           if (!isHuman || game.rollState !== "rolled") return;
 
           // If no rock is selected, show path on hover
@@ -534,13 +816,13 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     const rollBtn = document.getElementById("bk-roll-btn");
 
     const activePlayer = game.players[game.currentTurn];
-    const isBotTurn = (game.mode === "solo" || game.mode === "ai_bot") && game.currentTurn !== "player1";
+    const isBotTurn = !!activePlayer.isBot;
 
     turnLabel.textContent = activePlayer.name;
     turnLabel.style.color = playerConfig[game.currentTurn].color;
 
     if (!isBotTurn) {
-      statusTitle.textContent = game.currentTurn === "player1" ? "Your Turn" : `${activePlayer.name}'s Turn`;
+      statusTitle.textContent = `${activePlayer.name}'s Turn`;
       statusDesc.textContent = "Roll the dice to proceed.";
       rollBtn.removeAttribute("disabled");
 
@@ -562,7 +844,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   function handleHumanRoll() {
     if (isRolling || game.rollState !== "idle") return;
 
-    const isPlayerTurn = (game.mode === "offline") || (game.currentTurn === "player1");
+    const isPlayerTurn = !game.players[game.currentTurn].isBot;
     if (!isPlayerTurn) return;
 
     isRolling = true;
@@ -684,7 +966,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
   // Handle board tile clicking directly
   function handleTileClick(row, col) {
-    const isPlayerTurn = (game.mode === "offline") || (game.currentTurn === "player1");
+    const isPlayerTurn = !game.players[game.currentTurn].isBot;
     if (!isPlayerTurn || game.rollState !== "rolled") return;
 
     const actions = game.getLegalActions(game.currentTurn, game.diceValue);
@@ -774,7 +1056,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   // Bot Turn Handler
   function handleBotTurn() {
     const activeBotId = game.currentTurn;
-    if (game.status !== "in_progress" || activeBotId === "player1") return;
+    if (game.status !== "in_progress" || !game.players[activeBotId].isBot) return;
 
     const diceElement = document.getElementById("bk-dice-element");
     playDiceRollSound();

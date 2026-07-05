@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=4.1.4">
-  <link rel="stylesheet" href="barakatta/css/styles.css?v=1.1.7">
+  <link rel="stylesheet" href="barakatta/css/styles.css?v=1.1.8">
 </head>
 <body>
   <script>
@@ -231,6 +231,34 @@
             Play Online Game<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Coming Soon</span>
           </button>
         </div>
+      </div>
+    </section>
+
+    <!-- BARAKATTA SETUP SCREEN -->
+    <section id="barakatta-setup-screen" class="screen-view hidden">
+      <div class="glass-container dashboard-box barakatta-theme" style="max-width: 600px;">
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <div class="brand-badge">SIRIVELA</div>
+          <h1 class="app-title">Barakatta</h1>
+          <p class="app-tagline">Configure Local Match (2-4 Players)</p>
+        </header>
+
+        <form id="bk-setup-form" onsubmit="return false;" style="margin-top: 15px;">
+          <div class="form-group">
+            <label>Players & Avatars (2 - 4):</label>
+            <p class="form-hint-info">Click the avatar circles to cycle characters!</p>
+            <div id="bk-players-setup-container">
+              <!-- Dynamically populated rows -->
+            </div>
+            <button type="button" id="bk-setup-add-btn" class="btn secondary-btn" style="margin-top: 10px; width: 100%;">+ Add Player</button>
+          </div>
+
+          <div class="form-actions" style="display: flex; gap: 15px; margin-top: 20px;">
+            <button type="button" id="bk-setup-back-btn" class="btn secondary-btn" style="flex: 1;">Back</button>
+            <button type="button" id="bk-setup-start-btn" class="btn primary-btn bk-action-btn pulse-anim" style="flex: 1; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #000; font-weight: 700; width: auto; margin: 0;">Start Match</button>
+          </div>
+        </form>
       </div>
     </section>
 
@@ -796,14 +824,22 @@
               </div>
 
               <!-- Yard Displays -->
-              <div class="bk-yards-container" style="display: flex; gap: 15px;">
-                <div class="bk-yard-box" id="bk-player1-yard" style="flex: 1; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 10px; border-radius: 8px; text-align: center;">
-                  <h4 id="bk-player-yard-title" style="margin: 0 0 8px 0; font-size: 0.8rem; text-transform: uppercase; color: #f87171; letter-spacing: 0.05em;">Your Yard</h4>
-                  <div class="bk-yard-rocks" id="bk-player1-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 24px;"></div>
+              <div class="bk-yards-container" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <div class="bk-yard-box" id="bk-player1-yard" style="flex: 1; min-width: 90px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); padding: 8px; border-radius: 8px; text-align: center;">
+                  <h4 style="margin: 0 0 6px 0; font-size: 0.75rem; text-transform: uppercase; color: #f87171; letter-spacing: 0.05em;">Red Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-player1-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
                 </div>
-                <div class="bk-yard-box" id="bk-player3-yard" style="flex: 1; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.15); padding: 10px; border-radius: 8px; text-align: center;">
-                  <h4 id="bk-bot-yard-title" style="margin: 0 0 8px 0; font-size: 0.8rem; text-transform: uppercase; color: #fbbf24; letter-spacing: 0.05em;">Bot's Yard</h4>
-                  <div class="bk-yard-rocks" id="bk-player3-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 24px;"></div>
+                <div class="bk-yard-box" id="bk-player2-yard" style="flex: 1; min-width: 90px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); padding: 8px; border-radius: 8px; text-align: center; display: none;">
+                  <h4 style="margin: 0 0 6px 0; font-size: 0.75rem; text-transform: uppercase; color: #34d399; letter-spacing: 0.05em;">Green Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-player2-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
+                </div>
+                <div class="bk-yard-box" id="bk-player3-yard" style="flex: 1; min-width: 90px; background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.15); padding: 8px; border-radius: 8px; text-align: center;">
+                  <h4 style="margin: 0 0 6px 0; font-size: 0.75rem; text-transform: uppercase; color: #fbbf24; letter-spacing: 0.05em;">Yellow Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-player3-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
+                </div>
+                <div class="bk-yard-box" id="bk-player4-yard" style="flex: 1; min-width: 90px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15); padding: 8px; border-radius: 8px; text-align: center; display: none;">
+                  <h4 style="margin: 0 0 6px 0; font-size: 0.75rem; text-transform: uppercase; color: #60a5fa; letter-spacing: 0.05em;">Blue Yard</h4>
+                  <div class="bk-yard-rocks" id="bk-player4-yard-rocks" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 20px;"></div>
                 </div>
               </div>
 
@@ -855,14 +891,22 @@
               </div>
 
               <!-- Home statistics -->
-              <div class="bk-home-stats" style="background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.85rem; line-height: 1.4;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                  <span id="bk-player-home-label" style="color: #f87171; font-weight: 600;">Your Rocks Home:</span>
+              <div class="bk-home-stats" style="background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.85rem; line-height: 1.4; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #f87171; font-weight: 600;">Red Home:</span>
                   <strong id="bk-player1-home-count" style="color: #fff;">0/6</strong>
                 </div>
+                <div style="display: flex; justify-content: space-between; display: none;">
+                  <span style="color: #34d399; font-weight: 600;">Green Home:</span>
+                  <strong id="bk-player2-home-count" style="color: #fff;">0/6</strong>
+                </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span id="bk-bot-home-label" style="color: #fbbf24; font-weight: 600;">Bot Rocks Home:</span>
+                  <span style="color: #fbbf24; font-weight: 600;">Yellow Home:</span>
                   <strong id="bk-player3-home-count" style="color: #fff;">0/6</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; display: none;">
+                  <span style="color: #60a5fa; font-weight: 600;">Blue Home:</span>
+                  <strong id="bk-player4-home-count" style="color: #fff;">0/6</strong>
                 </div>
               </div>
             </div>
@@ -907,9 +951,9 @@
 
   <!-- Scripts -->
   <!-- Barakatta Scripts -->
-  <script src="barakatta/js/board-config.js?v=1.4.0"></script>
-  <script src="barakatta/js/game-logic.js?v=1.4.0"></script>
-  <script src="barakatta/js/ui-rendering.js?v=1.4.0"></script>
+  <script src="barakatta/js/board-config.js?v=1.5.0"></script>
+  <script src="barakatta/js/game-logic.js?v=1.5.0"></script>
+  <script src="barakatta/js/ui-rendering.js?v=1.5.0"></script>
 
   <script src="js/self-healing.js?v=1.36.4"></script>
   <script src="js/config.js?v=1.36.3"></script>
