@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=4.1.4">
-  <link rel="stylesheet" href="barakatta/css/styles.css?v=1.1.8">
+  <link rel="stylesheet" href="barakatta/css/styles.css?v=1.1.9">
 </head>
 <body>
   <script>
@@ -241,13 +241,13 @@
           <div class="logo-icon">★</div>
           <div class="brand-badge">SIRIVELA</div>
           <h1 class="app-title">Barakatta</h1>
-          <p class="app-tagline">Configure Local Match (2-4 Players)</p>
+          <p class="app-tagline" id="bk-setup-subtitle">Configure Local Match (2-4 Players)</p>
         </header>
 
         <form id="bk-setup-form" onsubmit="return false;" style="margin-top: 15px;">
           <div class="form-group">
-            <label>Players & Avatars (2 - 4):</label>
-            <p class="form-hint-info">Click the avatar circles to cycle characters!</p>
+            <label id="bk-setup-section-label">Players & Avatars (2 - 4):</label>
+            <p class="form-hint-info" id="bk-setup-hint">Click the avatar circles to cycle characters!</p>
             <div id="bk-players-setup-container">
               <!-- Dynamically populated rows -->
             </div>
@@ -951,9 +951,9 @@
 
   <!-- Scripts -->
   <!-- Barakatta Scripts -->
-  <script src="barakatta/js/board-config.js?v=1.5.0"></script>
-  <script src="barakatta/js/game-logic.js?v=1.5.0"></script>
-  <script src="barakatta/js/ui-rendering.js?v=1.5.0"></script>
+  <script src="barakatta/js/board-config.js?v=1.5.1"></script>
+  <script src="barakatta/js/game-logic.js?v=1.5.1"></script>
+  <script src="barakatta/js/ui-rendering.js?v=1.5.1"></script>
 
   <script src="js/self-healing.js?v=1.36.4"></script>
   <script src="js/config.js?v=1.36.3"></script>

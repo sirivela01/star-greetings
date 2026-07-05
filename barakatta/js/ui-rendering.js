@@ -96,21 +96,39 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     "assets/avatars/avatar_6.png"
   ];
 
-  // Dynamic player setup rows for Barakatta setup screen
+  // Track the current setup mode (ai_bot or offline)
+  let bkSetupMode = "offline";
+
+  // Mode-aware player setup row renderer
   function renderBkSetupFields() {
     const container = document.getElementById("bk-players-setup-container");
     if (!container) return;
     container.innerHTML = "";
 
     const defaultNames = ["Allu", "Ranbir", "Zendaya", "Prabhas"];
+    const isAiBot = bkSetupMode === "ai_bot";
 
     for (let i = 1; i <= bkSetupPlayerCount; i++) {
       const fieldRow = document.createElement("div");
       fieldRow.className = "player-setup-row";
 
       let defaultVal = bkSetupNames[i] || defaultNames[i - 1] || `Player ${i}`;
-      if (bkSetupTypes[i] === "bot" && !defaultVal.startsWith("Bot ")) {
-        defaultVal = `Bot ${defaultVal}`;
+
+      // Build the right-side tag: none for offline, locked label for ai_bot
+      let rightTag = "";
+      if (isAiBot) {
+        if (i === 1) {
+          rightTag = `<span class="player-type-tag human-tag">👤 You</span>`;
+        } else {
+          rightTag = `<span class="player-type-tag bot-tag">🤖 AI Bot</span>`;
+        }
+      }
+      // offline: no toggles, no tags — all human
+
+      // Remove button only for offline mode, rows 3+
+      let removeBtn = "";
+      if (!isAiBot && i > 2) {
+        removeBtn = `<button type="button" class="remove-player-btn" id="bk-setup-remove-btn-${i}" data-index="${i}">&times;</button>`;
       }
 
       fieldRow.innerHTML = `
@@ -120,68 +138,48 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
             <img src="${AVATARS[bkSetupAvatars[i]]}" id="bk-setup-avatar-img-${i}" alt="Avatar">
             <span class="avatar-cycler-badge">Cycle</span>
           </button>
-          
           <div class="input-row-main" style="flex: 1;">
-            <div style="display: flex; gap: 8px; width: 100%;">
-              <input type="text" id="bk-setup-name-${i}" class="player-name-input" value="${defaultVal}" placeholder="Enter Name" maxlength="15" required style="flex: 1;">
-              ${i > 1 ? `<button type="button" class="player-type-toggle-btn ${bkSetupTypes[i] === "bot" ? "bot" : ""}" id="bk-setup-type-btn-${i}" data-row="${i}">${bkSetupTypes[i] === "bot" ? "🤖 Bot" : "👤 Human"}</button>` : ""}
+            <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+              <input type="text" id="bk-setup-name-${i}" class="player-name-input"
+                value="${defaultVal}" placeholder="Enter Name" maxlength="15" required
+                style="flex: 1;" ${isAiBot && i === 2 ? "readonly" : ""}>
+              ${rightTag}
             </div>
           </div>
-          
-          ${i > 2 ? `<button type="button" class="remove-player-btn" id="bk-setup-remove-btn-${i}" data-index="${i}">&times;</button>` : ""}
+          ${removeBtn}
         </div>
       `;
       container.appendChild(fieldRow);
 
-      // Bind avatar cycle event
-      const avatarBtn = document.getElementById(`bk-setup-avatar-btn-${i}`);
-      if (avatarBtn) {
-        avatarBtn.addEventListener("click", () => {
-          playCycleSound();
-          bkSetupAvatars[i] = (bkSetupAvatars[i] + 1) % AVATARS.length;
-          const img = document.getElementById(`bk-setup-avatar-img-${i}`);
-          if (img) img.src = AVATARS[bkSetupAvatars[i]];
-        });
-      }
-
-      // Bind type toggle (only Player 2 and up)
-      if (i > 1) {
-        const typeBtn = document.getElementById(`bk-setup-type-btn-${i}`);
-        if (typeBtn) {
-          typeBtn.addEventListener("click", () => {
-            playTouchSound();
-            const nameInput = document.getElementById(`bk-setup-name-${i}`);
-            if (bkSetupTypes[i] === "bot") {
-              bkSetupTypes[i] = "human";
-              typeBtn.textContent = "👤 Human";
-              typeBtn.classList.remove("bot");
-              if (nameInput && nameInput.value.startsWith("Bot ")) {
-                nameInput.value = nameInput.value.replace("Bot ", "");
-              }
-            } else {
-              bkSetupTypes[i] = "bot";
-              typeBtn.textContent = "🤖 Bot";
-              typeBtn.classList.add("bot");
-              if (nameInput && !nameInput.value.startsWith("Bot ")) {
-                nameInput.value = `Bot ${nameInput.value}`;
-              }
-            }
+      // Avatar cycle — available for all rows except bot row in ai_bot mode
+      const avatarBtnEl = document.getElementById(`bk-setup-avatar-btn-${i}`);
+      if (avatarBtnEl) {
+        if (isAiBot && i === 2) {
+          // Bot avatar is fixed — disable cycling
+          avatarBtnEl.style.opacity = "0.5";
+          avatarBtnEl.style.pointerEvents = "none";
+          const badge = avatarBtnEl.querySelector(".avatar-cycler-badge");
+          if (badge) badge.style.display = "none";
+        } else {
+          avatarBtnEl.addEventListener("click", () => {
+            playCycleSound();
+            bkSetupAvatars[i] = (bkSetupAvatars[i] + 1) % AVATARS.length;
+            const img = document.getElementById(`bk-setup-avatar-img-${i}`);
+            if (img) img.src = AVATARS[bkSetupAvatars[i]];
           });
         }
       }
 
-      // Bind remove player
-      if (i > 2) {
-        const removeBtn = document.getElementById(`bk-setup-remove-btn-${i}`);
-        if (removeBtn) {
-          removeBtn.addEventListener("click", () => {
+      // Remove player (offline only, rows 3+)
+      if (!isAiBot && i > 2) {
+        const removeBtnEl = document.getElementById(`bk-setup-remove-btn-${i}`);
+        if (removeBtnEl) {
+          removeBtnEl.addEventListener("click", () => {
             playTouchSound();
-            // Pull name inputs first to save edits
             for (let k = 1; k <= bkSetupPlayerCount; k++) {
               const inp = document.getElementById(`bk-setup-name-${k}`);
               if (inp) bkSetupNames[k] = inp.value;
             }
-            // Shift values up
             for (let k = i; k < bkSetupPlayerCount; k++) {
               bkSetupNames[k] = bkSetupNames[k + 1];
               bkSetupAvatars[k] = bkSetupAvatars[k + 1];
@@ -190,7 +188,6 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
             delete bkSetupNames[bkSetupPlayerCount];
             delete bkSetupAvatars[bkSetupPlayerCount];
             delete bkSetupTypes[bkSetupPlayerCount];
-
             bkSetupPlayerCount--;
             renderBkSetupFields();
           });
@@ -198,73 +195,83 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
       }
     }
 
-    // Toggle Add Player button
+    // Add Player button — only visible in offline mode
     const addBtn = document.getElementById("bk-setup-add-btn");
     if (addBtn) {
-      if (bkSetupPlayerCount >= 4) {
-        addBtn.style.opacity = "0.5";
-        addBtn.style.pointerEvents = "none";
+      if (isAiBot) {
+        addBtn.style.display = "none";
       } else {
-        addBtn.style.opacity = "1";
-        addBtn.style.pointerEvents = "auto";
+        addBtn.style.display = "block";
+        addBtn.style.opacity = bkSetupPlayerCount >= 4 ? "0.5" : "1";
+        addBtn.style.pointerEvents = bkSetupPlayerCount >= 4 ? "none" : "auto";
       }
     }
   }
 
-  // Show setup screen with configuration options
+  // Show setup screen with mode-aware configuration
   window.showBarakattaSetup = function (defaultMode) {
-    const screens = ["login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen", "setup-screen", "game-screen", "game-selection-screen", "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen"];
+    bkSetupMode = defaultMode || "offline";
+    const isAiBot = bkSetupMode === "ai_bot";
+
+    const screens = ["login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen",
+      "setup-screen", "game-screen", "game-selection-screen",
+      "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen"];
     screens.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add("hidden");
     });
 
     const bkSetupView = document.getElementById("barakatta-setup-screen");
-    if (bkSetupView) {
-      bkSetupView.classList.remove("hidden");
+    if (bkSetupView) bkSetupView.classList.remove("hidden");
+
+    // Update title and subtitle based on mode
+    const setupSubtitle = document.getElementById("bk-setup-subtitle");
+    const setupSectionLabel = document.getElementById("bk-setup-section-label");
+    const setupHint = document.getElementById("bk-setup-hint");
+    if (isAiBot) {
+      if (setupSubtitle) setupSubtitle.textContent = "Play with AI Bot";
+      if (setupSectionLabel) setupSectionLabel.textContent = "YOUR NAME & AVATAR:";
+      if (setupHint) setupHint.textContent = "Click the avatar circle to choose your character!";
+    } else {
+      if (setupSubtitle) setupSubtitle.textContent = "Configure Local Match (2–4 Players)";
+      if (setupSectionLabel) setupSectionLabel.textContent = "PLAYERS & AVATARS (2 – 4):";
+      if (setupHint) setupHint.textContent = "Click the avatar circles to cycle characters!";
     }
 
-    const defaultNames = ["Allu", "Ranbir", "Zendaya", "Prabhas"];
-
-    // Reset setup configuration
+    // Reset config
     bkSetupPlayerCount = 2;
-    bkSetupNames = {
-      1: "Allu",
-      2: "Ranbir",
-      3: "Zendaya",
-      4: "Prabhas"
-    };
-    bkSetupAvatars = {
-      1: 0,
-      2: 1,
-      3: 2,
-      4: 3
-    };
+    bkSetupNames = { 1: "Allu", 2: "Ranbir", 3: "Zendaya", 4: "Prabhas" };
+    bkSetupAvatars = { 1: 0, 2: 1, 3: 2, 4: 3 };
+    // For ai_bot: P1=human, P2=bot. For offline: all human.
     bkSetupTypes = {
       1: "human",
-      2: defaultMode === "ai_bot" ? "bot" : "human",
-      3: "bot",
-      4: "bot"
+      2: isAiBot ? "bot" : "human",
+      3: "human",
+      4: "human"
     };
+
+    // For ai_bot, force P2 name to "AI Bot"
+    if (isAiBot) {
+      bkSetupNames[2] = "AI Bot";
+    }
 
     renderBkSetupFields();
 
-    // Wire buttons once on setup load
+    // Add Player button (offline only)
     const addBtn = document.getElementById("bk-setup-add-btn");
     if (addBtn) {
       addBtn.onclick = () => {
-        if (bkSetupPlayerCount >= 4) return;
+        if (bkSetupPlayerCount >= 4 || bkSetupMode === "ai_bot") return;
         playTouchSound();
         for (let k = 1; k <= bkSetupPlayerCount; k++) {
           const inp = document.getElementById(`bk-setup-name-${k}`);
           if (inp) bkSetupNames[k] = inp.value;
         }
-
         bkSetupPlayerCount++;
-        bkSetupNames[bkSetupPlayerCount] = defaultNames[bkSetupPlayerCount - 1] || `Player ${bkSetupPlayerCount}`;
+        const defNames = ["Allu", "Ranbir", "Zendaya", "Prabhas"];
+        bkSetupNames[bkSetupPlayerCount] = defNames[bkSetupPlayerCount - 1] || `Player ${bkSetupPlayerCount}`;
         bkSetupAvatars[bkSetupPlayerCount] = (bkSetupPlayerCount - 1) % AVATARS.length;
-        bkSetupTypes[bkSetupPlayerCount] = "bot"; // Default additional slots to Bot
-
+        bkSetupTypes[bkSetupPlayerCount] = "human"; // offline: always human
         renderBkSetupFields();
       };
     }
@@ -273,9 +280,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     if (backBtn) {
       backBtn.onclick = () => {
         playTouchSound();
-        if (window.showBarakattaDashboard) {
-          window.showBarakattaDashboard(window.currentUser);
-        }
+        if (window.showBarakattaDashboard) window.showBarakattaDashboard(window.currentUser);
       };
     }
 
@@ -293,11 +298,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
             isBot: bkSetupTypes[i] === "bot"
           });
         }
-
-        const hasBots = customPlayers.some(p => p.isBot);
-        const mode = hasBots ? "ai_bot" : "offline";
-
-        window.startBarakattaGameCustom(mode, bkSetupPlayerCount, customPlayers);
+        window.startBarakattaGameCustom(bkSetupMode, bkSetupPlayerCount, customPlayers);
       };
     }
   };
