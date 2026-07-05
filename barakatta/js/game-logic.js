@@ -244,10 +244,8 @@ class BarakattaGame {
           hasCaptured = true; // Remains unlocked once captured
           status = "active";
         } else {
-          // Blocked! Must stop at the end of the current ring in a blocked state
-          pos = pathL - 1;
-          status = "blocked";
-          break; // Stop movement
+          // Blocked! If we are trying to transition but are blocked, the move is invalid.
+          return null;
         }
       } else {
         // Normal move along current ring
@@ -277,9 +275,11 @@ class BarakattaGame {
       }
     }
 
-    // Check if reached HOME ring (final ring)
+    // Check if reached HOME ring (final ring) or if blocked at end of a ring
     if (ring === BARAKATTA_BOARD.rings.length - 1) {
       status = "home";
+    } else if (pos === BARAKATTA_BOARD.playerPaths[playerId][ring].length - 1 && !hasCaptured) {
+      status = "blocked";
     }
 
     return { ring, pos, hasCaptured, status, cell: finalCell };
@@ -311,7 +311,7 @@ class BarakattaGame {
           pos = 0;
           hasCaptured = true; // Remains unlocked once captured
         } else {
-          break;
+          return null;
         }
       } else {
         pos++;
