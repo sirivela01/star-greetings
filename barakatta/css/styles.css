@@ -422,120 +422,89 @@
   filter: drop-shadow(1.5px 1.5px 1px rgba(0, 0, 0, 0.75));
 }
 
-/* 3D Sphere Rocks */
+/* 3D Pin/Teardrop Pawns */
 .rock-token {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
   position: absolute;
   z-index: 100;
   transform-style: preserve-3d;
   transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
   pointer-events: none;
   
-  /* flat base lying on the tile */
-  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.5) 80%);
-  border: 1.5px solid rgba(255,255,255,0.1);
+  /* 3D pin body pointing downwards (pointing down via rotateZ(-45deg)) */
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 60%, #94a3b8 100%);
+  border: 1.5px solid var(--pawn-color-border);
   box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.8),
-    inset 0 0 5px rgba(0,0,0,0.5);
+    -2px 4px 6px rgba(0, 0, 0, 0.6),
+    inset -1px 1px 2px rgba(255,255,255,0.8);
 }
 
-/* 3D Pawn Body (Cone/Skirt) standing upright */
-.rock-token::before {
-  content: "";
-  position: absolute;
-  left: 5px;
-  bottom: 14px;
-  width: 18px;
-  height: 24px;
-  transform-origin: bottom center;
-  transform: rotateX(-90deg);
-  clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%);
-  background: linear-gradient(to right, 
-    var(--pawn-color-dark) 0%, 
-    var(--pawn-color-light) 30%, 
-    #ffffff 50%, 
-    var(--pawn-color-light) 70%, 
-    var(--pawn-color-dark) 100%
-  );
-  box-shadow: inset 0 -2px 5px rgba(0,0,0,0.4);
-}
-
-/* 3D Pawn Head (Sphere with blended demon face) standing upright */
+/* Inner circle containing the demon eyes/face (rotateZ(45deg) counter-rotation) */
 .rock-token::after {
   content: "";
   position: absolute;
-  left: 7px;
-  top: -24px;
-  width: 14px;
-  height: 14px;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
-  transform-origin: center center;
-  transform: translateZ(12px) rotateX(-90deg);
+  transform: rotateZ(45deg); /* Counter-rotate to keep face upright */
   background-size: cover;
   background-position: center;
-  background-blend-mode: overlay;
+  border: 1px solid var(--pawn-color-border);
   box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.5),
-    inset -1px -1px 3px rgba(0,0,0,0.6),
-    inset 2px 2px 4px rgba(255,255,255,0.8);
+    inset 1px 1px 3px rgba(0, 0, 0, 0.8),
+    0 0 6px var(--pawn-glow-color);
 }
 
 /* Player Color Customizations */
 .rock-token.player1 {
-  --pawn-color-light: #ef4444;
-  --pawn-color-dark: #7f1d1d;
-  --pawn-color-highlight: #ffffff;
+  --pawn-color-border: #ef4444;
+  --pawn-glow-color: rgba(239, 68, 68, 0.8);
 }
 .rock-token.player1::after {
-  background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(0,0,0,0.5) 80%), url('../../assets/barakatta/demon_red.jpg');
-  border: 1px solid #ef4444;
+  background-image: url('../../assets/barakatta/demon_red.jpg');
 }
 
 .rock-token.player2 {
-  --pawn-color-light: #22c55e;
-  --pawn-color-dark: #14532d;
-  --pawn-color-highlight: #ffffff;
+  --pawn-color-border: #22c55e;
+  --pawn-glow-color: rgba(34, 197, 94, 0.8);
 }
 .rock-token.player2::after {
-  background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(0,0,0,0.5) 80%), url('../../assets/barakatta/demon_green.jpg');
-  border: 1px solid #22c55e;
+  background-image: url('../../assets/barakatta/demon_green.jpg');
 }
 
 .rock-token.player3 {
-  --pawn-color-light: #eab308;
-  --pawn-color-dark: #713f12;
-  --pawn-color-highlight: #ffffff;
+  --pawn-color-border: #eab308;
+  --pawn-glow-color: rgba(234, 179, 8, 0.8);
 }
 .rock-token.player3::after {
-  background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(0,0,0,0.5) 80%), url('../../assets/barakatta/demon_yellow.jpg');
-  border: 1px solid #eab308;
+  background-image: url('../../assets/barakatta/demon_yellow.jpg');
 }
 
 .rock-token.player4 {
-  --pawn-color-light: #3b82f6;
-  --pawn-color-dark: #1e3a8a;
-  --pawn-color-highlight: #ffffff;
+  --pawn-color-border: #3b82f6;
+  --pawn-glow-color: rgba(59, 130, 246, 0.8);
 }
 .rock-token.player4::after {
-  background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(0,0,0,0.5) 80%), url('../../assets/barakatta/demon_blue.jpg');
-  border: 1px solid #3b82f6;
+  background-image: url('../../assets/barakatta/demon_blue.jpg');
 }
 
-/* Hop animation */
+/* Hop animation preserving rotateX and rotateZ */
 .rock-hopping {
   animation: rock-hop 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 @keyframes rock-hop {
   0% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), 12px) scale(1);
+    transform: translate3d(var(--ox, 0), var(--oy, 0), 12px) rotateX(-46deg) rotateZ(-45deg) scale(1);
   }
   50% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), 32px) scale(1.35);
+    transform: translate3d(var(--ox, 0), var(--oy, 0), 32px) rotateX(-46deg) rotateZ(-45deg) scale(1.35);
   }
   100% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), 12px) scale(1);
+    transform: translate3d(var(--ox, 0), var(--oy, 0), 12px) rotateX(-46deg) rotateZ(-45deg) scale(1);
   }
 }
 

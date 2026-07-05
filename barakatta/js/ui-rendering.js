@@ -489,7 +489,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
         }
 
         tileTop.appendChild(rockToken);
-        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 12px)`;
+        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 12px) rotateX(-46deg) rotateZ(-45deg)`;
 
         // Mouse hover preview path
         rockToken.onmouseenter = () => {
