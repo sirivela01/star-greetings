@@ -62,15 +62,25 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   function initEventListeners() {
     const diceElement = document.getElementById("bk-dice-element");
     const rollBtn = document.getElementById("bk-roll-btn");
+    const passBtn = document.getElementById("bk-pass-btn");
 
     // Remove existing event listeners by cloning
     const newDice = diceElement.cloneNode(true);
     diceElement.parentNode.replaceChild(newDice, diceElement);
     const newRoll = rollBtn.cloneNode(true);
     rollBtn.parentNode.replaceChild(newRoll, rollBtn);
+    if (passBtn) {
+      const newPass = passBtn.cloneNode(true);
+      passBtn.parentNode.replaceChild(newPass, passBtn);
+    }
 
     document.getElementById("bk-dice-element").addEventListener("click", handleHumanRoll);
     document.getElementById("bk-roll-btn").addEventListener("click", handleHumanRoll);
+
+    const activePassBtn = document.getElementById("bk-pass-btn");
+    if (activePassBtn) {
+      activePassBtn.addEventListener("click", handlePassTurn);
+    }
   }
 
   // Initialize the DOM-based 3D Board structure
@@ -515,6 +525,9 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   function triggerTurn() {
     if (!game) return;
 
+    const passBtn = document.getElementById("bk-pass-btn");
+    if (passBtn) passBtn.style.display = "none";
+
     const turnLabel = document.getElementById("bk-active-player-name");
     const statusTitle = document.getElementById("bk-status-title");
     const statusDesc = document.getElementById("bk-status-desc");
@@ -595,6 +608,16 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     }
   }
 
+  function handlePassTurn() {
+    if (isRolling || game.rollState !== "rolled") return;
+    const passBtn = document.getElementById("bk-pass-btn");
+    if (passBtn) passBtn.style.display = "none";
+
+    saveMatchState();
+    game.nextTurn();
+    triggerTurn();
+  }
+
   // Evaluate action choices and auto-execute entries
   function evaluateHumanActions() {
     const actions = game.getLegalActions(game.currentTurn, game.diceValue);
@@ -621,6 +644,11 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
     const hasMoves = actions.some(act => act.type === "MOVE_ROCK");
 
     if (hasEnter1 || hasEnterAll) {
+      if (hasEnter1 && game.getYardRocks(game.currentTurn).length === 6) {
+        const passBtn = document.getElementById("bk-pass-btn");
+        if (passBtn) passBtn.style.display = "block";
+      }
+
       const yardBox = document.getElementById(`bk-${game.currentTurn}-yard`);
       if (yardBox) {
         yardBox.classList.add("bk-yard-clickable-highlight");
@@ -780,6 +808,21 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
 
       setTimeout(() => {
         const actions = game.getLegalActions(activeBotId, roll);
+
+        // Strategy: if bot has 6 demons in yard and rolled a 1,
+        // it has a 50% chance of passing to wait for a 6 (to enter all 6 together)
+        const isBotYardEmpty = game.getBoardRocks(activeBotId).length === 0;
+        if (roll === 1 && isBotYardEmpty && Math.random() < 0.5) {
+          const activeBotName = game.players[activeBotId].name;
+          document.getElementById("bk-status-title").textContent = `${activeBotName} Passes Turn`;
+          document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a 1 and chooses to PASS to wait for a 6.`;
+          
+          setTimeout(() => {
+            game.nextTurn();
+            triggerTurn();
+          }, 1500);
+          return;
+        }
         
         if (actions.length === 0) {
           const activeBotName = game.players[activeBotId].name;
