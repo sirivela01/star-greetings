@@ -1169,7 +1169,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.2.8");
   function handleGameOver() {
     const winnerId = game.status.split("_")[0];
     const winnerName = game.players[winnerId] ? game.players[winnerId].name : "Unknown Player";
-    const isHumanWinner = (winnerId === "player1");
+    const isHumanWinner = game.players[winnerId] ? !game.players[winnerId].isBot : false;
     const currentUser = window.currentUser;
     if (currentUser) {
       updateMatchHistoryStats(isHumanWinner);

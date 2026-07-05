@@ -434,6 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
       loginView, signupView, forgotView, dashboardView, setupView, gameView,
       document.getElementById("game-selection-screen"),
       document.getElementById("barakatta-dashboard-screen"),
+      document.getElementById("barakatta-setup-screen"),
       document.getElementById("barakatta-game-screen")
     ];
     allViews.forEach(view => {
@@ -1009,6 +1010,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadBarakattaStats(user);
   }
+
+  // Expose to window so Barakatta setup/game screens can navigate back
+  window.showBarakattaDashboard = showBarakattaDashboard;
 
   function loadBarakattaStats(user) {
     const winsLabel = document.getElementById("barakatta-stats-wins");
