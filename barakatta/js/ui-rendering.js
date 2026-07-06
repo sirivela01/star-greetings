@@ -784,29 +784,48 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
         const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        // Animate hop if moving to a new cell
-        if (rockToken.parentNode && rockToken.parentNode !== tileDiv && !prefersReducedMotion) {
-          rockToken.classList.add("rock-hopping");
-          rockToken.style.setProperty("--ox", `${offsetX}px`);
-          rockToken.style.setProperty("--oy", `${offsetY}px`);
-          rockToken.style.setProperty("--base-z", `${baseZ}px`);
-          rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
-          setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
-        }
+        const gridEl = document.querySelector(".barakatta-board-grid");
+        if (gridEl) {
+          const posX = tileDiv.offsetLeft + tileDiv.offsetWidth / 2 + offsetX;
+          const posY = tileDiv.offsetTop + tileDiv.offsetHeight / 2 + offsetY;
 
-        // Calculate counter-rotation for token based on board's rotation to keep them upright relative to the screen perspective
-        let boardRotateZ = 0;
-        if (game.mode === "online" && window.currentUser) {
-          const matchedPId = Object.keys(game.players).find(pId => game.players[pId].username === window.currentUser.username);
-          if (matchedPId === "player3") boardRotateZ = 180;
-          else if (matchedPId === "player2") boardRotateZ = 270;
-          else if (matchedPId === "player4") boardRotateZ = 90;
-        }
-        const tokenRotVal = `rotateZ(${-boardRotateZ}deg) rotateX(-46deg) rotateZ(-45deg)`;
-        rockToken.style.setProperty("--token-rot", tokenRotVal);
+          // Animate hop if moving to a new cell
+          const currentR = rockToken.dataset.row ? Number(rockToken.dataset.row) : null;
+          const currentX = rockToken.dataset.posX ? Number(rockToken.dataset.posX) : null;
+          const currentY = rockToken.dataset.posY ? Number(rockToken.dataset.posY) : null;
 
-        tileDiv.appendChild(rockToken);
-        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, ${baseZ}px) ${tokenRotVal}`;
+          if (currentR !== null && currentR !== r && !prefersReducedMotion) {
+            const hopOffsetX = currentX - posX;
+            const hopOffsetY = currentY - posY;
+
+            rockToken.classList.add("rock-hopping");
+            rockToken.style.setProperty("--ox", `${hopOffsetX}px`);
+            rockToken.style.setProperty("--oy", `${hopOffsetY}px`);
+            rockToken.style.setProperty("--base-z", `${baseZ}px`);
+            rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
+            setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
+          }
+
+          // Update dataset attributes
+          rockToken.dataset.row = r;
+          rockToken.dataset.col = c;
+          rockToken.dataset.posX = posX;
+          rockToken.dataset.posY = posY;
+
+          // Calculate counter-rotation for token based on board's rotation to keep them upright relative to the screen perspective
+          let boardRotateZ = 0;
+          if (game.mode === "online" && window.currentUser) {
+            const matchedPId = Object.keys(game.players).find(pId => game.players[pId].username === window.currentUser.username);
+            if (matchedPId === "player3") boardRotateZ = 180;
+            else if (matchedPId === "player2") boardRotateZ = 270;
+            else if (matchedPId === "player4") boardRotateZ = 90;
+          }
+          const tokenRotVal = `rotateZ(${-boardRotateZ}deg) rotateX(-46deg) rotateZ(-45deg)`;
+          rockToken.style.setProperty("--token-rot", tokenRotVal);
+
+          gridEl.appendChild(rockToken);
+          rockToken.style.transform = `translate3d(${posX}px, ${posY}px, ${baseZ}px) ${tokenRotVal}`;
+        }
 
         // Mouse hover preview path
         rockToken.onmouseenter = () => {
