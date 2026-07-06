@@ -883,7 +883,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     drawBoard();
   }
 
-  // Handle d  function handleHumanRoll() {
+  // Handle dice rolling event
+  function handleHumanRoll() {
     if (isRolling || game.rollState !== "idle") return;
 
     const isPlayerTurn = !game.players[game.currentTurn].isBot;
