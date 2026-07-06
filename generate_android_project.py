@@ -100,11 +100,12 @@ android {
     }
 }
 
-dependencies {
+    dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
 }
 """
     with open(os.path.join(project_dir, "app", "build.gradle"), "w", encoding="utf-8") as f:
@@ -145,16 +146,64 @@ dependencies {
     main_activity = """package com.stargreetings.barakatta
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
+import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
+    private lateinit var googleSignInClient: GoogleSignInClient
 
-    @SuppressLint("SetJavaScriptEnabled")
+    // Native ActivityResult Launcher for Google Sign-In intent
+    private val signInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account: GoogleSignInAccount = task.getResult(ApiException::class.java)
+                val idToken = account.idToken
+                if (idToken != null) {
+                    // Send token back to WebView Javascript
+                    webView.post {
+                        webView.evaluateJavascript("javascript:window.handleAndroidGoogleSuccess(\\"$idToken\\");", null)
+                    }
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this, "Google Sign-In failed: No ID Token retrieved.", Toast.LENGTH_LONG).show()
+                    }
+                    webView.post {
+                        webView.evaluateJavascript("javascript:window.handleAndroidGoogleError(\\"No ID Token retrieved. Make sure you registered your SHA-1 key in Firebase Console.\\");", null)
+                    }
+                }
+            } catch (e: ApiException) {
+                val errorMessage = e.message ?: "Error code: ${e.statusCode}"
+                runOnUiThread {
+                    Toast.makeText(this, "Google Sign-In failed: $errorMessage", Toast.LENGTH_LONG).show()
+                }
+                webView.post {
+                    webView.evaluateJavascript("javascript:window.handleAndroidGoogleError(\\"$errorMessage\\");", null)
+                }
+            }
+        } else {
+            webView.post {
+                webView.evaluateJavascript("javascript:window.handleAndroidGoogleError(\\"Sign-in cancelled by user\\");", null)
+            }
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -179,8 +228,33 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Configure Google Sign-In options
+        // NOTE: Replace "YOUR_WEB_CLIENT_ID_HERE" with your actual Web Client ID from Firebase Console (Project Settings > Web SDK config)
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("YOUR_WEB_CLIENT_ID_HERE")
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        // Register Javascript Bridge Interface
+        webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
+
         // Load game files locally from the assets/www folder
         webView.loadUrl("file:///android_asset/www/index.html")
+    }
+
+    // Inner class defining JavaScript interface methods
+    inner class WebAppInterface {
+        @JavascriptInterface
+        fun loginWithGoogle() {
+            runOnUiThread {
+                // Sign out first to force account selector popup
+                googleSignInClient.signOut().addOnCompleteListener {
+                    val signInIntent = googleSignInClient.signInIntent
+                    signInLauncher.launch(signInIntent)
+                }
+            }
+        }
     }
 
     @Deprecated("Deprecated in Java")

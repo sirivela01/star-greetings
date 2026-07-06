@@ -401,13 +401,20 @@ const auth = new AuthManager();
 
 // --- DOM Page Navigation & View Transitions ---
 document.addEventListener("DOMContentLoaded", () => {
-  // Hide social login buttons in Android WebView context (as popups are unsupported)
+  // Check if we are running in an Android WebView context
   const isWebView = window.location.protocol === 'file:' || navigator.userAgent.toLowerCase().includes('wv');
   if (isWebView) {
-    const separator = document.querySelector(".social-login-separator");
-    const socialGroup = document.querySelector(".social-login-group");
-    if (separator) separator.style.display = "none";
-    if (socialGroup) socialGroup.style.display = "none";
+    // Hide Facebook login button (popups are unsupported and we aren't using a native Facebook SDK)
+    const facebookBtnEl = document.getElementById("facebook-login-btn");
+    if (facebookBtnEl) {
+      facebookBtnEl.style.display = "none";
+    }
+    // Make Google button take full width
+    const googleBtnEl = document.getElementById("google-login-btn");
+    if (googleBtnEl) {
+      googleBtnEl.style.flex = "1";
+      googleBtnEl.style.width = "100%";
+    }
   }
 
   const loginView = document.getElementById("login-screen");
@@ -646,11 +653,107 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   if (googleBtn) {
-    googleBtn.addEventListener("click", () => handleSocialLogin(googleBtn, "google"));
+    googleBtn.addEventListener("click", () => {
+      const isWebView = window.location.protocol === 'file:' || navigator.userAgent.toLowerCase().includes('wv');
+      if (isWebView && typeof AndroidBridge !== 'undefined') {
+        // Trigger native Google sign-in wrapper in Android
+        AndroidBridge.loginWithGoogle();
+      } else {
+        // Fallback to web popup sign-in
+        handleSocialLogin(googleBtn, "google");
+      }
+    });
   }
   if (facebookBtn) {
     facebookBtn.addEventListener("click", () => handleSocialLogin(facebookBtn, "facebook"));
   }
+
+  // Global callbacks for Native Google Sign-In integration
+  window.handleAndroidGoogleSuccess = async (idToken) => {
+    if (!googleBtn) return;
+    const originalContent = googleBtn.innerHTML;
+    googleBtn.innerHTML = "Logging in...";
+    googleBtn.classList.add("loading");
+    googleBtn.setAttribute("disabled", "true");
+
+    try {
+      if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+        const result = await firebase.auth().signInWithCredential(credential);
+        const user = result.user;
+
+        if (user) {
+          let baseUsername = (user.email ? user.email.split('@')[0] : user.displayName || 'user')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+          
+          if (!baseUsername) {
+            baseUsername = 'user' + user.uid.substring(0, 5);
+          }
+
+          const snapshot = await firebase.database().ref(`users/${user.uid}`).once("value");
+          let dbUser;
+          let greetingsStack = 6;
+
+          if (snapshot.exists()) {
+            dbUser = snapshot.val();
+            const playerSnapshot = await firebase.database().ref(`players/${user.uid}`).once("value");
+            if (playerSnapshot.exists()) {
+              const val = playerSnapshot.val();
+              greetingsStack = (val && val.greetingsStack !== undefined) ? val.greetingsStack : 6;
+            } else {
+              await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 6 });
+              greetingsStack = 6;
+            }
+          } else {
+            dbUser = {
+              name: user.displayName || baseUsername,
+              username: baseUsername,
+              coins: 300,
+              freeStackBuys: 10,
+              uid: user.uid,
+              avatar: user.photoURL || ""
+            };
+            await firebase.database().ref(`users/${user.uid}`).set(dbUser);
+            await firebase.database().ref(`players/${user.uid}`).set({ greetingsStack: 6 });
+            greetingsStack = 6;
+          }
+
+          const accounts = auth.getAccounts();
+          const finalUsername = dbUser.username || baseUsername;
+
+          accounts[finalUsername] = {
+            name: dbUser.name,
+            password: "",
+            coins: isNaN(parseInt(dbUser.coins, 10)) ? 300 : parseInt(dbUser.coins, 10),
+            freeStackBuys: isNaN(parseInt(dbUser.freeStackBuys, 10)) ? 10 : parseInt(dbUser.freeStackBuys, 10),
+            greetingsStack: greetingsStack,
+            uid: user.uid,
+            social: "google",
+            avatar: dbUser.avatar || user.photoURL || ""
+          };
+
+          auth.saveAccounts(accounts);
+          localStorage.setItem(auth.sessionKey, finalUsername);
+
+          showGameSelection(accounts[finalUsername]);
+        } else {
+          alert("Login failed: Google user could not be retrieved.");
+        }
+      }
+    } catch (err) {
+      console.error("Firebase Auth with Google credential failed:", err);
+      alert("Google Sign-In failed: " + err.message);
+    } finally {
+      googleBtn.innerHTML = originalContent;
+      googleBtn.classList.remove("loading");
+      googleBtn.removeAttribute("disabled");
+    }
+  };
+
+  window.handleAndroidGoogleError = (errorMessage) => {
+    alert("Google Sign-In failed: " + errorMessage);
+  };
 
   // Go to Sign Up
   if (toSignupBtn) {
