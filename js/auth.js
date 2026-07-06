@@ -509,9 +509,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Handle cold start splash screen fade out
+  const splashStartTime = Date.now();
   let splashResolved = false;
   function resolveSplash() {
     if (splashResolved) return;
+    const elapsed = Date.now() - splashStartTime;
+    const minDuration = 10000; // 10 seconds
+    if (elapsed < minDuration) {
+      setTimeout(resolveSplash, minDuration - elapsed);
+      return;
+    }
     splashResolved = true;
     const splash = document.getElementById("cold-start-splash");
     if (splash) {
@@ -521,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Set a fallback timeout for the splash screen in case we are offline or Firebase is slow
-  setTimeout(resolveSplash, 2000);
+  setTimeout(resolveSplash, 10000);
 
   // Initialize Firebase Auth state change listener
   if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
