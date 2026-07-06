@@ -671,5 +671,70 @@ class BarakattaGame {
 
     return bestAction;
   }
+
+  serialize() {
+    return {
+      mode: this.mode,
+      playerCount: this.playerCount,
+      currentTurn: this.currentTurn,
+      diceValue: this.diceValue,
+      rollState: this.rollState || "idle",
+      status: this.status,
+      activePlayerIds: this.activePlayerIds,
+      hasCapturedAnOpponent: this.hasCapturedAnOpponent,
+      consecutiveFailedYardRolls: this.consecutiveFailedYardRolls,
+      players: Object.keys(this.players).reduce((acc, pId) => {
+        const p = this.players[pId];
+        acc[pId] = {
+          id: p.id,
+          name: p.name,
+          avatar: p.avatar,
+          isBot: p.isBot,
+          color: p.color,
+          username: p.username || "",
+          rocks: p.rocks.map(r => ({
+            id: r.id,
+            status: r.status,
+            currentRing: r.currentRing,
+            positionInRing: r.positionInRing,
+            hasCapturedThisRing: r.hasCapturedThisRing
+          }))
+        };
+        return acc;
+      }, {})
+    };
+  }
+
+  deserialize(data) {
+    this.mode = data.mode;
+    this.playerCount = data.playerCount;
+    this.currentTurn = data.currentTurn;
+    this.diceValue = data.diceValue;
+    this.rollState = data.rollState;
+    this.status = data.status;
+    this.activePlayerIds = data.activePlayerIds;
+    this.hasCapturedAnOpponent = data.hasCapturedAnOpponent;
+    this.consecutiveFailedYardRolls = data.consecutiveFailedYardRolls;
+    
+    this.players = {};
+    Object.keys(data.players).forEach(pId => {
+      const p = data.players[pId];
+      this.players[pId] = {
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        isBot: p.isBot,
+        color: p.color,
+        username: p.username || "",
+        rocks: p.rocks.map(r => ({
+          id: r.id,
+          status: r.status,
+          currentRing: r.currentRing,
+          positionInRing: r.positionInRing,
+          hasCapturedThisRing: r.hasCapturedThisRing
+        }))
+      };
+    });
+  }
 }
 window.BarakattaGame = BarakattaGame;

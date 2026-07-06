@@ -228,9 +228,64 @@
           <button type="button" id="barakatta-play-offline-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
             Play Offline (Pass & Play)<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Local 1v1 match on the same device</span>
           </button>
-          <button type="button" id="barakatta-play-online-btn" class="btn secondary-btn play-mode-btn" disabled style="opacity: 0.5; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: var(--text-muted); width: 100%;">
-            Play Online Game<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Coming Soon</span>
+          <button type="button" id="barakatta-play-online-btn" class="btn secondary-btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); color: #fff; width: 100%;">
+            Play Online Game<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Create or Join a Real-Time Multiplayer Room</span>
           </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BARAKATTA ONLINE LOBBY SCREEN -->
+    <section id="barakatta-online-lobby-screen" class="screen-view hidden">
+      <div class="glass-container dashboard-box barakatta-theme" style="max-width: 600px;">
+        <header class="app-header" style="position: relative;">
+          <div class="logo-icon">★</div>
+          <div class="brand-badge">SIRIVELA</div>
+          <h1 class="app-title">Barakatta Lobby</h1>
+          <p class="app-tagline">Create or Join a Room</p>
+        </header>
+
+        <!-- Database Connection Status Banner -->
+        <div id="bk-db-status-banner" class="db-status-banner connecting">
+          <span class="status-dot"></span> <span class="status-text">Connecting to database...</span>
+        </div>
+
+        <div class="online-choice-container" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+          <button type="button" id="bk-online-create-room-btn" class="btn primary-btn play-mode-btn" style="width: 100%;">Create New Room<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Start as Host and get a Room Code</span></button>
+          
+          <div class="lobby-divider" style="text-align: center; margin: 10px 0; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">OR</div>
+
+          <div class="form-group">
+            <label for="bk-online-join-code">Enter Room Code</label>
+            <input type="text" id="bk-online-join-code" class="auth-input text-center" maxlength="5" placeholder="e.g. XDFRE" style="text-transform: uppercase; font-size: 1.4rem; letter-spacing: 0.25em;">
+          </div>
+          <button type="button" id="bk-online-join-room-btn" class="btn secondary-btn play-mode-btn" style="width: 100%;">Join Existing Room<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Enter code to join friends</span></button>
+        </div>
+
+        <p class="auth-toggle-lbl" style="text-align: center; margin-top: 20px;"><a href="#" id="link-bk-online-to-dashboard">Back to Barakatta Dashboard</a></p>
+      </div>
+    </section>
+
+    <!-- BARAKATTA ONLINE ROOM WAITING SCREEN -->
+    <section id="barakatta-online-waiting-screen" class="screen-view hidden">
+      <div class="glass-container setup-box barakatta-theme" style="max-width: 600px;">
+        <header class="app-header">
+          <div class="logo-icon">★</div>
+          <div class="brand-badge">SIRIVELA</div>
+          <h1 class="app-title">Waiting Room</h1>
+          <div class="room-code-badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 6px 14px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; display: inline-block; margin-top: 10px;">Room Code: <strong id="bk-lobby-room-code-lbl" style="color: #fff; letter-spacing: 0.05em;">-----</strong></div>
+        </header>
+
+        <div class="lobby-players-section" style="margin-top: 20px;">
+          <h3 style="font-size: 1rem; color: #fff; margin-bottom: 12px; font-weight: 600; text-align: left;">Joined Players (<span id="bk-lobby-player-count">0</span> / 4)</h3>
+          <ul id="bk-lobby-players-list" class="lobby-players-list" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+            <!-- Joined players rendered dynamically -->
+          </ul>
+        </div>
+
+        <div class="form-actions mt-4" style="margin-top: 25px; display: flex; flex-direction: column; gap: 12px;">
+          <button type="button" id="bk-online-start-match-btn" class="btn primary-btn play-mode-btn" style="width: 100%;">Start Match<span class="btn-sub" style="display: block; font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 4px;">Host only can start the match</span></button>
+          <button type="button" id="bk-online-leave-room-btn" class="btn secondary-btn" style="width: 100%;">Leave Room</button>
         </div>
       </div>
     </section>
@@ -952,9 +1007,10 @@
 
   <!-- Scripts -->
   <!-- Barakatta Scripts -->
-  <script src="barakatta/js/board-config.js?v=1.5.2"></script>
-  <script src="barakatta/js/game-logic.js?v=1.5.2"></script>
-  <script src="barakatta/js/ui-rendering.js?v=1.5.2"></script>
+  <script src="barakatta/js/board-config.js?v=1.6.0"></script>
+  <script src="barakatta/js/game-logic.js?v=1.6.0"></script>
+  <script src="barakatta/js/ui-rendering.js?v=1.6.0"></script>
+  <script src="barakatta/js/multiplayer.js?v=1.0.0"></script>
 
   <script src="js/self-healing.js?v=1.36.4"></script>
   <script src="js/config.js?v=1.36.3"></script>
