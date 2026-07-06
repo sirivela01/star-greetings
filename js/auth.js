@@ -514,7 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function resolveSplash() {
     if (splashResolved) return;
     const elapsed = Date.now() - splashStartTime;
-    const minDuration = 10000; // 10 seconds
+    const minDuration = 7000; // 7 seconds
     if (elapsed < minDuration) {
       setTimeout(resolveSplash, minDuration - elapsed);
       return;
@@ -528,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Set a fallback timeout for the splash screen in case we are offline or Firebase is slow
-  setTimeout(resolveSplash, 10000);
+  setTimeout(resolveSplash, 7000);
 
   // Initialize Firebase Auth state change listener
   if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
