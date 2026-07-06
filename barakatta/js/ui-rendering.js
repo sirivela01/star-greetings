@@ -310,7 +310,14 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
   // Initialize Barakatta Game Screen with dynamic config
   window.startBarakattaGameCustom = function (mode, playerCount, customPlayers) {
-    const screens = ["login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen", "setup-screen", "game-screen", "game-selection-screen", "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen"];
+    const screens = [
+      "login-screen", "signup-screen", "forgot-password-screen", 
+      "dashboard-screen", "setup-screen", "game-screen", 
+      "game-selection-screen", "barakatta-dashboard-screen", 
+      "barakatta-game-screen", "barakatta-setup-screen",
+      "barakatta-online-lobby-screen", "barakatta-online-waiting-screen",
+      "online-lobby-screen", "online-waiting-screen"
+    ];
     screens.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add("hidden");
@@ -531,6 +538,19 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
   function drawBoard() {
     window.bkDrawBoard = drawBoard; // Expose for self-healing
     if (!game) return;
+
+    // Dynamically rotate board so local player's home slot is always at the bottom
+    const boardEl = document.getElementById("barakatta-board-3d");
+    if (boardEl) {
+      let rotateZ = 0;
+      if (game.mode === "online" && window.currentUser) {
+        const matchedPId = Object.keys(game.players).find(pId => game.players[pId].username === window.currentUser.username);
+        if (matchedPId === "player3") rotateZ = 180;
+        else if (matchedPId === "player2") rotateZ = 270;
+        else if (matchedPId === "player4") rotateZ = 90;
+      }
+      boardEl.style.transform = `rotateX(46deg) rotateZ(${rotateZ}deg)`;
+    }
 
     if (!tilesGrid) {
       initDOMBoard();
@@ -771,8 +791,18 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
           setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
         }
 
+        // Calculate counter-rotation for token based on board's rotation to keep them upright relative to the screen perspective
+        let boardRotateZ = 0;
+        if (game.mode === "online" && window.currentUser) {
+          const matchedPId = Object.keys(game.players).find(pId => game.players[pId].username === window.currentUser.username);
+          if (matchedPId === "player3") boardRotateZ = 180;
+          else if (matchedPId === "player2") boardRotateZ = 270;
+          else if (matchedPId === "player4") boardRotateZ = 90;
+        }
+        const tokenRotateZ = -45 - boardRotateZ;
+
         tileTop.appendChild(rockToken);
-        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 12px) rotateX(-46deg) rotateZ(-45deg)`;
+        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 12px) rotateX(-46deg) rotateZ(${tokenRotateZ}deg)`;
 
         // Mouse hover preview path
         rockToken.onmouseenter = () => {
