@@ -802,10 +802,11 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
           else if (matchedPId === "player2") boardRotateZ = 270;
           else if (matchedPId === "player4") boardRotateZ = 90;
         }
-        const tokenRotateZ = -45 - boardRotateZ;
+        const tokenRotVal = `rotateZ(${-boardRotateZ}deg) rotateX(-46deg) rotateZ(-45deg)`;
+        rockToken.style.setProperty("--token-rot", tokenRotVal);
 
         tileDiv.appendChild(rockToken);
-        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, ${baseZ}px) rotateX(-46deg) rotateZ(${tokenRotateZ}deg)`;
+        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, ${baseZ}px) ${tokenRotVal}`;
 
         // Mouse hover preview path
         rockToken.onmouseenter = () => {
