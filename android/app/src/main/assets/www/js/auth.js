@@ -401,6 +401,15 @@ const auth = new AuthManager();
 
 // --- DOM Page Navigation & View Transitions ---
 document.addEventListener("DOMContentLoaded", () => {
+  // Hide social login buttons in Android WebView context (as popups are unsupported)
+  const isWebView = window.location.protocol === 'file:' || navigator.userAgent.toLowerCase().includes('wv');
+  if (isWebView) {
+    const separator = document.querySelector(".social-login-separator");
+    const socialGroup = document.querySelector(".social-login-group");
+    if (separator) separator.style.display = "none";
+    if (socialGroup) socialGroup.style.display = "none";
+  }
+
   const loginView = document.getElementById("login-screen");
   const signupView = document.getElementById("signup-screen");
   const forgotView = document.getElementById("forgot-password-screen");
