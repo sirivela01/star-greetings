@@ -8,6 +8,8 @@ def create_android_project():
     dirs = [
         project_dir,
         os.path.join(project_dir, "app"),
+        os.path.join(project_dir, "gradle"),
+        os.path.join(project_dir, "gradle", "wrapper"),
         os.path.join(project_dir, "app", "src", "main"),
         os.path.join(project_dir, "app", "src", "main", "assets"),
         os.path.join(project_dir, "app", "src", "main", "java", "com", "stargreetings", "barakatta"),
