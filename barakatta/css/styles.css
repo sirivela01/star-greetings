@@ -428,6 +428,10 @@
   height: 26px;
   border-radius: 50% 50% 50% 0;
   position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -13px;
+  margin-left: -13px;
   z-index: 100;
   transform-style: preserve-3d;
   transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
@@ -498,13 +502,13 @@
 }
 @keyframes rock-hop {
   0% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), 12px) rotateX(-46deg) rotateZ(-45deg) scale(1);
+    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--base-z, 12px)) rotateX(-46deg) rotateZ(-45deg) scale(1);
   }
   50% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), 32px) rotateX(-46deg) rotateZ(-45deg) scale(1.35);
+    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--hop-z, 32px)) rotateX(-46deg) rotateZ(-45deg) scale(1.35);
   }
   100% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), 12px) rotateX(-46deg) rotateZ(-45deg) scale(1);
+    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--base-z, 12px)) rotateX(-46deg) rotateZ(-45deg) scale(1);
   }
 }
 

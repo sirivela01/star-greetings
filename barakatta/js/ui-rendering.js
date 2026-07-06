@@ -756,10 +756,11 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     // Render / reposition all active rocks
     Object.keys(cellMap).forEach(key => {
       const [r, c] = key.split("_").map(Number);
-      if (!tilesGrid[r] || !tilesGrid[r][c]) return;
+      const tileDiv = tilesGrid[r] ? tilesGrid[r][c] : null;
+      if (!tileDiv) return;
 
-      const tileTop = tilesGrid[r][c].querySelector(".tile-top");
-      if (!tileTop) return;
+      const isSafe = BARAKATTA_BOARD.safeSquares.some(s => s.row === r && s.col === c);
+      const baseZ = isSafe ? 22 : 18;
 
       const rocks = cellMap[key];
       const N = rocks.length;
@@ -784,10 +785,12 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
         const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
         // Animate hop if moving to a new cell
-        if (rockToken.parentNode && rockToken.parentNode !== tileTop && !prefersReducedMotion) {
+        if (rockToken.parentNode && rockToken.parentNode !== tileDiv && !prefersReducedMotion) {
           rockToken.classList.add("rock-hopping");
           rockToken.style.setProperty("--ox", `${offsetX}px`);
           rockToken.style.setProperty("--oy", `${offsetY}px`);
+          rockToken.style.setProperty("--base-z", `${baseZ}px`);
+          rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
           setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
         }
 
@@ -801,8 +804,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
         }
         const tokenRotateZ = -45 - boardRotateZ;
 
-        tileTop.appendChild(rockToken);
-        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 12px) rotateX(-46deg) rotateZ(${tokenRotateZ}deg)`;
+        tileDiv.appendChild(rockToken);
+        rockToken.style.transform = `translate3d(${offsetX}px, ${offsetY}px, ${baseZ}px) rotateX(-46deg) rotateZ(${tokenRotateZ}deg)`;
 
         // Mouse hover preview path
         rockToken.onmouseenter = () => {
