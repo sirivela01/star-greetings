@@ -198,10 +198,14 @@ class BarakattaMultiplayerManager {
     this.currentUser = window.auth.getCurrentUser();
     if (!this.currentUser) return;
 
-    const inputCode = document.getElementById("bk-online-join-code").value.trim().toUpperCase();
+    let inputCode = document.getElementById("bk-online-join-code").value.trim().toUpperCase();
     if (!inputCode) {
       alert("Please enter a room code.");
       return;
+    }
+
+    if (inputCode.length === 4 && !inputCode.startsWith("BK-")) {
+      inputCode = "BK-" + inputCode;
     }
 
     try {
