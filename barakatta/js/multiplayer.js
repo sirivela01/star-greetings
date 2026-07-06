@@ -267,114 +267,122 @@ class BarakattaMultiplayerManager {
         return;
       }
 
-      // 1. Sync waiting lobby player list
-      const playersList = document.getElementById("bk-lobby-players-list");
-      const playerCountSpan = document.getElementById("bk-lobby-player-count");
-      
-      const playersArray = Object.entries(room.players || {}).map(([uid, p]) => {
-        p.uid = uid;
-        return p;
-      }).sort((a, b) => a.joinedAt - b.joinedAt);
+      // 1. Sync waiting lobby player list (only if room is in waiting or starting status)
+      if (room.status === "waiting" || room.status === "starting") {
+        const playersList = document.getElementById("bk-lobby-players-list");
+        const playerCountSpan = document.getElementById("bk-lobby-player-count");
+        
+        const playersArray = Object.entries(room.players || {}).map(([uid, p]) => {
+          p.uid = uid;
+          return p;
+        }).sort((a, b) => a.joinedAt - b.joinedAt);
 
-      if (playerCountSpan) playerCountSpan.textContent = playersArray.length;
-      if (playersList) {
-        playersList.innerHTML = "";
-        playersArray.forEach((p, idx) => {
-          const li = document.createElement("li");
-          li.style.display = "flex";
-          li.style.alignItems = "center";
-          li.style.justifyContent = "space-between";
-          li.style.background = "rgba(255, 255, 255, 0.05)";
-          li.style.padding = "10px 15px";
-          li.style.borderRadius = "8px";
-          li.style.border = "1px solid rgba(255, 255, 255, 0.1)";
-          
-          const avatarUrl = p.avatar || "assets/avatars/avatar_1.png";
-          const hostBadge = p.username === room.hostUsername ? "👑 Host" : "Player";
-          
-          li.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.2);">
-              <span style="font-weight: 600; color: #fff;">${p.name} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">(@${p.username})</span></span>
-            </div>
-            <span style="font-size: 0.8rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: ${p.username === room.hostUsername ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.1)'}; color: ${p.username === room.hostUsername ? '#fbbf24' : '#fff'};">${hostBadge}</span>
-          `;
-          playersList.appendChild(li);
-        });
-      }
+        if (playerCountSpan) playerCountSpan.textContent = playersArray.length;
+        if (playersList) {
+          playersList.innerHTML = "";
+          playersArray.forEach((p, idx) => {
+            const li = document.createElement("li");
+            li.style.display = "flex";
+            li.style.alignItems = "center";
+            li.style.justifyContent = "space-between";
+            li.style.background = "rgba(255, 255, 255, 0.05)";
+            li.style.padding = "10px 15px";
+            li.style.borderRadius = "8px";
+            li.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+            
+            const avatarUrl = p.avatar || "assets/avatars/avatar_1.png";
+            const hostBadge = p.username === room.hostUsername ? "👑 Host" : "Player";
+            
+            li.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.2);">
+                <span style="font-weight: 600; color: #fff;">${p.name} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">(@${p.username})</span></span>
+              </div>
+              <span style="font-size: 0.8rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: ${p.username === room.hostUsername ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.1)'}; color: ${p.username === room.hostUsername ? '#fbbf24' : '#fff'};">${hostBadge}</span>
+            `;
+            playersList.appendChild(li);
+          });
+        }
 
-      // 2. Start Match Button Enable/Disable
-      const startBtn = document.getElementById("bk-online-start-match-btn");
-      if (startBtn) {
-        if (this.isHost) {
-          startBtn.style.display = "block";
-          if (playersArray.length >= 2) {
-            startBtn.removeAttribute("disabled");
-            startBtn.style.opacity = "1";
-            startBtn.style.pointerEvents = "auto";
+        // 2. Start Match Button Enable/Disable
+        const startBtn = document.getElementById("bk-online-start-match-btn");
+        if (startBtn) {
+          if (this.isHost) {
+            startBtn.style.display = "block";
+            const playersCount = Object.keys(room.players || {}).length;
+            if (playersCount >= 2) {
+              startBtn.removeAttribute("disabled");
+              startBtn.style.opacity = "1";
+              startBtn.style.pointerEvents = "auto";
+            } else {
+              startBtn.setAttribute("disabled", "true");
+              startBtn.style.opacity = "0.5";
+              startBtn.style.pointerEvents = "none";
+            }
           } else {
-            startBtn.setAttribute("disabled", "true");
-            startBtn.style.opacity = "0.5";
-            startBtn.style.pointerEvents = "none";
+            startBtn.style.display = "none";
           }
-        } else {
-          startBtn.style.display = "none";
         }
       }
 
-      // 3. Gameplay transitions
-      if (room.status === "playing") {
+      // 3. Game Start Gate: Transition to "starting"
+      if (room.status === "starting" || room.status === "playing") {
         const localGameActive = window.bkGame && window.bkGame.mode === "online";
         
         if (!localGameActive) {
-          // Initialize online game locally
-          const sortedPlayers = Object.entries(room.players || {}).map(([uid, p]) => {
-            p.uid = uid;
-            return p;
-          }).sort((a, b) => a.joinedAt - b.joinedAt);
+          // Initialize online game locally from the locked seat assignments
+          const mappedCustom = room.seats;
+          const playerCount = room.playerCount || 4;
+          
+          window.startBarakattaGameCustom("online", playerCount, mappedCustom);
 
-          // Map players based on slots
-          const mappedCustom = [];
-          if (sortedPlayers.length === 2) {
-            // P1 (Red) and P3 (Yellow)
-            mappedCustom[0] = { name: sortedPlayers[0].name, avatar: sortedPlayers[0].avatar, isBot: false, username: sortedPlayers[0].username };
-            mappedCustom[1] = { name: "", avatar: "", isBot: true }; // dummy slot 2
-            mappedCustom[2] = { name: sortedPlayers[1].name, avatar: sortedPlayers[1].avatar, isBot: false, username: sortedPlayers[1].username };
-            mappedCustom[3] = { name: "", avatar: "", isBot: true }; // dummy slot 4
-          } else if (sortedPlayers.length === 3) {
-            // P1, P2, P3
-            mappedCustom[0] = { name: sortedPlayers[0].name, avatar: sortedPlayers[0].avatar, isBot: false, username: sortedPlayers[0].username };
-            mappedCustom[1] = { name: sortedPlayers[1].name, avatar: sortedPlayers[1].avatar, isBot: false, username: sortedPlayers[1].username };
-            mappedCustom[2] = { name: sortedPlayers[2].name, avatar: sortedPlayers[2].avatar, isBot: false, username: sortedPlayers[2].username };
-            mappedCustom[3] = { name: "", avatar: "", isBot: true };
-          } else {
-            // P1, P2, P3, P4
-            mappedCustom[0] = { name: sortedPlayers[0].name, avatar: sortedPlayers[0].avatar, isBot: false, username: sortedPlayers[0].username };
-            mappedCustom[1] = { name: sortedPlayers[1].name, avatar: sortedPlayers[1].avatar, isBot: false, username: sortedPlayers[1].username };
-            mappedCustom[2] = { name: sortedPlayers[2].name, avatar: sortedPlayers[2].avatar, isBot: false, username: sortedPlayers[2].username };
-            mappedCustom[3] = { name: sortedPlayers[3].name, avatar: sortedPlayers[3].avatar, isBot: false, username: sortedPlayers[3].username };
-          }
-
-          window.startBarakattaGameCustom("online", sortedPlayers.length, mappedCustom);
+          // Mark this player as ready
+          const myUsername = this.currentUser.username;
+          this.roomRef.child("readiness/" + myUsername).set(true);
         }
 
-        // 4. Action synchronizer
-        if (room.lastAction && room.lastAction.actionId !== this.lastActionId) {
-          this.lastActionId = room.lastAction.actionId;
+        // Host client readiness coordinator
+        if (this.isHost && room.status === "starting") {
+          const humanPlayers = room.seats.filter(s => s && !s.isBot);
+          const readyPlayers = Object.keys(room.readiness || {});
           
-          if (room.lastAction.type === "roll") {
-            // Animate only if it's not our local roll (which was already animated)
-            if (room.lastAction.player !== window.bkGame.currentTurn || room.lastAction.playerObjUsername !== this.currentUser.username) {
-              window.bkAnimateOnlineRoll(room.lastAction.value, room.lastAction.player);
-            }
-          } else if (room.lastAction.type === "move" || room.lastAction.type === "pass") {
-            // Sync game state variables and draw board
-            window.bkSyncGameState(room.gameState);
+          if (readyPlayers.length === humanPlayers.length) {
+            // All players initialized and ready! Start the match officially
+            const serialized = window.bkGame.serialize();
+            this.lastActionId = "start_" + Math.random().toString(36).substring(2, 11);
             
-            // If match is over, stop listening
-            if (window.bkGame.status !== "in_progress") {
-              this.roomRef.off();
-            }
+            this.roomRef.update({
+              status: "playing",
+              gameState: serialized,
+              lastAction: {
+                type: "start",
+                actionId: this.lastActionId,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+              }
+            });
+          }
+        }
+      }
+
+      // 4. Gameplay Action Synchronizer
+      if (room.status === "playing" && room.lastAction && room.lastAction.actionId !== this.lastActionId) {
+        this.lastActionId = room.lastAction.actionId;
+        
+        if (room.lastAction.type === "roll") {
+          // Animate only if it's not our local roll (which was already animated)
+          if (room.lastAction.player !== window.bkGame.currentTurn || room.lastAction.playerObjUsername !== this.currentUser.username) {
+            window.bkAnimateOnlineRoll(room.lastAction.value, room.lastAction.player);
+          } else {
+            // It is our local roll, sync the game state just in case
+            window.bkSyncGameState(room.gameState);
+          }
+        } else if (room.lastAction.type === "move" || room.lastAction.type === "pass") {
+          // Sync game state variables and draw board
+          window.bkSyncGameState(room.gameState);
+          
+          // If match is over, stop listening
+          if (window.bkGame.status !== "in_progress") {
+            this.roomRef.off();
           }
         }
       }
@@ -416,92 +424,185 @@ class BarakattaMultiplayerManager {
         mappedCustom[3] = { name: sortedPlayers[3].name, avatar: sortedPlayers[3].avatar, isBot: false, username: sortedPlayers[3].username };
       }
 
-      // Initialize game engine locally
-      window.startBarakattaGameCustom("online", sortedPlayers.length, mappedCustom);
-
-      // Serialize game state
-      const serialized = window.bkGame.serialize();
-
-      // Write match start to database
-      this.lastActionId = "start_" + Math.random().toString(36).substring(2, 11);
+      // Transition to starting gate phase
       await this.roomRef.update({
-        status: "playing",
-        gameState: serialized,
-        lastAction: {
-          type: "start",
-          actionId: this.lastActionId,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-        }
+        status: "starting",
+        seats: mappedCustom,
+        playerCount: sortedPlayers.length,
+        readiness: {}
       });
     } catch (e) {
       alert("Failed to start match: " + e.message);
     }
   }
 
-  async sendRollAction(rollValue) {
-    if (!this.roomRef) return;
-    try {
-      const actionId = "roll_" + Math.random().toString(36).substring(2, 11);
-      this.lastActionId = actionId;
+  sendRollAction() {
+    return new Promise((resolve, reject) => {
+      if (!this.roomRef) {
+        reject(new Error("No room active"));
+        return;
+      }
       
-      const serialized = window.bkGame.serialize();
-      await this.roomRef.update({
-        gameState: serialized,
-        lastAction: {
+      const myUsername = this.currentUser.username;
+      let rolledValue = null;
+
+      this.roomRef.transaction((room) => {
+        if (!room || room.status !== "playing") return room;
+        if (!room.gameState) return room;
+
+        const tempGame = new BarakattaGame(room.gameState.mode, room.gameState.playerCount);
+        tempGame.deserialize(room.gameState);
+
+        const activePlayerId = tempGame.currentTurn;
+        const activePlayerObj = tempGame.players[activePlayerId];
+        if (!activePlayerObj || activePlayerObj.username !== myUsername) {
+          return; // Abort
+        }
+
+        if (tempGame.rollState !== "idle") {
+          return; // Abort
+        }
+
+        rolledValue = tempGame.generatePityRoll(activePlayerId);
+        tempGame.diceValue = rolledValue;
+        tempGame.rollState = "rolled";
+
+        room.gameState = tempGame.serialize();
+        room.lastAction = {
           type: "roll",
-          value: rollValue,
-          player: window.bkGame.currentTurn,
-          playerObjUsername: this.currentUser.username,
-          actionId: actionId,
+          value: rolledValue,
+          player: activePlayerId,
+          playerObjUsername: myUsername,
+          actionId: "roll_" + Math.random().toString(36).substring(2, 11),
           timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        return room;
+      }, (error, committed, snapshot) => {
+        if (error) {
+          reject(error);
+        } else if (!committed) {
+          reject(new Error("Transaction aborted or conflict occurred."));
+        } else {
+          resolve(rolledValue);
         }
       });
-    } catch (e) {
-      console.error("Failed to sync roll action:", e);
-    }
+    });
   }
 
-  async sendMoveAction(summary) {
-    if (!this.roomRef) return;
-    try {
-      const actionId = "move_" + Math.random().toString(36).substring(2, 11);
-      this.lastActionId = actionId;
+  sendMoveAction(actionData) {
+    return new Promise((resolve, reject) => {
+      if (!this.roomRef) {
+        reject(new Error("No room active"));
+        return;
+      }
+      
+      const myUsername = this.currentUser.username;
+      let actionSummary = "";
 
-      const serialized = window.bkGame.serialize();
-      await this.roomRef.update({
-        gameState: serialized,
-        lastAction: {
+      this.roomRef.transaction((room) => {
+        if (!room || room.status !== "playing") return room;
+        if (!room.gameState) return room;
+
+        const tempGame = new BarakattaGame(room.gameState.mode, room.gameState.playerCount);
+        tempGame.deserialize(room.gameState);
+
+        const activePlayerId = tempGame.currentTurn;
+        const activePlayerObj = tempGame.players[activePlayerId];
+        if (!activePlayerObj || activePlayerObj.username !== myUsername) {
+          return; // Abort
+        }
+
+        const actions = tempGame.getLegalActions(activePlayerId, tempGame.diceValue);
+        const confirmAction = actions.find(act => {
+          if (act.type !== actionData.type) return false;
+          if (act.type === "MOVE_ROCK") return act.rockId === actionData.rockId;
+          return true;
+        });
+        
+        if (!confirmAction) {
+          return; // Abort
+        }
+
+        actionSummary = tempGame.executeAction(activePlayerId, confirmAction);
+        
+        if (tempGame.status === "in_progress") {
+          tempGame.nextTurn();
+        }
+
+        room.gameState = tempGame.serialize();
+        room.lastAction = {
           type: "move",
-          summary: summary || "",
-          player: window.bkGame.currentTurn,
-          actionId: actionId,
+          summary: actionSummary || "",
+          player: activePlayerId,
+          actionId: "move_" + Math.random().toString(36).substring(2, 11),
           timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        return room;
+      }, (error, committed, snapshot) => {
+        if (error) {
+          reject(error);
+        } else if (!committed) {
+          reject(new Error("Transaction aborted or conflict occurred."));
+        } else {
+          resolve(actionSummary);
         }
       });
-    } catch (e) {
-      console.error("Failed to sync move action:", e);
-    }
+    });
   }
 
-  async sendPassAction() {
-    if (!this.roomRef) return;
-    try {
-      const actionId = "pass_" + Math.random().toString(36).substring(2, 11);
-      this.lastActionId = actionId;
+  sendPassAction() {
+    return new Promise((resolve, reject) => {
+      if (!this.roomRef) {
+        reject(new Error("No room active"));
+        return;
+      }
+      
+      const myUsername = this.currentUser.username;
 
-      const serialized = window.bkGame.serialize();
-      await this.roomRef.update({
-        gameState: serialized,
-        lastAction: {
+      this.roomRef.transaction((room) => {
+        if (!room || room.status !== "playing") return room;
+        if (!room.gameState) return room;
+
+        const tempGame = new BarakattaGame(room.gameState.mode, room.gameState.playerCount);
+        tempGame.deserialize(room.gameState);
+
+        const activePlayerId = tempGame.currentTurn;
+        const activePlayerObj = tempGame.players[activePlayerId];
+        if (!activePlayerObj || activePlayerObj.username !== myUsername) {
+          return; // Abort
+        }
+
+        if (tempGame.rollState !== "rolled") {
+          return; // Abort
+        }
+
+        tempGame.executeAction(activePlayerId, { type: "PASS" });
+        
+        if (tempGame.status === "in_progress") {
+          tempGame.nextTurn();
+        }
+
+        room.gameState = tempGame.serialize();
+        room.lastAction = {
           type: "pass",
-          player: window.bkGame.currentTurn,
-          actionId: actionId,
+          player: activePlayerId,
+          actionId: "pass_" + Math.random().toString(36).substring(2, 11),
           timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        return room;
+      }, (error, committed, snapshot) => {
+        if (error) {
+          reject(error);
+        } else if (!committed) {
+          reject(new Error("Transaction aborted or conflict occurred."));
+        } else {
+          resolve();
         }
       });
-    } catch (e) {
-      console.error("Failed to sync pass action:", e);
-    }
+    });
   }
 
   async leaveRoom() {

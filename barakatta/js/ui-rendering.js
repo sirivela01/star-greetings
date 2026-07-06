@@ -883,8 +883,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     drawBoard();
   }
 
-  // Handle dice rolling event
-  function handleHumanRoll() {
+  // Handle d  function handleHumanRoll() {
     if (isRolling || game.rollState !== "idle") return;
 
     const isPlayerTurn = !game.players[game.currentTurn].isBot;
@@ -906,21 +905,59 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     rollBtn.setAttribute("disabled", "true");
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let duration = prefersReducedMotion ? 0 : 1000;
+    
+    if (game.mode === "online" && window.bkMultiplayer) {
+      let interval = null;
+      if (!prefersReducedMotion) {
+        interval = setInterval(() => {
+          const tempX = Math.floor(Math.random() * 360);
+          const tempY = Math.floor(Math.random() * 360);
+          diceElement.style.transform = `rotateX(${tempX}deg) rotateY(${tempY}deg)`;
+        }, 80);
+      }
 
-    if (!prefersReducedMotion) {
-      let interval = setInterval(() => {
-        const tempX = Math.floor(Math.random() * 360);
-        const tempY = Math.floor(Math.random() * 360);
-        diceElement.style.transform = `rotateX(${tempX}deg) rotateY(${tempY}deg)`;
-      }, 80);
+      window.bkMultiplayer.sendRollAction().then((rollValue) => {
+        setTimeout(() => {
+          if (interval) clearInterval(interval);
+          isRolling = false;
+          
+          game.diceValue = rollValue;
+          game.rollState = "rolled";
+          
+          currentRollCount++;
+          const baseRot = diceRotations[rollValue];
+          const spinX = baseRot.x + currentRollCount * 1440;
+          const spinY = baseRot.y + currentRollCount * 1440;
+          diceElement.style.transform = `rotateX(${spinX}deg) rotateY(${spinY}deg)`;
 
-      setTimeout(() => {
-        clearInterval(interval);
-        finalizeRoll();
-      }, duration);
+          setTimeout(() => {
+            evaluateHumanActions();
+          }, prefersReducedMotion ? 0 : 400);
+        }, prefersReducedMotion ? 0 : 800);
+      }).catch((err) => {
+        if (interval) clearInterval(interval);
+        isRolling = false;
+        rollBtn.removeAttribute("disabled");
+        alert("Roll failed: " + err.message);
+      });
     } else {
-      finalizeRoll();
+      // Offline mode
+      let duration = prefersReducedMotion ? 0 : 1000;
+
+      if (!prefersReducedMotion) {
+        let interval = setInterval(() => {
+          const tempX = Math.floor(Math.random() * 360);
+          const tempY = Math.floor(Math.random() * 360);
+          diceElement.style.transform = `rotateX(${tempX}deg) rotateY(${tempY}deg)`;
+        }, 80);
+
+        setTimeout(() => {
+          clearInterval(interval);
+          finalizeRoll();
+        }, duration);
+      } else {
+        finalizeRoll();
+      }
     }
 
     function finalizeRoll() {
@@ -928,11 +965,6 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       const roll = game.generatePityRoll(game.currentTurn);
       game.diceValue = roll;
       game.rollState = "rolled";
-
-      // Online multiplayer sync
-      if (game.mode === "online" && window.bkMultiplayer) {
-        window.bkMultiplayer.sendRollAction(roll);
-      }
 
       currentRollCount++;
       const baseRot = diceRotations[roll];
@@ -948,18 +980,26 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
   function handlePassTurn() {
     if (isRolling || game.rollState !== "rolled") return;
+
+    // Online multiplayer check
+    if (game.mode === "online") {
+      const activePlayerObj = game.players[game.currentTurn];
+      if (!window.currentUser || activePlayerObj.username !== window.currentUser.username) {
+        return; // Not their turn
+      }
+    }
+
     const passBtn = document.getElementById("bk-pass-btn");
     if (passBtn) passBtn.style.display = "none";
 
-    saveMatchState();
-    game.nextTurn();
-
-    // Online multiplayer sync
     if (game.mode === "online" && window.bkMultiplayer) {
       window.bkMultiplayer.sendPassAction();
+    } else {
+      // Offline mode
+      saveMatchState();
+      game.nextTurn();
+      triggerTurn();
     }
-
-    triggerTurn();
   }
 
   // Evaluate action choices and auto-execute entries
@@ -975,14 +1015,12 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       document.getElementById("bk-status-desc").textContent = `${activeName} rolled a ${game.diceValue}. Turn is skipped.`;
       
       setTimeout(() => {
-        game.nextTurn();
-        
-        // Online multiplayer sync
         if (game.mode === "online" && window.bkMultiplayer) {
           window.bkMultiplayer.sendPassAction();
+        } else {
+          game.nextTurn();
+          triggerTurn();
         }
-
-        triggerTurn();
       }, 1800);
       return;
     }
@@ -1014,15 +1052,15 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
           const action = actions.find(act => act.type === "ENTER_1_OPTIONAL" || act.type === "ENTER_ALL_6");
           if (action) {
-            const summary = game.executeAction(game.currentTurn, action);
-            document.getElementById("bk-status-desc").textContent = summary;
-            
-            // Online multiplayer sync
             if (game.mode === "online" && window.bkMultiplayer) {
-              window.bkMultiplayer.sendMoveAction(summary);
+              window.bkMultiplayer.sendMoveAction(action).then((summary) => {
+                document.getElementById("bk-status-desc").textContent = summary;
+              });
+            } else {
+              const summary = game.executeAction(game.currentTurn, action);
+              document.getElementById("bk-status-desc").textContent = summary;
+              completeTurnSequence();
             }
-
-            completeTurnSequence();
           }
         };
       }
@@ -1068,15 +1106,15 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
         selectedRockId = null;
         clearHighlightPath();
         clearYardClickListeners();
-        const summary = game.executeAction(game.currentTurn, clickedRockAction);
-        document.getElementById("bk-status-desc").textContent = summary;
-        
-        // Online multiplayer sync
         if (game.mode === "online" && window.bkMultiplayer) {
-          window.bkMultiplayer.sendMoveAction(summary);
+          window.bkMultiplayer.sendMoveAction(clickedRockAction).then((summary) => {
+            document.getElementById("bk-status-desc").textContent = summary;
+          });
+        } else {
+          const summary = game.executeAction(game.currentTurn, clickedRockAction);
+          document.getElementById("bk-status-desc").textContent = summary;
+          completeTurnSequence();
         }
-
-        completeTurnSequence();
       } else {
         // Otherwise, select this rock and show its step-by-step path
         selectedRockId = rockId;
@@ -1109,15 +1147,15 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
           selectedRockId = null;
           clearHighlightPath();
           clearYardClickListeners();
-          const summary = game.executeAction(game.currentTurn, confirmAction);
-          document.getElementById("bk-status-desc").textContent = summary;
-          
-          // Online multiplayer sync
           if (game.mode === "online" && window.bkMultiplayer) {
-            window.bkMultiplayer.sendMoveAction(summary);
+            window.bkMultiplayer.sendMoveAction(confirmAction).then((summary) => {
+              document.getElementById("bk-status-desc").textContent = summary;
+            });
+          } else {
+            const summary = game.executeAction(game.currentTurn, confirmAction);
+            document.getElementById("bk-status-desc").textContent = summary;
+            completeTurnSequence();
           }
-
-          completeTurnSequence();
           return;
         }
       }
@@ -1152,24 +1190,118 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     const activeBotId = game.currentTurn;
     if (game.status !== "in_progress" || !game.players[activeBotId].isBot) return;
 
+    // In online mode, ONLY the host coordinates bot turns
+    if (game.mode === "online") {
+      if (!window.bkMultiplayer || !window.bkMultiplayer.isHost) {
+        return; 
+      }
+    }
+
     const diceElement = document.getElementById("bk-dice-element");
     playDiceRollSound();
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let duration = prefersReducedMotion ? 0 : 1000;
+    
+    if (game.mode === "online") {
+      let interval = null;
+      if (!prefersReducedMotion) {
+        interval = setInterval(() => {
+          const tempX = Math.floor(Math.random() * 360);
+          const tempY = Math.floor(Math.random() * 360);
+          diceElement.style.transform = `rotateX(${tempX}deg) rotateY(${tempY}deg)`;
+        }, 80);
+      }
 
-    if (!prefersReducedMotion) {
-      let interval = setInterval(() => {
-        const tempX = Math.floor(Math.random() * 360);
-        const tempY = Math.floor(Math.random() * 360);
-        diceElement.style.transform = `rotateX(${tempX}deg) rotateY(${tempY}deg)`;
-      }, 80);
+      window.bkMultiplayer.sendRollAction().then((rollValue) => {
+        setTimeout(() => {
+          if (interval) clearInterval(interval);
+          
+          game.diceValue = rollValue;
+          game.rollState = "rolled";
+          
+          currentRollCount++;
+          const baseRot = diceRotations[rollValue];
+          const spinX = baseRot.x + currentRollCount * 1440;
+          const spinY = baseRot.y + currentRollCount * 1440;
+          diceElement.style.transform = `rotateX(${spinX}deg) rotateY(${spinY}deg)`;
 
-      setTimeout(() => {
-        clearInterval(interval);
-        finalizeBotRoll();
-      }, duration);
+          setTimeout(() => {
+            const actions = game.getLegalActions(activeBotId, rollValue);
+
+            const isBotYardEmpty = game.getBoardRocks(activeBotId).length === 0;
+            if (rollValue === 1 && isBotYardEmpty && Math.random() < 0.5) {
+              const activeBotName = game.players[activeBotId].name;
+              document.getElementById("bk-status-title").textContent = `${activeBotName} Passes Turn`;
+              document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a 1 and chooses to PASS.`;
+              
+              setTimeout(() => {
+                window.bkMultiplayer.sendPassAction();
+              }, 1500);
+              return;
+            }
+            
+            if (actions.length === 0) {
+              const activeBotName = game.players[activeBotId].name;
+              document.getElementById("bk-status-title").textContent = `${activeBotName} Has No Moves!`;
+              document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a ${rollValue}. Skips turn.`;
+              
+              setTimeout(() => {
+                window.bkMultiplayer.sendPassAction();
+              }, 1500);
+              return;
+            }
+
+            const chosenAction = game.getBotDecision(actions);
+            if (chosenAction) {
+              if (chosenAction.type === "MOVE_ROCK") {
+                const path = game.getRockStepPath(activeBotId, chosenAction.rockId, chosenAction.steps);
+                if (path) {
+                  clearHighlightPath();
+                  drawHighlightPath(activeBotId, path);
+                  
+                  const targetCell = path[path.length - 1];
+                  if (tilesGrid[targetCell.row] && tilesGrid[targetCell.row][targetCell.col]) {
+                    const targetTile = tilesGrid[targetCell.row][targetCell.col].querySelector(".tile-top");
+                    if (targetTile) targetTile.classList.add("target-highlight");
+                  }
+                }
+                
+                setTimeout(() => {
+                  clearHighlightPath();
+                  window.bkMultiplayer.sendMoveAction(chosenAction).then((summary) => {
+                    document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
+                  });
+                }, 800);
+              } else {
+                window.bkMultiplayer.sendMoveAction(chosenAction).then((summary) => {
+                  document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
+                });
+              }
+            }
+          }, prefersReducedMotion ? 0 : 500);
+        }, prefersReducedMotion ? 0 : 800);
+      }).catch((err) => {
+        if (interval) clearInterval(interval);
+        console.error("Bot roll transaction failed:", err);
+      });
+
     } else {
-      finalizeBotRoll();
+      // Offline mode
+      let duration = prefersReducedMotion ? 0 : 1000;
+
+      if (!prefersReducedMotion) {
+        let interval = setInterval(() => {
+          const tempX = Math.floor(Math.random() * 360);
+          const tempY = Math.floor(Math.random() * 360);
+          diceElement.style.transform = `rotateX(${tempX}deg) rotateY(${tempY}deg)`;
+        }, 80);
+
+        setTimeout(() => {
+          clearInterval(interval);
+          finalizeBotRoll();
+        }, duration);
+      } else {
+        finalizeBotRoll();
+      }
     }
 
     function finalizeBotRoll() {
@@ -1185,8 +1317,6 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       setTimeout(() => {
         const actions = game.getLegalActions(activeBotId, roll);
 
-        // Strategy: if bot has 6 demons in yard and rolled a 1,
-        // it has a 50% chance of passing to wait for a 6 (to enter all 6 together)
         const isBotYardEmpty = game.getBoardRocks(activeBotId).length === 0;
         if (roll === 1 && isBotYardEmpty && Math.random() < 0.5) {
           const activeBotName = game.players[activeBotId].name;
@@ -1345,7 +1475,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
   window.bkSyncGameState = function (serializedState) {
     if (!game) return;
     game.deserialize(serializedState);
-    drawBoard();
+    triggerTurn();
   };
 
   window.bkAnimateOnlineRoll = function (roll, player) {
