@@ -1032,11 +1032,13 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     const hasEnterAll = actions.some(act => act.type === "ENTER_ALL_6");
     const hasMoves = actions.some(act => act.type === "MOVE_ROCK");
 
+    // Always allow passing if they rolled a 1
+    if (game.diceValue === 1) {
+      const passBtn = document.getElementById("bk-pass-btn");
+      if (passBtn) passBtn.style.display = "block";
+    }
+
     if (hasEnter1 || hasEnterAll) {
-      if (hasEnter1 && game.getYardRocks(game.currentTurn).length === 6) {
-        const passBtn = document.getElementById("bk-pass-btn");
-        if (passBtn) passBtn.style.display = "block";
-      }
 
       const yardBox = document.getElementById(`bk-${game.currentTurn}-yard`);
       if (yardBox) {
