@@ -108,6 +108,7 @@ class BarakattaGame {
 
     this.extraTurn = false;
     this.rollState = "idle";
+    this.passedTurn = false;
   }
 
   // Generates a dice roll with a pity mechanism (guarantees a 1 or 6 if stuck in Yard for 3 turns)
@@ -403,7 +404,10 @@ class BarakattaGame {
     const player = this.players[playerId];
     let actionSummary = "";
 
-    if (action.type === "ENTER_ALL_6") {
+    if (action.type === "PASS") {
+      this.passedTurn = true;
+      actionSummary = "Passed turn.";
+    } else if (action.type === "ENTER_ALL_6") {
       const yardRocks = this.getYardRocks(playerId);
       yardRocks.forEach(rock => {
         rock.status = "active";
@@ -471,6 +475,17 @@ class BarakattaGame {
   // Transitions the active turn
   nextTurn() {
     this.rollState = "idle";
+    
+    // Explicit pass turn request forfeits extra turn benefits
+    if (this.passedTurn) {
+      this.passedTurn = false;
+      this.extraTurn = false;
+      
+      const currentIndex = this.activePlayerIds.indexOf(this.currentTurn);
+      const nextIndex = (currentIndex + 1) % this.activePlayerIds.length;
+      this.currentTurn = this.activePlayerIds[nextIndex];
+      return this.currentTurn;
+    }
     
     // Check if extra turn is granted (roll of 6 or 1, or capture)
     if (this.diceValue === 6 || this.diceValue === 1 || this.extraTurn) {
