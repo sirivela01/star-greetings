@@ -99,7 +99,9 @@
     const allScreens = [
       "login-screen", "signup-screen", "forgot-password-screen",
       "dashboard-screen", "setup-screen", "theme-selection-screen",
-      "game-screen", "online-lobby-screen", "online-game-screen"
+      "game-screen", "online-lobby-screen",
+      "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen",
+      "barakatta-online-lobby-screen", "barakatta-online-waiting-screen"
     ];
     let allHidden = true;
     allScreens.forEach(id => {
@@ -109,10 +111,11 @@
       }
     });
     if (allHidden) {
-      const dashboard = document.getElementById("dashboard-screen");
+      const targetId = (window.selectedGame === "barakatta") ? "barakatta-dashboard-screen" : "dashboard-screen";
+      const dashboard = document.getElementById(targetId);
       if (dashboard) {
         dashboard.classList.remove("hidden");
-        healingMessages.push("Blank screen detected. Restored dashboard view.");
+        healingMessages.push(`Blank screen detected. Restored ${targetId} view.`);
       }
     }
 
