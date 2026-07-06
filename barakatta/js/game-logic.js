@@ -34,14 +34,19 @@ class BarakattaGame {
 
     const slots = slotMapping[this.playerCount] || ["player1", "player3"];
 
-    if (this.customPlayers && this.customPlayers.length === this.playerCount) {
+    if (this.customPlayers) {
       slots.forEach((pId, idx) => {
-        const custom = this.customPlayers[idx];
+        // Map index to the custom configuration:
+        // For playerCount === 2, slots are player1 and player3, which are index 0 and 2 in mappedCustom.
+        const customIdx = (this.playerCount === 2 && idx === 1) ? 2 : idx;
+        const custom = this.customPlayers[customIdx] || {};
+        
         this.players[pId] = {
           id: pId,
-          name: custom.name,
-          avatar: custom.avatar,
-          isBot: custom.isBot,
+          name: custom.name || defaultNames[pId],
+          avatar: custom.avatar || "assets/avatars/avatar_1.png",
+          isBot: custom.isBot !== undefined ? custom.isBot : false,
+          username: custom.username || "",
           color: slotColors[pId],
           rocks: Array.from({ length: 6 }, (_, rId) => ({
             id: rId,
@@ -74,7 +79,9 @@ class BarakattaGame {
         this.players[pId] = {
           id: pId,
           name: name,
+          avatar: "assets/avatars/avatar_1.png",
           isBot: isBot,
+          username: "",
           color: slotColors[pId],
           rocks: Array.from({ length: 6 }, (_, rId) => ({
             id: rId,
