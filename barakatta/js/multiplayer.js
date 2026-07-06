@@ -16,7 +16,36 @@ class BarakattaMultiplayerManager {
 
   initFirebase() {
     try {
-      if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      if (typeof firebase !== 'undefined') {
+        if (firebase.apps.length === 0) {
+          // Initialize using the same settings as main multiplayer engine
+          let savedUrl = localStorage.getItem("star_greetings_firebase_url");
+          if (savedUrl && savedUrl.includes("star-greetings-default-default-rtdb")) {
+            savedUrl = null;
+          }
+          let savedApiKey = localStorage.getItem("star_greetings_firebase_api_key");
+          const activeUrl = savedUrl || "https://star-greetings-default-rtdb.asia-southeast1.firebasedatabase.app";
+          const activeApiKey = savedApiKey || "AIzaSyBE_YC0fC3p7JJrDA6BwfIdVVYRPacZtn0";
+          
+          // Helper to extract authDomain from Database URL
+          const getAuthDomain = (dbUrl) => {
+            if (!dbUrl) return "";
+            const host = dbUrl.replace("https://", "").split("/")[0];
+            const parts = host.split(".");
+            let firstPart = parts[0];
+            if (firstPart.endsWith("-default-rtdb")) {
+              firstPart = firstPart.substring(0, firstPart.length - "-default-rtdb".length);
+            }
+            return `${firstPart}.firebaseapp.com`;
+          };
+
+          firebase.initializeApp({
+            apiKey: activeApiKey,
+            databaseURL: activeUrl,
+            authDomain: getAuthDomain(activeUrl)
+          });
+        }
+
         this.db = firebase.database();
         
         // Listen to connection status
