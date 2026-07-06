@@ -49,15 +49,23 @@ class BarakattaMultiplayerManager {
         this.db = firebase.database();
         
         // Listen to connection status
+        let wasOffline = false;
         this.db.ref(".info/connected").on("value", (snapshot) => {
+          const isConnected = snapshot.val() === true;
           const banner = document.getElementById("bk-db-status-banner");
           if (banner) {
-            if (snapshot.val() === true) {
+            if (isConnected) {
               banner.className = "db-status-banner connected";
               banner.querySelector(".status-text").textContent = "Connected to Database";
+              if (wasOffline) {
+                wasOffline = false;
+                console.log("📶 Reconnected to database. Triggering automatic resync...");
+                this.forceResyncState();
+              }
             } else {
               banner.className = "db-status-banner offline";
               banner.querySelector(".status-text").textContent = "Offline (Reconnecting...)";
+              wasOffline = true;
             }
           }
         });
@@ -265,6 +273,16 @@ class BarakattaMultiplayerManager {
         alert("The room was disbanded by the host.");
         this.showScreen("barakatta-dashboard-screen");
         return;
+      }
+
+      // Self-healing during play: if my player node is missing or marked disconnected, restore it!
+      if (this.currentUser) {
+        const myUid = this.currentUser.uid || "guest_" + this.currentUser.username;
+        const dbPlayer = room.players ? room.players[myUid] : null;
+        if (dbPlayer && dbPlayer.status !== "connected") {
+          console.log("Self-healing (Barakatta): restabilizing my status to connected");
+          this.roomRef.child(`players/${myUid}/status`).set("connected");
+        }
       }
 
       // 1. Sync waiting lobby player list (only if room is in waiting or starting status)
@@ -632,6 +650,20 @@ class BarakattaMultiplayerManager {
     this.roomRef = null;
     this.roomCode = null;
     this.showScreen("barakatta-dashboard-screen");
+  }
+
+  async forceResyncState() {
+    if (!this.roomRef) return;
+    try {
+      const snap = await this.roomRef.once("value");
+      const room = snap.val();
+      if (room && room.gameState) {
+        window.bkSyncGameState(room.gameState);
+        console.log("🔄 Force-resynced Barakatta game state on reconnect or request failure.");
+      }
+    } catch (e) {
+      console.error("Failed to force-resync Barakatta game state:", e);
+    }
   }
 
   verifyAuth() {

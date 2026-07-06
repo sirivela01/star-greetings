@@ -373,10 +373,13 @@
           healBtn.textContent = "🛡️ Run AI Heal";
           // Trigger force heal
           if (window.bkDrawBoard) window.bkDrawBoard();
+          if (window.bkMultiplayer && window.bkMultiplayer.forceResyncState) {
+            window.bkMultiplayer.forceResyncState();
+          }
           if (window.selfHealingEngine && window.selfHealingEngine.forceHeal) {
             window.selfHealingEngine.forceHeal();
           }
-          metrics.lastDiagnosis = "AI Engine executed manual override self-heal. Canvas matrices reset.";
+          metrics.lastDiagnosis = "AI Engine executed manual override self-heal. Canvas and Firebase states synced.";
           updateUI();
         }, 800);
       };

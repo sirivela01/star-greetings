@@ -1017,7 +1017,10 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     if (passBtn) passBtn.style.display = "none";
 
     if (game.mode === "online" && window.bkMultiplayer) {
-      window.bkMultiplayer.sendPassAction();
+      window.bkMultiplayer.sendPassAction().catch(err => {
+        console.error("Pass action failed:", err);
+        window.bkMultiplayer.forceResyncState();
+      });
     } else {
       // Offline mode
       saveMatchState();
@@ -1040,7 +1043,10 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       
       setTimeout(() => {
         if (game.mode === "online" && window.bkMultiplayer) {
-          window.bkMultiplayer.sendPassAction();
+          window.bkMultiplayer.sendPassAction().catch(err => {
+            console.error("Pass action failed:", err);
+            window.bkMultiplayer.forceResyncState();
+          });
         } else {
           game.nextTurn();
           triggerTurn();
@@ -1081,6 +1087,9 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
             if (game.mode === "online" && window.bkMultiplayer) {
               window.bkMultiplayer.sendMoveAction(action).then((summary) => {
                 document.getElementById("bk-status-desc").textContent = summary;
+              }).catch((err) => {
+                console.error("Yard enter action failed:", err);
+                window.bkMultiplayer.forceResyncState();
               });
             } else {
               const summary = game.executeAction(game.currentTurn, action);
@@ -1135,6 +1144,9 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
         if (game.mode === "online" && window.bkMultiplayer) {
           window.bkMultiplayer.sendMoveAction(clickedRockAction).then((summary) => {
             document.getElementById("bk-status-desc").textContent = summary;
+          }).catch((err) => {
+            console.error("Rock move action failed:", err);
+            window.bkMultiplayer.forceResyncState();
           });
         } else {
           const summary = game.executeAction(game.currentTurn, clickedRockAction);
@@ -1176,6 +1188,9 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
           if (game.mode === "online" && window.bkMultiplayer) {
             window.bkMultiplayer.sendMoveAction(confirmAction).then((summary) => {
               document.getElementById("bk-status-desc").textContent = summary;
+            }).catch((err) => {
+              console.error("Confirm move action failed:", err);
+              window.bkMultiplayer.forceResyncState();
             });
           } else {
             const summary = game.executeAction(game.currentTurn, confirmAction);
@@ -1260,7 +1275,10 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
               document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a 1 and chooses to PASS.`;
               
               setTimeout(() => {
-                window.bkMultiplayer.sendPassAction();
+                window.bkMultiplayer.sendPassAction().catch(err => {
+                  console.error("Bot pass failed:", err);
+                  window.bkMultiplayer.forceResyncState();
+                });
               }, 1500);
               return;
             }
@@ -1271,7 +1289,10 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
               document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a ${rollValue}. Skips turn.`;
               
               setTimeout(() => {
-                window.bkMultiplayer.sendPassAction();
+                window.bkMultiplayer.sendPassAction().catch(err => {
+                  console.error("Bot pass failed:", err);
+                  window.bkMultiplayer.forceResyncState();
+                });
               }, 1500);
               return;
             }
@@ -1295,11 +1316,17 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
                   clearHighlightPath();
                   window.bkMultiplayer.sendMoveAction(chosenAction).then((summary) => {
                     document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
+                  }).catch((err) => {
+                    console.error("Bot move failed:", err);
+                    window.bkMultiplayer.forceResyncState();
                   });
                 }, 800);
               } else {
                 window.bkMultiplayer.sendMoveAction(chosenAction).then((summary) => {
                   document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
+                }).catch((err) => {
+                  console.error("Bot move failed:", err);
+                  window.bkMultiplayer.forceResyncState();
                 });
               }
             }
