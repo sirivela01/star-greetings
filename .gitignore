@@ -16,3 +16,11 @@ desktop.ini
 chrome_user_data/
 assets/real_stars/
 
+# Generated build directories
+/www/
+android/.gradle/
+android/app/build/
+android/local.properties
+.gradle/
+build/
+

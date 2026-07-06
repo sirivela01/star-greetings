@@ -1,0 +1,6 @@
+{
+  "appId": "com.stargreetings.barakatta",
+  "appName": "Star Greetings & Barakatta",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

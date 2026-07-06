@@ -1,0 +1,19 @@
+{
+  "name": "star-greetings-app",
+  "version": "1.0.0",
+  "description": "Star Greetings & Barakatta Game",
+  "main": "index.html",
+  "scripts": {
+    "build": "python build.py",
+    "cap:init": "cap init",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/android": "^6.0.0"
+  }
+}

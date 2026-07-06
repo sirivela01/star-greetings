@@ -1,0 +1,652 @@
+/* Barakatta - earth/traditional visual styling */
+
+/* Style variables specific to Barakatta */
+:root {
+  --bk-terracotta: #d97706;
+  --bk-terracotta-glow: rgba(217, 119, 6, 0.4);
+  --bk-wood-dark: #140e0a;
+  --bk-wood-medium: #2a1c12;
+  --bk-wood-light: #432e20;
+  --bk-brass-gold: #fbbf24;
+  --bk-brass-glow: rgba(251, 191, 36, 0.3);
+  --bk-text-main: #f3f4f6;
+  --bk-text-muted: #9ca3af;
+}
+
+/* Base class styling overrides for barakatta screens */
+.barakatta-theme {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  color: var(--bk-text-main);
+  background: radial-gradient(circle at center, var(--bk-wood-medium) 0%, var(--bk-wood-dark) 100%) !important;
+}
+
+/* Game Selection screen cards styling */
+.selection-box {
+  background: rgba(25, 18, 12, 0.7) !important;
+  border: 1px solid rgba(245, 158, 11, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.game-select-card {
+  background: rgba(30, 20, 15, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-select-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-select-card:hover::before {
+  opacity: 1;
+}
+
+.game-select-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+#select-star-greetings-btn:hover {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.15);
+}
+
+#select-barakatta-btn:hover {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.15);
+}
+
+/* Barakatta Dashboard Theme overrides */
+.barakatta-theme.dashboard-box {
+  background: rgba(20, 14, 10, 0.75) !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7) !important;
+}
+
+.barakatta-theme .play-mode-btn:hover {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 15px var(--bk-brass-glow) !important;
+}
+
+/* Dashboard Buttons Overrides */
+#barakatta-play-ai-btn {
+  background: linear-gradient(135deg, #d97706 0%, #78350f 100%) !important;
+  color: #fff !important;
+  border: 1px solid rgba(251, 191, 36, 0.5) !important;
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+#barakatta-play-ai-btn:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #92400e 100%) !important;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.55) !important;
+  transform: translateY(-2px) !important;
+  border-color: #fbbf24 !important;
+}
+
+#barakatta-play-ai-btn .btn-sub {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+#barakatta-play-offline-btn:disabled,
+#barakatta-play-online-btn:disabled {
+  background: rgba(30, 20, 15, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.55 !important;
+}
+
+#barakatta-play-offline-btn:disabled .btn-sub,
+#barakatta-play-online-btn:disabled .btn-sub {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Board Game View styles */
+.barakatta-tabletop {
+  min-height: 100vh;
+  background: radial-gradient(circle at center, #06362e 0%, #010c0a 100%) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.bk-board-container {
+  touch-action: none;
+}
+
+#barakatta-board-canvas {
+  background: #242424;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9), 0 16px 36px rgba(0, 0, 0, 0.8);
+  border: 4px solid #1a0a02;
+  border-radius: 8px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: perspective(1000px) rotateX(10deg);
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.bk-control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bk-yard-rocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 5px;
+}
+
+.bk-rock-token {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 2px 2px rgba(255,255,255,0.2);
+  border: 1px solid rgba(0,0,0,0.3);
+  position: relative;
+}
+
+/* Colors for active rocks */
+.bk-rock-red {
+  background: radial-gradient(circle at 35% 35%, #f87171 0%, #b91c1c 80%);
+}
+
+.bk-rock-yellow {
+  background: radial-gradient(circle at 35% 35%, #fbbf24 0%, #b45309 80%);
+}
+
+.bk-rock-green {
+  background: radial-gradient(circle at 35% 35%, #34d399 0%, #047857 80%);
+}
+
+.bk-rock-blue {
+  background: radial-gradient(circle at 35% 35%, #60a5fa 0%, #1d4ed8 80%);
+}
+
+/* Active Turn pulsing indicator */
+.bk-status-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(245,158,11,0.1);
+}
+
+.bk-dice-box {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bk-dice-box:active {
+  transform: scale(0.9) rotate(-10deg);
+}
+
+.bk-dice-rolling {
+  animation: bk-dice-shake 0.4s infinite alternate;
+}
+
+@keyframes bk-dice-shake {
+  0% { transform: translate(2px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  20% { transform: translate(-3px, 0px) rotate(1deg); }
+  30% { transform: translate(0px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(2px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -1px) rotate(1deg); }
+  90% { transform: translate(2px, 2px) rotate(0deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+/* Button style extensions for Barakatta controls */
+.btn-barakatta-primary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.btn-barakatta-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.6);
+  transform: translateY(-2px);
+}
+
+/* ==========================================
+   TRUE 3D PERSPECTIVE BOARD & CHROME ELEMENTS
+   ========================================== */
+.barakatta-board-scene {
+  perspective: 1500px;
+  perspective-origin: 50% 15%;
+  width: 560px;
+  height: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.barakatta-board {
+  width: 520px;
+  height: 520px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(46deg) rotateZ(0deg);
+  background: #5c2e0b; /* Mahogany wood frame */
+  border-radius: 16px;
+  border: 12px solid #231103; /* Frame bevel */
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.95),
+    0 10px 20px rgba(0, 0, 0, 0.4),
+    inset 0 0 20px rgba(0, 0, 0, 0.8);
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+/* 3D Extrusion face for the main wood board frame */
+.barakatta-board::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  bottom: -12px;
+  height: 24px;
+  background: #1a0c02; /* Extra dark mahogany shade for frame depth */
+  transform: rotateX(-90deg);
+  transform-origin: bottom;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.barakatta-board-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(7, 1fr);
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+/* Individual Tiles */
+.tile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.tile-top {
+  position: absolute;
+  inset: 1px;
+  transform: translateZ(6px);
+  background: var(--tile-color);
+  border-radius: 4px;
+  box-shadow: 
+    inset 1px 1px 1px rgba(255, 255, 255, 0.15),
+    inset -1px -1px 1px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transform-style: preserve-3d;
+}
+
+/* Safe squares are raised higher */
+.tile-top.safe-tile {
+  transform: translateZ(10px);
+  box-shadow: 
+    0 0 10px rgba(255, 255, 255, 0.3),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.2),
+    inset -1px -1px 1px rgba(0, 0, 0, 0.2);
+}
+
+/* Rims for active player safe starts */
+.tile-top.rim-p1 {
+  box-shadow: 
+    0 0 15px rgba(239, 68, 68, 0.95),
+    inset 0 0 6px rgba(239, 68, 68, 0.6),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.tile-top.rim-p3 {
+  box-shadow: 
+    0 0 15px rgba(234, 179, 8, 0.95),
+    inset 0 0 6px rgba(234, 179, 8, 0.6),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.tile-top.rim-p2 {
+  box-shadow: 
+    0 0 15px rgba(22, 163, 74, 0.95),
+    inset 0 0 6px rgba(22, 163, 74, 0.6),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.tile-top.rim-p4 {
+  box-shadow: 
+    0 0 15px rgba(37, 99, 235, 0.95),
+    inset 0 0 6px rgba(37, 99, 235, 0.6),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Side extrusion faces for normal tiles (6px Z) */
+.tile-side-bottom {
+  position: absolute;
+  bottom: 1px;
+  left: 1px;
+  right: 1px;
+  height: 6px;
+  background: var(--tile-color-shadow);
+  transform: rotateX(-90deg);
+  transform-origin: bottom;
+}
+
+.tile-side-right {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  right: 1px;
+  width: 6px;
+  background: var(--tile-color-shadow-darker);
+  transform: rotateY(90deg);
+  transform-origin: right;
+}
+
+/* Side extrusion faces for safe tiles (10px Z) */
+.tile:has(.safe-tile) .tile-side-bottom {
+  height: 10px;
+}
+.tile:has(.safe-tile) .tile-side-right {
+  width: 10px;
+}
+
+/* Pulsing legal indicator for player rocks */
+.tile-top.legal-highlight {
+  animation: tile-glow 1.5s infinite alternate;
+}
+@keyframes tile-glow {
+  0% {
+    box-shadow: 
+      inset 0 0 10px rgba(255, 255, 255, 0.3),
+      0 0 5px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    box-shadow: 
+      inset 0 0 20px rgba(255, 255, 255, 0.7),
+      0 0 15px rgba(255, 255, 255, 0.5);
+    background: color-mix(in srgb, var(--tile-color) 85%, #ffffff);
+  }
+}
+
+/* Pulsing target indicator for rock destination */
+.tile-top.target-highlight {
+  animation: target-glow 1s infinite alternate;
+}
+@keyframes target-glow {
+  0% {
+    box-shadow: 
+      inset 0 0 12px rgba(34, 197, 94, 0.4),
+      0 0 8px rgba(34, 197, 94, 0.3);
+  }
+  100% {
+    box-shadow: 
+      inset 0 0 24px rgba(34, 197, 94, 0.9),
+      0 0 20px rgba(34, 197, 94, 0.7);
+    background: color-mix(in srgb, var(--tile-color) 70%, #22c55e);
+  }
+}
+
+/* Vector SVG X marks - beveled chrome styling */
+.tile-x-icon {
+  width: 75%;
+  height: 75%;
+  pointer-events: none;
+  filter: drop-shadow(1.5px 1.5px 1px rgba(0, 0, 0, 0.75));
+}
+
+/* 3D Pin/Teardrop Pawns */
+.rock-token {
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin-top: -13px;
+  margin-left: -13px;
+  z-index: 100;
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  pointer-events: none;
+  
+  /* 3D pin body pointing downwards (pointing down via rotateZ(-45deg)) */
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 60%, #94a3b8 100%);
+  border: 1.5px solid var(--pawn-color-border);
+  box-shadow: 
+    -2px 4px 6px rgba(0, 0, 0, 0.6),
+    inset -1px 1px 2px rgba(255,255,255,0.8);
+}
+
+/* Inner circle containing the demon eyes/face (rotateZ(45deg) counter-rotation) */
+.rock-token::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  transform: rotateZ(45deg); /* Counter-rotate to keep face upright */
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--pawn-color-border);
+  box-shadow: 
+    inset 1px 1px 3px rgba(0, 0, 0, 0.8),
+    0 0 6px var(--pawn-glow-color);
+}
+
+/* Player Color Customizations */
+.rock-token.player1 {
+  --pawn-color-border: #ef4444;
+  --pawn-glow-color: rgba(239, 68, 68, 0.8);
+}
+.rock-token.player1::after {
+  background-image: url('../../assets/barakatta/demon_red.jpg');
+}
+
+.rock-token.player2 {
+  --pawn-color-border: #22c55e;
+  --pawn-glow-color: rgba(34, 197, 94, 0.8);
+}
+.rock-token.player2::after {
+  background-image: url('../../assets/barakatta/demon_green.jpg');
+}
+
+.rock-token.player3 {
+  --pawn-color-border: #eab308;
+  --pawn-glow-color: rgba(234, 179, 8, 0.8);
+}
+.rock-token.player3::after {
+  background-image: url('../../assets/barakatta/demon_yellow.jpg');
+}
+
+.rock-token.player4 {
+  --pawn-color-border: #3b82f6;
+  --pawn-glow-color: rgba(59, 130, 246, 0.8);
+}
+.rock-token.player4::after {
+  background-image: url('../../assets/barakatta/demon_blue.jpg');
+}
+
+/* Hop animation preserving rotateX and rotateZ */
+.rock-hopping {
+  animation: rock-hop 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+@keyframes rock-hop {
+  0% {
+    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--base-z, 12px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1);
+  }
+  50% {
+    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--hop-z, 32px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1.35);
+  }
+  100% {
+    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--base-z, 12px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1);
+  }
+}
+
+/* Capture fly-out animation */
+.rock-captured {
+  animation: rock-pop 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+  z-index: 500;
+}
+@keyframes rock-pop {
+  0% {
+    transform: translate3d(0, 0, 10px) scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: translate3d(0, -50px, 80px) scale(1.6);
+  }
+  100% {
+    transform: translate3d(0, 150px, -150px) scale(0.1);
+    opacity: 0;
+  }
+}
+
+/* 3D Dice styling */
+.dice-scene {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+}
+.dice-cube {
+  width: 56px;
+  height: 56px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1);
+  transform: rotateX(20deg) rotateY(20deg);
+}
+.dice-face {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  background: #f4f0e8;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  box-shadow: 
+    inset 0 0 8px rgba(0, 0, 0, 0.12),
+    0 0 2px rgba(0, 0, 0, 0.2);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 5px;
+  box-sizing: border-box;
+}
+.pip {
+  background: #1e1b18;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  margin: auto;
+  box-shadow: 
+    inset 1px 1px 1px rgba(0, 0, 0, 0.5),
+    1px 1px 1px rgba(255, 255, 255, 0.7);
+}
+/* Grid positions for pips */
+.pip.top-left { grid-column: 1; grid-row: 1; }
+.pip.top-right { grid-column: 3; grid-row: 1; }
+.pip.mid-left { grid-column: 1; grid-row: 2; }
+.pip.middle { grid-column: 2; grid-row: 2; }
+.pip.mid-right { grid-column: 3; grid-row: 2; }
+.pip.bot-left { grid-column: 1; grid-row: 3; }
+.pip.bot-right { grid-column: 3; grid-row: 3; }
+
+/* 3D transforms for faces */
+.face-1 { transform: translateZ(28px); }
+.face-6 { transform: translateZ(-28px) rotateY(180deg); }
+.face-2 { transform: rotateY(90deg) translateZ(28px); }
+.face-5 { transform: rotateY(-90deg) translateZ(28px); }
+.face-3 { transform: rotateX(90deg) translateZ(28px); }
+.face-4 { transform: rotateX(-90deg) translateZ(28px); }
+
+/* Reduced motion fallbacks */
+@media (prefers-reduced-motion: reduce) {
+  .rock-hopping, .rock-captured, .dice-cube {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Clickable Yard Glow Highlight */
+.bk-yard-box.bk-yard-clickable-highlight {
+  cursor: pointer;
+  animation: bk-yard-pulse-glow 1.5s infinite alternate;
+  border-width: 2px !important;
+  transition: all 0.3s ease;
+}
+
+@keyframes bk-yard-pulse-glow {
+  from {
+    box-shadow: 0 0 5px var(--glow-color, #fbbf24);
+    border-color: var(--glow-color, #fbbf24) !important;
+    background: rgba(251, 191, 36, 0.05);
+  }
+  to {
+    box-shadow: 0 0 20px var(--glow-color, #fbbf24), inset 0 0 10px var(--glow-color, #fbbf24);
+    border-color: var(--glow-color, #fbbf24) !important;
+    background: rgba(251, 191, 36, 0.15);
+  }
+}
+
+/* Locked player type labels in AI Bot setup mode */
+.player-type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.player-type-tag.human-tag {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.player-type-tag.bot-tag {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* Readonly name input styling for locked bot slot */
+.player-name-input[readonly] {
+  opacity: 0.55;
+  cursor: default;
+  background: rgba(255,255,255,0.04);
+}
