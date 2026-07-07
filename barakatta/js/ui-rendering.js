@@ -638,7 +638,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
   }
 
   // Synthesize a realistic dice rolling/tumbling sound effect using the Web Audio API
-  function playDiceRollSound() {
+  function playSynthesizedDiceRollSound() {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const now = audioCtx.currentTime;
@@ -704,6 +704,20 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       }
     } catch (e) {
       console.warn("Dice AudioContext playback failed:", e);
+    }
+  }
+
+  function playDiceRollSound() {
+    try {
+      const diceAudio = new Audio('assets/freesound_community-rolling-dice-2-102706.mp3');
+      diceAudio.volume = 0.6;
+      diceAudio.play().catch(e => {
+        console.warn("Dice custom audio play failed, falling back to synthesis:", e);
+        playSynthesizedDiceRollSound();
+      });
+    } catch (err) {
+      console.warn("Dice custom audio load failed, falling back to synthesis:", err);
+      playSynthesizedDiceRollSound();
     }
   }
 
