@@ -7,6 +7,8 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceError
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -73,6 +75,8 @@ class MainActivity : AppCompatActivity() {
         settings.allowContentAccess = true
         settings.mediaPlaybackRequiresUserGesture = false
 
+        var loadedFallback = false
+
         webView.webViewClient = object : WebViewClient() {
             @Deprecated("Deprecated in Java")
             override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean {
@@ -80,6 +84,20 @@ class MainActivity : AppCompatActivity() {
                     view.loadUrl(url)
                 }
                 return true
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                if (request?.isForMainFrame == true && !loadedFallback) {
+                    loadedFallback = true
+                    runOnUiThread {
+                        view?.loadUrl("file:///android_asset/www/index.html")
+                        Toast.makeText(this@MainActivity, "Offline: Loaded local game files", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
 
@@ -94,8 +112,8 @@ class MainActivity : AppCompatActivity() {
         // Register Javascript Bridge Interface
         webView.addJavascriptInterface(WebAppInterface(), "AndroidBridge")
 
-        // Load game files locally from the assets/www folder
-        webView.loadUrl("file:///android_asset/www/index.html")
+        // Load development server IP first, falls back to offline assets automatically if unreachable
+        webView.loadUrl("http://192.168.0.214:8000/index.html")
     }
 
     // Inner class defining JavaScript interface methods
