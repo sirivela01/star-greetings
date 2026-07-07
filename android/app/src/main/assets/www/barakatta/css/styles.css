@@ -650,3 +650,57 @@
   cursor: default;
   background: rgba(255,255,255,0.04);
 }
+
+/* Mobile Responsiveness for Barakatta Board */
+@media (max-width: 600px) {
+  .bk-game-layout {
+    padding: 8px 5px !important;
+    gap: 15px !important;
+  }
+  
+  .bk-board-container {
+    padding: 6px !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 350px !important;
+    overflow: hidden !important;
+  }
+
+  .barakatta-board-scene {
+    width: 320px !important;
+    height: 320px !important;
+    perspective: 900px !important;
+    margin: 0 auto !important;
+  }
+
+  .barakatta-board {
+    width: 290px !important;
+    height: 290px !important;
+    border-width: 8px !important;
+    border-radius: 10px !important;
+    padding: 4px !important;
+    transform: rotateX(46deg) rotateZ(0deg) scale(0.9) !important;
+  }
+  
+  /* Scale pieces and status cards for mobile screen spacing */
+  .bk-control-panel {
+    width: 100% !important;
+    max-width: 350px !important;
+    padding: 15px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .barakatta-board-scene {
+    width: 280px !important;
+    height: 280px !important;
+    perspective: 750px !important;
+  }
+
+  .barakatta-board {
+    width: 260px !important;
+    height: 260px !important;
+    transform: rotateX(46deg) rotateZ(0deg) scale(0.85) !important;
+  }
+}
+
