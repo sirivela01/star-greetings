@@ -357,6 +357,10 @@ class BarakattaMultiplayerManager {
           // Mark this player as ready
           const myUsername = this.currentUser.username;
           this.roomRef.child("readiness/" + myUsername).set(true);
+
+          if (room.status === "playing" && room.gameState) {
+            window.bkSyncGameState(room.gameState);
+          }
         }
 
         // Host client readiness coordinator
@@ -394,7 +398,7 @@ class BarakattaMultiplayerManager {
             // It is our local roll, sync the game state just in case
             window.bkSyncGameState(room.gameState);
           }
-        } else if (room.lastAction.type === "move" || room.lastAction.type === "pass") {
+        } else if (room.lastAction.type === "move" || room.lastAction.type === "pass" || room.lastAction.type === "start") {
           // Sync game state variables and draw board
           window.bkSyncGameState(room.gameState);
           

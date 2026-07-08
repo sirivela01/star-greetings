@@ -502,13 +502,13 @@
 }
 @keyframes rock-hop {
   0% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--base-z, 12px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1);
+    transform: translate3d(var(--ox, 0px), var(--oy, 0px), var(--base-z, 12px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1);
   }
   50% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--hop-z, 32px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1.35);
+    transform: translate3d(var(--mx, 0px), var(--my, 0px), var(--hop-z, 32px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1.35);
   }
   100% {
-    transform: translate3d(var(--ox, 0), var(--oy, 0), var(--base-z, 12px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1);
+    transform: translate3d(var(--nx, 0px), var(--ny, 0px), var(--base-z, 12px)) var(--token-rot, rotateX(-46deg) rotateZ(-45deg)) scale(1);
   }
 }
 

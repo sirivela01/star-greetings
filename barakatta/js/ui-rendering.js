@@ -178,23 +178,6 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       const currentX = rockToken.dataset.posX ? Number(rockToken.dataset.posX) : posX;
       const currentY = rockToken.dataset.posY ? Number(rockToken.dataset.posY) : posY;
       
-      if (!prefersReducedMotion) {
-        const hopOffsetX = currentX - posX;
-        const hopOffsetY = currentY - posY;
-        
-        rockToken.classList.add("rock-hopping");
-        rockToken.style.setProperty("--ox", `${hopOffsetX}px`);
-        rockToken.style.setProperty("--oy", `${hopOffsetY}px`);
-        rockToken.style.setProperty("--base-z", `${baseZ}px`);
-        rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
-        setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
-      }
-      
-      rockToken.dataset.row = r;
-      rockToken.dataset.col = c;
-      rockToken.dataset.posX = posX;
-      rockToken.dataset.posY = posY;
-      
       let boardRotateZ = 0;
       if (game.mode === "online" && window.currentUser) {
         const matchedPId = Object.keys(game.players).find(pId => game.players[pId].username === window.currentUser.username);
@@ -203,6 +186,29 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
         else if (matchedPId === "player4") boardRotateZ = 90;
       }
       const tokenRotVal = `rotateZ(${-boardRotateZ}deg) rotateX(-46deg) rotateZ(-45deg)`;
+
+      if (!prefersReducedMotion) {
+        const mx = (currentX + posX) / 2;
+        const my = (currentY + posY) / 2;
+        
+        rockToken.classList.add("rock-hopping");
+        rockToken.style.setProperty("--ox", `${currentX}px`);
+        rockToken.style.setProperty("--oy", `${currentY}px`);
+        rockToken.style.setProperty("--mx", `${mx}px`);
+        rockToken.style.setProperty("--my", `${my}px`);
+        rockToken.style.setProperty("--nx", `${posX}px`);
+        rockToken.style.setProperty("--ny", `${posY}px`);
+        rockToken.style.setProperty("--base-z", `${baseZ}px`);
+        rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
+        rockToken.style.setProperty("--token-rot", tokenRotVal);
+        setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
+      }
+      
+      rockToken.dataset.row = r;
+      rockToken.dataset.col = c;
+      rockToken.dataset.posX = posX;
+      rockToken.dataset.posY = posY;
+      
       rockToken.style.transform = `translate3d(${posX}px, ${posY}px, ${baseZ}px) ${tokenRotVal}`;
       
       if (rockToken.parentNode !== gridEl) {
@@ -667,44 +673,30 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     const color = playerConfig[playerId].color;
     const offset = playerOffsets[playerId];
 
-    for (let i = 0; i < path.length - 1; i++) {
-      const c1 = path[i];
-      const c2 = path[i + 1];
+    // Draw glowing circles (dots) at each cell of the path (excluding the start cell)
+    for (let i = 1; i < path.length; i++) {
+      const cell = path[i];
+      const cx = cell.col * 100 + 50 + offset.dx;
+      const cy = cell.row * 100 + 50 + offset.dy;
 
-      const x1 = c1.col * 100 + 50 + offset.dx;
-      const y1 = c1.row * 100 + 50 + offset.dy;
-      const x2 = c2.col * 100 + 50 + offset.dx;
-      const y2 = c2.row * 100 + 50 + offset.dy;
+      // Draw a glowing outer circle/halo for the dot
+      const dotHalo = document.createElementNS(svgNS, "circle");
+      dotHalo.setAttribute("cx", cx);
+      dotHalo.setAttribute("cy", cy);
+      dotHalo.setAttribute("r", "10");
+      dotHalo.setAttribute("fill", color);
+      dotHalo.setAttribute("opacity", "0.4");
+      dotHalo.style.filter = `drop-shadow(0 0 4px ${color})`;
+      dynamicLinesContainer.appendChild(dotHalo);
 
-      // 1. Draw thick neon background ribbon (semi-transparent)
-      const lineBg = document.createElementNS(svgNS, "line");
-      lineBg.setAttribute("x1", x1);
-      lineBg.setAttribute("y1", y1);
-      lineBg.setAttribute("x2", x2);
-      lineBg.setAttribute("y2", y2);
-      lineBg.setAttribute("stroke", color);
-      lineBg.setAttribute("stroke-width", "16");
-      lineBg.setAttribute("opacity", "0.35");
-      lineBg.setAttribute("stroke-linecap", "round");
-      lineBg.style.filter = `drop-shadow(0 0 5px ${color})`;
-      dynamicLinesContainer.appendChild(lineBg);
-
-      // 2. Draw thin solid foreground arrow line
-      const lineFg = document.createElementNS(svgNS, "line");
-      lineFg.setAttribute("x1", x1);
-      lineFg.setAttribute("y1", y1);
-      lineFg.setAttribute("x2", x2);
-      lineFg.setAttribute("y2", y2);
-      lineFg.setAttribute("stroke", "#ffffff");
-      lineFg.setAttribute("stroke-width", "3");
-      lineFg.setAttribute("opacity", "0.95");
-      lineFg.setAttribute("stroke-linecap", "round");
-
-      // Place arrowhead only at the final segment (the target cell)
-      if (i === path.length - 2) {
-        lineFg.setAttribute("marker-end", `url(#bk-arrow-${playerId})`);
-      }
-      dynamicLinesContainer.appendChild(lineFg);
+      // Draw a bright inner dot
+      const dotInner = document.createElementNS(svgNS, "circle");
+      dotInner.setAttribute("cx", cx);
+      dotInner.setAttribute("cy", cy);
+      dotInner.setAttribute("r", "5");
+      dotInner.setAttribute("fill", "#ffffff");
+      dotInner.setAttribute("opacity", "1");
+      dynamicLinesContainer.appendChild(dotInner);
     }
   }
 
