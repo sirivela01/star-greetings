@@ -237,12 +237,12 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       if (prefersReducedMotion) {
         playStepSound();
       } else {
-        setTimeout(playStepSound, 300);
+        setTimeout(playStepSound, 400);
       }
       moveTokenToCell(playerId, rockId, cell.row, cell.col);
       
       currentStep++;
-      setTimeout(nextStep, 500);
+      setTimeout(nextStep, 400);
     }
     
     nextStep();
