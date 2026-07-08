@@ -3714,6 +3714,9 @@ document.addEventListener("DOMContentLoaded", () => {
             normalizedGuess.includes(normalizedRoster)) {
           return true;
         }
+      }
+    }
+    
     return false;
   }
 
