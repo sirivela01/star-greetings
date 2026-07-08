@@ -3714,9 +3714,9 @@ document.addEventListener("DOMContentLoaded", () => {
             normalizedGuess.includes(normalizedRoster)) {
           return true;
         }
-      }
-    }
-    
+    return false;
+  }
+
   // --- REFILL GREETINGS STACK MODAL LOGIC ---
   const greetingsWrapper = document.getElementById("dashboard-greetings-wrapper");
   const refillModal = document.getElementById("refill-stack-modal");
