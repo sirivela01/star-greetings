@@ -391,7 +391,7 @@ class MultiplayerManager {
           betVote: 25,
           joinedAt: firebase.database.ServerValue.TIMESTAMP,
           status: "connected",
-          greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 6
+          greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 50
         }
       }
     };
@@ -513,7 +513,7 @@ class MultiplayerManager {
         betVote: 25,
         joinedAt: firebase.database.ServerValue.TIMESTAMP,
         status: "connected",
-        greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 6
+        greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 50
       }));
       await this.registerPresence();
 
@@ -797,7 +797,7 @@ class MultiplayerManager {
         const displayAvatar = p.avatar || "assets/avatars/avatar_1.png";
         const displayBetVote = p.betVote !== undefined ? p.betVote : 25;
         const isOffline = p.status === "disconnected";
-        const displayGreetings = p.greetingsStack !== undefined ? p.greetingsStack : 6;
+        const displayGreetings = p.greetingsStack !== undefined ? p.greetingsStack : 50;
         
         row.innerHTML = `
           <div class="lobby-player-info">
@@ -832,8 +832,8 @@ class MultiplayerManager {
     const startBtn = document.getElementById("online-start-match-btn");
     const waitingMsg = document.getElementById("online-host-msg");
     
-    // Check if any player has less than 6 greetings
-    const lowGreetingsPlayers = players.filter(p => (p.greetingsStack !== undefined ? p.greetingsStack : 6) < 6);
+    // Check if any player has less than 50 greetings
+    const lowGreetingsPlayers = players.filter(p => (p.greetingsStack !== undefined ? p.greetingsStack : 50) < 50);
     const hasLowGreetings = lowGreetingsPlayers.length > 0;
     
     if (startBtn && waitingMsg) {
@@ -847,7 +847,7 @@ class MultiplayerManager {
           startBtn.parentNode.insertBefore(warningBanner, startBtn);
         }
         const playerNamesStr = lowGreetingsPlayers.map(p => p.name).join(", ");
-        warningBanner.innerHTML = `⚠️ Cannot start match: <strong>${playerNamesStr}</strong> has less than 6 greetings.`;
+        warningBanner.innerHTML = `⚠️ Cannot start match: <strong>${playerNamesStr}</strong> has less than 50 greetings.`;
       } else {
         if (warningBanner) {
           warningBanner.remove();
@@ -2318,7 +2318,7 @@ class MultiplayerManager {
 
       let totalCollected = 0;
       wrongGuessers.forEach(p => {
-        const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 6;
+        const originalVal = p.greetingsStack !== undefined ? p.greetingsStack : 50;
         const transferVal = Math.min(confirmedStake, originalVal);
         totalCollected += transferVal;
         diffs[p.id] = -transferVal;
@@ -2471,7 +2471,7 @@ class MultiplayerManager {
 
     wrongGuessers.forEach(p => {
       const dbPlayer = dbPlayers[p.uid] || {};
-      const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 6;
+      const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 50;
       const transferVal = Math.min(confirmedStake, originalVal);
       const newVal = originalVal - transferVal;
       updates[`players/${p.uid}/greetingsStack`] = newVal;
@@ -2488,13 +2488,13 @@ class MultiplayerManager {
 
      // cardHolder is already declared at the top of the function
     const dbCardHolder = cardHolder ? (dbPlayers[cardHolder.uid] || {}) : {};
-    const originalHolderVal = dbCardHolder.greetingsStack !== undefined ? dbCardHolder.greetingsStack : 6;
+    const originalHolderVal = dbCardHolder.greetingsStack !== undefined ? dbCardHolder.greetingsStack : 50;
 
     if (correctGuessers.length > 0) {
       const awardVal = Math.floor(totalCollected / correctGuessers.length);
       correctGuessers.forEach(p => {
         const dbPlayer = dbPlayers[p.uid] || {};
-        const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 6;
+        const originalVal = dbPlayer.greetingsStack !== undefined ? dbPlayer.greetingsStack : 50;
         const newVal = originalVal + awardVal;
         updates[`players/${p.uid}/greetingsStack`] = newVal;
       });

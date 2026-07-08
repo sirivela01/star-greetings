@@ -3717,7 +3717,140 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
-    return false;
+  // --- REFILL GREETINGS STACK MODAL LOGIC ---
+  const greetingsWrapper = document.getElementById("dashboard-greetings-wrapper");
+  const refillModal = document.getElementById("refill-stack-modal");
+  const refillCloseBtn = document.getElementById("refill-close-btn");
+  const refillFreeBtn = document.getElementById("refill-free-btn");
+  const refillFreeSub = document.getElementById("refill-free-sub");
+  const refillCoinBtn = document.getElementById("refill-coin-btn");
+  const refillBrokeBtn = document.getElementById("refill-broke-btn");
+
+  if (greetingsWrapper) {
+    greetingsWrapper.style.cursor = "pointer";
+    greetingsWrapper.title = "Click to Refill / Buy Stack";
+    greetingsWrapper.addEventListener("click", () => {
+      openRefillModal();
+    });
+  }
+
+  function openRefillModal() {
+    if (!window.auth) return;
+    const user = window.auth.getCurrentUser();
+    if (!user) return;
+
+    // Update free refill button label
+    const freeBuys = user.freeStackBuys !== undefined ? user.freeStackBuys : 10;
+    if (refillFreeSub) {
+      refillFreeSub.textContent = `${freeBuys} refills left`;
+    }
+
+    // Enable/disable options based on balance
+    if (freeBuys > 0) {
+      refillFreeBtn.disabled = false;
+      refillFreeBtn.style.opacity = "1";
+    } else {
+      refillFreeBtn.disabled = true;
+      refillFreeBtn.style.opacity = "0.4";
+    }
+
+    const coins = user.coins !== undefined ? user.coins : 300;
+    if (coins >= 100) {
+      refillCoinBtn.disabled = false;
+      refillCoinBtn.style.opacity = "1";
+    } else {
+      refillCoinBtn.disabled = true;
+      refillCoinBtn.style.opacity = "0.4";
+    }
+
+    // If completely broke, show claim coins option
+    if (freeBuys === 0 && coins < 100) {
+      refillBrokeBtn.style.display = "block";
+    } else {
+      refillBrokeBtn.style.display = "none";
+    }
+
+    if (refillModal) {
+      refillModal.style.display = "flex";
+      refillModal.classList.remove("hidden");
+    }
+  }
+
+  function closeRefillModal() {
+    if (refillModal) {
+      refillModal.style.display = "none";
+      refillModal.classList.add("hidden");
+    }
+  }
+
+  if (refillCloseBtn) {
+    refillCloseBtn.addEventListener("click", closeRefillModal);
+  }
+
+  if (refillFreeBtn) {
+    refillFreeBtn.addEventListener("click", async () => {
+      if (!window.auth) return;
+      const user = window.auth.getCurrentUser();
+      if (!user) return;
+
+      const freeBuys = user.freeStackBuys !== undefined ? user.freeStackBuys : 10;
+      if (freeBuys > 0) {
+        const currentGreetings = user.greetingsStack !== undefined ? user.greetingsStack : 50;
+        await window.auth.updateFreeStackBuys(freeBuys - 1);
+        await window.auth.updateGreetingsStack(currentGreetings + 50);
+        playReadySound();
+        if (window.refreshGreetingsStack) {
+          window.refreshGreetingsStack(user);
+        }
+        closeRefillModal();
+      }
+    });
+  }
+
+  if (refillCoinBtn) {
+    refillCoinBtn.addEventListener("click", async () => {
+      if (!window.auth) return;
+      const user = window.auth.getCurrentUser();
+      if (!user) return;
+
+      const coins = user.coins !== undefined ? user.coins : 300;
+      if (coins >= 100) {
+        const currentGreetings = user.greetingsStack !== undefined ? user.greetingsStack : 50;
+        await window.auth.updateCoins(coins - 100);
+        await window.auth.updateGreetingsStack(currentGreetings + 50);
+        playReadySound();
+        if (window.refreshGreetingsStack) {
+          window.refreshGreetingsStack(user);
+        }
+        // Update coins label in UI
+        const coinsLabel = document.getElementById("dashboard-profile-coins");
+        if (coinsLabel) {
+          coinsLabel.textContent = coins - 100;
+        }
+        closeRefillModal();
+      }
+    });
+  }
+
+  if (refillBrokeBtn) {
+    refillBrokeBtn.addEventListener("click", async () => {
+      if (!window.auth) return;
+      const user = window.auth.getCurrentUser();
+      if (!user) return;
+
+      const coins = user.coins !== undefined ? user.coins : 0;
+      await window.auth.updateCoins(coins + 300);
+      playReadySound();
+      if (window.refreshGreetingsStack) {
+        window.refreshGreetingsStack(user);
+      }
+      // Update coins label in UI
+      const coinsLabel = document.getElementById("dashboard-profile-coins");
+      if (coinsLabel) {
+        coinsLabel.textContent = coins + 300;
+      }
+      openRefillModal(); // Refresh button states
+    });
   }
 
   // Initialize view

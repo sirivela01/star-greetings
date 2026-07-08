@@ -823,6 +823,40 @@
       </div>
     </div>
 
+  <!-- Refill Greetings Stack Modal -->
+  <div id="refill-stack-modal" class="modal-overlay hidden" style="display: none; z-index: 10000;">
+    <div class="glass-container modal-content-box" style="max-width: 420px; padding: 25px; text-align: center;">
+      <h2 style="color: #fbbf24; margin-bottom: 15px; font-size: 1.5rem; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);">Refill Greetings Stack</h2>
+      <p style="color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4;">
+        You need at least <strong>50 cards</strong> to play a match. Choose a refill method:
+      </p>
+      
+      <div id="refill-options-container" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <!-- Refill using Free Buy -->
+        <button type="button" id="refill-free-btn" class="btn buy-btn free-buy-btn" style="width: 100%; padding: 12px !important; font-size: 0.9rem !important;">
+          Use Free Refill <br>
+          <span class="btn-sub" id="refill-free-sub" style="font-size: 0.7rem;">10 refills left</span>
+        </button>
+        
+        <!-- Refill using Coins -->
+        <button type="button" id="refill-coin-btn" class="btn buy-btn coin-buy-btn" style="width: 100%; padding: 12px !important; font-size: 0.9rem !important;">
+          Buy Stack (50 Cards) <br>
+          <span class="btn-sub" style="font-size: 0.7rem;">🪙 100 Coins</span>
+        </button>
+        
+        <!-- Get Free Coins -->
+        <button type="button" id="refill-broke-btn" class="btn buy-btn broke-buy-btn" style="width: 100%; padding: 12px !important; font-size: 0.9rem !important; display: none;">
+          Claim Free Coins <br>
+          <span class="btn-sub" style="font-size: 0.7rem;">Get 300 Coins</span>
+        </button>
+      </div>
+      
+      <div style="display: flex; gap: 15px; margin-top: 10px;">
+         <button type="button" id="refill-close-btn" class="btn secondary-btn" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); color: #fff;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Custom Theme Prompt Modal -->
   <div id="custom-theme-modal" class="modal-overlay hidden" style="display: none; z-index: 10000;">
     <div class="glass-container modal-content-box" style="max-width: 450px; padding: 25px; text-align: center;">
