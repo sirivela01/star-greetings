@@ -7,6 +7,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
   let currentRollCount = 0;
   let selectedRockId = null;
   let activeHighlightPath = null;
+  let isAnimatingMove = false;
 
   // Custom player setup configuration variables
   let bkSetupPlayerCount = 2;
@@ -85,6 +86,186 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + 0.06);
     } catch (e) {}
+  }
+
+  // Synthesizes a realistic pawn step/movement sound effect
+  function playStepSound() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      
+      // 1. Low impact wood block sound (Triangle wave)
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.type = "triangle";
+      
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+      
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.15, now + 0.005);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
+      
+      // 2. High frequency click/tap to simulate solid contact
+      const clickOsc = audioCtx.createOscillator();
+      const clickGain = clickOsc.context.createGain();
+      clickOsc.type = "sine";
+      clickOsc.frequency.setValueAtTime(1200, now);
+      clickOsc.frequency.exponentialRampToValueAtTime(600, now + 0.02);
+      
+      clickGain.gain.setValueAtTime(0.03, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+      
+      clickOsc.connect(clickGain);
+      clickGain.connect(audioCtx.destination);
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.02);
+    } catch (e) {
+      console.warn("Step sound playback failed:", e);
+    }
+  }
+
+  // Physically update DOM token's position to cell (r, c)
+  function moveTokenToCell(playerId, rockId, r, c) {
+    const domId = `bk-rock-${playerId}-${rockId}`;
+    const rockToken = document.getElementById(domId);
+    if (!rockToken) return;
+    
+    const tileDiv = tilesGrid[r] ? tilesGrid[r][c] : null;
+    if (!tileDiv) return;
+    
+    const isSafe = BARAKATTA_BOARD.safeSquares.some(s => s.row === r && s.col === c);
+    const baseZ = isSafe ? 22 : 18;
+    
+    // Group active board / home rocks on target cell to calculate staggered offset
+    let rocksOnCell = [];
+    Object.keys(game.players).forEach(pId => {
+      game.players[pId].rocks.forEach(rObj => {
+        if (pId === playerId && rObj.id === rockId) return; // Exclude moving rock
+        
+        let cell = null;
+        if (rObj.status === "active" || rObj.status === "blocked") {
+          cell = game.getRockCell(pId, rObj.id);
+        } else if (rObj.status === "home") {
+          cell = { row: 3, col: 3 };
+        }
+        if (cell && cell.row === r && cell.col === c) {
+          rocksOnCell.push({ playerId: pId, rockId: rObj.id });
+        }
+      });
+    });
+    
+    rocksOnCell.push({ playerId, rockId });
+    const N = rocksOnCell.length;
+    const idx = N - 1;
+    
+    const angle = (idx * 2 * Math.PI) / N;
+    const dist = N > 1 ? 12 : 0;
+    const offsetX = Math.cos(angle) * dist;
+    const offsetY = Math.sin(angle) * dist;
+    
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const gridEl = document.querySelector(".barakatta-board-grid");
+    if (gridEl) {
+      const posX = tileDiv.offsetLeft + tileDiv.offsetWidth / 2 + offsetX;
+      const posY = tileDiv.offsetTop + tileDiv.offsetHeight / 2 + offsetY;
+      
+      const currentX = rockToken.dataset.posX ? Number(rockToken.dataset.posX) : posX;
+      const currentY = rockToken.dataset.posY ? Number(rockToken.dataset.posY) : posY;
+      
+      if (!prefersReducedMotion) {
+        const hopOffsetX = currentX - posX;
+        const hopOffsetY = currentY - posY;
+        
+        rockToken.classList.add("rock-hopping");
+        rockToken.style.setProperty("--ox", `${hopOffsetX}px`);
+        rockToken.style.setProperty("--oy", `${hopOffsetY}px`);
+        rockToken.style.setProperty("--base-z", `${baseZ}px`);
+        rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
+        setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
+      }
+      
+      rockToken.dataset.row = r;
+      rockToken.dataset.col = c;
+      rockToken.dataset.posX = posX;
+      rockToken.dataset.posY = posY;
+      
+      let boardRotateZ = 0;
+      if (game.mode === "online" && window.currentUser) {
+        const matchedPId = Object.keys(game.players).find(pId => game.players[pId].username === window.currentUser.username);
+        if (matchedPId === "player3") boardRotateZ = 180;
+        else if (matchedPId === "player2") boardRotateZ = 270;
+        else if (matchedPId === "player4") boardRotateZ = 90;
+      }
+      const tokenRotVal = `rotateZ(${-boardRotateZ}deg) rotateX(-46deg) rotateZ(-45deg)`;
+      rockToken.style.transform = `translate3d(${posX}px, ${posY}px, ${baseZ}px) ${tokenRotVal}`;
+      
+      if (rockToken.parentNode !== gridEl) {
+        gridEl.appendChild(rockToken);
+      }
+    }
+  }
+
+  // Move a single rock token step-by-step along a path of cells
+  function animateRockPath(playerId, rockId, path, onComplete) {
+    if (!path || path.length <= 1) {
+      if (onComplete) onComplete();
+      return;
+    }
+    
+    let currentStep = 1;
+    
+    function nextStep() {
+      if (currentStep >= path.length) {
+        if (onComplete) onComplete();
+        return;
+      }
+      
+      const cell = path[currentStep];
+      playStepSound();
+      moveTokenToCell(playerId, rockId, cell.row, cell.col);
+      
+      currentStep++;
+      setTimeout(nextStep, 350);
+    }
+    
+    nextStep();
+  }
+
+  // Execute local/offline actions with path animation if MOVE_ROCK
+  function executeLocalAction(playerId, action, isBot) {
+    if (action.type === "MOVE_ROCK") {
+      const path = game.getRockStepPath(playerId, action.rockId, action.steps);
+      if (path && path.length > 1) {
+        isAnimatingMove = true;
+        animateRockPath(playerId, action.rockId, path, () => {
+          isAnimatingMove = false;
+          const summary = game.executeAction(playerId, action);
+          if (isBot) {
+            document.getElementById("bk-status-desc").textContent = `${game.players[playerId].name}: ${summary}`;
+            completeBotTurnSequence();
+          } else {
+            document.getElementById("bk-status-desc").textContent = summary;
+            completeTurnSequence();
+          }
+        });
+        return;
+      }
+    }
+    
+    const summary = game.executeAction(playerId, action);
+    if (isBot) {
+      document.getElementById("bk-status-desc").textContent = `${game.players[playerId].name}: ${summary}`;
+      completeBotTurnSequence();
+    } else {
+      document.getElementById("bk-status-desc").textContent = summary;
+      completeTurnSequence();
+    }
   }
 
   const AVATARS = [
@@ -922,6 +1103,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
   // Handle dice rolling event
   function handleHumanRoll() {
+    if (isAnimatingMove) return;
     if (isRolling || game.rollState !== "idle") return;
 
     const isPlayerTurn = !game.players[game.currentTurn].isBot;
@@ -1017,6 +1199,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
   }
 
   function handlePassTurn() {
+    if (isAnimatingMove) return;
     if (isRolling || game.rollState !== "rolled") return;
 
     // Online multiplayer check
@@ -1106,9 +1289,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
                 window.bkMultiplayer.forceResyncState();
               });
             } else {
-              const summary = game.executeAction(game.currentTurn, action);
-              document.getElementById("bk-status-desc").textContent = summary;
-              completeTurnSequence();
+              executeLocalAction(game.currentTurn, action, false);
             }
           }
         };
@@ -1127,6 +1308,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
   // Handle board tile clicking directly
   function handleTileClick(row, col) {
+    if (isAnimatingMove) return;
     const isPlayerTurn = !game.players[game.currentTurn].isBot;
     if (!isPlayerTurn || game.rollState !== "rolled") return;
 
@@ -1163,9 +1345,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
             window.bkMultiplayer.forceResyncState();
           });
         } else {
-          const summary = game.executeAction(game.currentTurn, clickedRockAction);
-          document.getElementById("bk-status-desc").textContent = summary;
-          completeTurnSequence();
+          executeLocalAction(game.currentTurn, clickedRockAction, false);
         }
       } else {
         // Otherwise, select this rock and show its step-by-step path
@@ -1207,9 +1387,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
               window.bkMultiplayer.forceResyncState();
             });
           } else {
-            const summary = game.executeAction(game.currentTurn, confirmAction);
-            document.getElementById("bk-status-desc").textContent = summary;
-            completeTurnSequence();
+            executeLocalAction(game.currentTurn, confirmAction, false);
           }
           return;
         }
@@ -1428,14 +1606,10 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
               
               setTimeout(() => {
                 clearHighlightPath();
-                const summary = game.executeAction(activeBotId, chosenAction);
-                document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
-                completeBotTurnSequence();
+                executeLocalAction(activeBotId, chosenAction, true);
               }, 800);
             } else {
-              const summary = game.executeAction(activeBotId, chosenAction);
-              document.getElementById("bk-status-desc").textContent = `${game.players[activeBotId].name}: ${summary}`;
-              completeBotTurnSequence();
+              executeLocalAction(activeBotId, chosenAction, true);
             }
           }, 600);
         }
@@ -1541,8 +1715,45 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
   window.bkSyncGameState = function (serializedState) {
     if (!game) return;
-    game.deserialize(serializedState);
-    triggerTurn();
+
+    let movedPlayerId = null;
+    let movedRockId = null;
+    let path = null;
+
+    if (tilesGrid) {
+      Object.keys(game.players).forEach(pId => {
+        const incomingPlayer = serializedState.players[pId];
+        if (!incomingPlayer) return;
+
+        game.players[pId].rocks.forEach(rock => {
+          const incomingRock = incomingPlayer.rocks[rock.id];
+          if (!incomingRock) return;
+
+          if (rock.currentRing !== incomingRock.currentRing || rock.positionInRing !== incomingRock.positionInRing) {
+            if (rock.status === "active" || rock.status === "blocked") {
+              const steps = game.diceValue || 1;
+              path = game.getRockStepPath(pId, rock.id, steps);
+              if (path) {
+                movedPlayerId = pId;
+                movedRockId = rock.id;
+              }
+            }
+          }
+        });
+      });
+    }
+
+    if (movedPlayerId !== null && movedRockId !== null && path && path.length > 1) {
+      isAnimatingMove = true;
+      animateRockPath(movedPlayerId, movedRockId, path, () => {
+        isAnimatingMove = false;
+        game.deserialize(serializedState);
+        triggerTurn();
+      });
+    } else {
+      game.deserialize(serializedState);
+      triggerTurn();
+    }
   };
 
   window.bkAnimateOnlineRoll = function (roll, player) {

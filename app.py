@@ -314,11 +314,79 @@ def get_ml_voice_match(transcript, roster_names):
 
     return None
 
+def query_openai_whisper(audio_bytes, mime_type):
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_key:
+        return None
+    
+    ext = "webm"
+    if "mp4" in mime_type:
+        ext = "mp4"
+    elif "ogg" in mime_type:
+        ext = "ogg"
+    elif "wav" in mime_type:
+        ext = "wav"
+        
+    headers = {
+        "Authorization": f"Bearer {openai_key}"
+    }
+    files = {
+        "file": (f"audio.{ext}", audio_bytes, mime_type)
+    }
+    data = {
+        "model": "whisper-1"
+    }
+    
+    try:
+        url = "https://api.openai.com/v1/audio/transcriptions"
+        response = requests.post(url, headers=headers, files=files, data=data, timeout=10)
+        if response.status_code == 200:
+            result = response.json()
+            return result.get("text", "").strip()
+        else:
+            print(f"OpenAI Whisper API error (status {response.status_code}): {response.text}")
+    except Exception as e:
+        print(f"Failed to query OpenAI Whisper API: {e}")
+    return None
+
+def query_openai_gpt(sys_instruction, prompt):
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_key:
+        return None
+        
+    headers = {
+        "Authorization": f"Bearer {openai_key}",
+        "Content-Type": "application/json"
+    }
+    json_data = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": sys_instruction},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.0,
+        "max_tokens": 50
+    }
+    
+    try:
+        url = "https://api.openai.com/v1/chat/completions"
+        response = requests.post(url, headers=headers, json=json_data, timeout=10)
+        if response.status_code == 200:
+            result = response.json()
+            choices = result.get("choices", [])
+            if choices:
+                return choices[0].get("message", {}).get("content", "").strip().replace('"', '')
+        else:
+            print(f"OpenAI GPT API error (status {response.status_code}): {response.text}")
+    except Exception as e:
+        print(f"Failed to query OpenAI GPT API: {e}")
+    return None
+
 @app.route('/api/voice/transcribe', methods=['POST'])
 def transcribe_voice_audio():
     """
-    Receives a raw audio file from the client, sends it directly to Gemini model
-    for high-accuracy audio transcription + RAG context matching of actor names.
+    Receives a raw audio file from the client, sends it to OpenAI Whisper (ASR) + GPT (NLP)
+    for high-accuracy audio transcription & name resolution, with Gemini fallback.
     """
     try:
         if 'audio' not in request.files:
@@ -340,6 +408,37 @@ def transcribe_voice_audio():
         if "octet-stream" in mime_type or not mime_type:
             mime_type = "audio/webm"
 
+        sys_instruction = (
+            "You are an expert voice recognition and transcription engine for Indian actor names in a card game. "
+            "The user is speaking an actor's name (like Prabhas, Allu Arjun, Mahesh Babu, Samantha, Nagarjuna, etc.). "
+            "You will be given the raw audio/transcript and the list of active actor names in play (RAG Context). "
+            "Identify what name they are saying, and match it to the closest actor name from the list. "
+            "Return ONLY the exact matched star name from the list. "
+            "If it matches absolutely nothing, return the transcription of the name they spoke. "
+            "Do not add any explanations, quotes, punctuation, or other text."
+        )
+
+        # 1. Try OpenAI Whisper (ASR) + GPT (NLP) Pipeline if API Key is configured
+        openai_key = os.environ.get("OPENAI_API_KEY")
+        if openai_key:
+            print("🎤 OpenAI pipeline selected for ASR transcription")
+            whisper_text = query_openai_whisper(audio_bytes, mime_type)
+            if whisper_text:
+                print(f"🎤 OpenAI Whisper (ASR) resolved transcript: '{whisper_text}'")
+                prompt = (
+                    f"Identify the actor name from this spoken transcript.\n"
+                    f"Spoken Transcript: '{whisper_text}'\n"
+                    f"RAG Context (Possible Star Names in Play):\n"
+                    f"{json.dumps(roster_names)}\n"
+                    f"\nRemember: 'Hello Arjun' or 'Hello' or 'Arjun' is 'Allu Arjun'. 'Now That' or similar is 'Nagarjuna'. "
+                    f"Return ONLY the exact matched name."
+                )
+                corrected_name = query_openai_gpt(sys_instruction, prompt)
+                if corrected_name:
+                    print(f"🎤 OpenAI GPT (NLP) resolved matched name: '{corrected_name}'")
+                    return jsonify({"success": True, "transcription": corrected_name})
+
+        # 2. Fallback: Gemini Client
         global gemini_client
         if not gemini_client and os.environ.get("GEMINI_API_KEY"):
             try:
@@ -348,16 +447,7 @@ def transcribe_voice_audio():
                 print(f"Lazy init of Gemini client failed: {e}")
 
         if gemini_client:
-            sys_instruction = (
-                "You are an expert voice recognition and transcription engine for Indian actor names in a card game. "
-                "The user is speaking an actor's name (like Prabhas, Allu Arjun, Mahesh Babu, Samantha, Nagarjuna, etc.). "
-                "You will be given the raw audio recording and the list of active actor names in play (RAG Context). "
-                "Listen to the audio, identify what name they are saying, and match it to the closest actor name from the list. "
-                "Return ONLY the exact matched star name from the list. "
-                "If it matches absolutely nothing, return your best transcription of the name they spoke. "
-                "Do not add any explanations, quotes, punctuation, or other text."
-            )
-            
+            print("🎤 Gemini pipeline selected for ASR transcription")
             prompt = (
                 f"Identify the actor name spoken in this audio clip.\n"
                 f"RAG Context (Possible Star Names in Play):\n"
@@ -365,7 +455,6 @@ def transcribe_voice_audio():
                 f"\nRemember: 'Hello Arjun' or 'Hello' or 'Arjun' is 'Allu Arjun'. 'Now That' or similar is 'Nagarjuna'. "
                 f"Return ONLY the exact matched name."
             )
-
             try:
                 response = gemini_client.models.generate_content(
                     model='gemini-2.5-flash',
@@ -387,7 +476,7 @@ def transcribe_voice_audio():
             except Exception as gemini_err:
                 print(f"Gemini audio transcription failed: {gemini_err}")
 
-        # Fallback if Gemini or network is offline
+        # Fallback if both offline
         return jsonify({"success": False, "error": "GenAI Service Unavailable"}), 503
     except Exception as e:
         print(f"Error in audio transcription endpoint: {e}")
@@ -396,7 +485,7 @@ def transcribe_voice_audio():
 @app.route('/api/voice/correct', methods=['POST'])
 def correct_voice_input():
     """
-    Uses Hybrid Machine Learning (edit distance phonetics) and Gemini LLM RAG to correct spoken actor names.
+    Uses Hybrid Machine Learning (edit distance phonetics) and OpenAI GPT / Gemini LLM RAG to correct spoken actor names.
     """
     try:
         body = request.json or {}
@@ -415,7 +504,34 @@ def correct_voice_input():
             print(f"🤖 ML Phonetic Matcher resolved: '{transcript}' -> '{ml_match}'")
             return jsonify({"corrected": ml_match})
 
-        # 2. Fallback to Gemini Generative AI for complex cases
+        sys_instruction = (
+            "You are an expert phonetic parser and auto-correction engine for Indian actor names. "
+            "The user is playing a cinema game and spoke a name. The speech recognition transcribed it as a phonetic approximation. "
+            "Your goal is to match this approximation to the single most likely star from the provided roster. "
+            "Return ONLY the exact matched star name from the roster (e.g. 'Nagarjuna', 'Prabhas'). "
+            "If it does not resemble any star in the roster, return the original transcription as-is. "
+            "Do not include quotes, explanations, or any other characters."
+        )
+        prompt = (
+            f"Spoken text phonetic transcription: '{transcript}'\n"
+            f"Roster of stars in play (RAG Context):\n"
+            f"{json.dumps(roster_names)}\n"
+            f"\nIdentify if the spoken transcription resembles one of the names in the roster phonetically, "
+            f"for example, 'Hello Arjun' or 'Hello' sounds exactly like 'Allu Arjun', "
+            f"'Now That' sounds exactly like 'Nagarjuna', "
+            f"'Bunny' or 'Allu' is 'Allu Arjun', 'Sam' is 'Samantha Ruth Prabhu', 'NTR' or 'Tarak' is 'Jr NTR'. "
+            f"Output ONLY the corrected name or the original transcription if no match is found."
+        )
+
+        # 2. Try OpenAI GPT if API Key is configured
+        openai_key = os.environ.get("OPENAI_API_KEY")
+        if openai_key:
+            corrected_name = query_openai_gpt(sys_instruction, prompt)
+            if corrected_name:
+                print(f"🤖 OpenAI GPT voice correction resolved: '{corrected_name}'")
+                return jsonify({"corrected": corrected_name})
+
+        # 3. Fallback: Gemini Client
         global gemini_client
         if not gemini_client and os.environ.get("GEMINI_API_KEY"):
             try:
@@ -424,26 +540,6 @@ def correct_voice_input():
                 print(f"Lazy init of Gemini client failed: {e}")
 
         if gemini_client:
-            sys_instruction = (
-                "You are an expert phonetic parser and auto-correction engine for Indian actor names. "
-                "The user is playing a cinema game and spoke a name. The speech recognition transcribed it as a phonetic approximation. "
-                "Your goal is to match this approximation to the single most likely star from the provided roster. "
-                "Return ONLY the exact matched star name from the roster (e.g. 'Nagarjuna', 'Prabhas'). "
-                "If it does not resemble any star in the roster, return the original transcription as-is. "
-                "Do not include quotes, explanations, or any other characters."
-            )
-            
-            prompt = (
-                f"Spoken text phonetic transcription: '{transcript}'\n"
-                f"Roster of stars in play (RAG Context):\n"
-                f"{json.dumps(roster_names)}\n"
-                f"\nIdentify if the spoken transcription resembles one of the names in the roster phonetically, "
-                f"for example, 'Hello Arjun' or 'Hello' sounds exactly like 'Allu Arjun', "
-                f"'Now That' sounds exactly like 'Nagarjuna', "
-                f"'Bunny' or 'Allu' is 'Allu Arjun', 'Sam' is 'Samantha Ruth Prabhu', 'NTR' or 'Tarak' is 'Jr NTR'. "
-                f"Output ONLY the corrected name or the original transcription if no match is found."
-            )
-
             try:
                 response = gemini_client.models.generate_content(
                     model='gemini-2.5-flash',
@@ -454,6 +550,7 @@ def correct_voice_input():
                     )
                 )
                 corrected_name = response.text.strip().replace('"', '')
+                print(f"🤖 Gemini voice correction resolved: '{corrected_name}'")
                 return jsonify({"corrected": corrected_name})
             except Exception as gemini_err:
                 print(f"Gemini voice correction failed: {gemini_err}")

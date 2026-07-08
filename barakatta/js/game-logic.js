@@ -37,8 +37,7 @@ class BarakattaGame {
     if (this.customPlayers) {
       slots.forEach((pId, idx) => {
         // Map index to the custom configuration:
-        // For playerCount === 2, slots are player1 and player3, which are index 0 and 2 in mappedCustom.
-        const customIdx = idx;
+        const customIdx = parseInt(pId.replace("player", ""), 10) - 1;
         const custom = this.customPlayers[customIdx] || {};
         
         this.players[pId] = {

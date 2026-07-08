@@ -249,6 +249,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        webView.webChromeClient = object : android.webkit.WebChromeClient() {
+            override fun onJsAlert(
+                view: WebView?,
+                url: String?,
+                message: String?,
+                result: android.webkit.JsResult?
+            ): Boolean {
+                runOnUiThread {
+                    androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
+                        .setMessage(message)
+                        .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
+                        .setCancelable(false)
+                        .show()
+                }
+                return true
+            }
+        }
+
         // Configure Google Sign-In options
         // NOTE: Replace "YOUR_WEB_CLIENT_ID_HERE" with your actual Web Client ID from Firebase Console (Project Settings > Web SDK config)
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

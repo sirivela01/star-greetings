@@ -127,3 +127,18 @@ All code and styling assets for Barakatta reside in the new, isolated `barakatta
 - **Compile Success**: Code compiles cleanly: `python -m py_compile app.py`.
 - **UI & Routing**: Web interface scales dynamically and loads assets reliably.
 - **Gameplay Loop**: Concentric path loops, counter-clockwise paths, safety square stacks, 3D animations, offline Pass & Play, 4-player AI / Pass & Play modes, and clean multi-layered player lanes operate correctly.
+- **Multiplayer Synchronisation (Demons Sync)**:
+  - Fixed 2-player seat index mapping inside `game-logic.js` constructor, so Player 3 is mapped to seat index 2 (guest player) instead of index 1 (bot).
+  - Fixed initial match start state sync (`"start"` action type) in `multiplayer.js` so guest client updates the board position of demons immediately when status changes to `"playing"`.
+- **WebView Dialog Popups**:
+  - Configured `WebChromeClient` inside `MainActivity.kt` layout template to forward JS `alert()` messages to native Android dialog blocks, showing Firebase error messages (e.g. if the developer forgets to turn on Email/Password sign-in method on console).
+- **OpenAI Whisper ASR + GPT NLP Voice Integration**:
+  - Replaced the voice transcription endpoint in `app.py` with a two-stage pipeline:
+    1. **ASR (Speech-to-Text)**: Calls OpenAI Whisper (`whisper-1`) to convert the audio bytes to raw text.
+    2. **NLP (Intent / Name Understanding)**: Calls OpenAI GPT (`gpt-4o-mini`) using the active roster context to resolve the spoken name (including abbreviations like "bunny" or "Sam").
+  - Implemented automatic, self-healing fallback to Gemini (`gemini-2.5-flash`) if `OPENAI_API_KEY` is not present in the environment.
+- **Step-by-Step Movement Animations & Physical Step Sounds**:
+  - Implemented detailed step-by-step movements where demon tokens hop cell-by-cell along their path rather than teleporting to the end.
+  - Synthesized a realistic physical "wooden/plastic step" impact sound effect using the Web Audio API (low-frequency triangle wave thud and high-frequency sine click) played at each intermediate hop.
+  - Integrated the step-by-step animations with the online multiplayer synchronizer (`bkSyncGameState`), ensuring that when a database state update is received, spectators see the other player's pieces move step-by-step along the path with step sounds in real-time, while blocking conflicting UI interactions during the animation.
+
