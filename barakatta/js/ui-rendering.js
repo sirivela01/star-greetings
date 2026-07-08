@@ -201,7 +201,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
         rockToken.style.setProperty("--base-z", `${baseZ}px`);
         rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
         rockToken.style.setProperty("--token-rot", tokenRotVal);
-        setTimeout(() => rockToken.classList.remove("rock-hopping"), 800);
+        setTimeout(() => rockToken.classList.remove("rock-hopping"), 600);
       }
       
       rockToken.dataset.row = r;
@@ -237,7 +237,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       moveTokenToCell(playerId, rockId, cell.row, cell.col);
       
       currentStep++;
-      setTimeout(nextStep, 1000);
+      setTimeout(nextStep, 800);
     }
     
     nextStep();
