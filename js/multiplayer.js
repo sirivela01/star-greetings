@@ -327,7 +327,10 @@ class MultiplayerManager {
     const screens = [
       "login-screen", "signup-screen", "forgot-password-screen",
       "dashboard-screen", "online-lobby-screen", "online-waiting-screen",
-      "setup-screen", "game-screen", "end-screen"
+      "setup-screen", "game-screen", "end-screen",
+      "theme-selection-screen", "game-selection-screen",
+      "barakatta-dashboard-screen", "barakatta-setup-screen", "barakatta-game-screen",
+      "barakatta-online-lobby-screen", "barakatta-online-waiting-screen"
     ];
     screens.forEach(id => {
       const el = document.getElementById(id);

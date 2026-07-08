@@ -499,7 +499,13 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("game-selection-screen"),
       document.getElementById("barakatta-dashboard-screen"),
       document.getElementById("barakatta-setup-screen"),
-      document.getElementById("barakatta-game-screen")
+      document.getElementById("barakatta-game-screen"),
+      document.getElementById("theme-selection-screen"),
+      document.getElementById("online-lobby-screen"),
+      document.getElementById("online-waiting-screen"),
+      document.getElementById("end-screen"),
+      document.getElementById("barakatta-online-lobby-screen"),
+      document.getElementById("barakatta-online-waiting-screen")
     ];
     allViews.forEach(view => {
       if (view) view.classList.add("hidden");

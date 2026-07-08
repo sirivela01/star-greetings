@@ -86,7 +86,8 @@ class BarakattaMultiplayerManager {
       "dashboard-screen", "online-lobby-screen", "online-waiting-screen",
       "setup-screen", "game-screen", "end-screen",
       "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen",
-      "barakatta-online-lobby-screen", "barakatta-online-waiting-screen"
+      "barakatta-online-lobby-screen", "barakatta-online-waiting-screen",
+      "theme-selection-screen", "game-selection-screen"
     ];
     screens.forEach(id => {
       const el = document.getElementById(id);

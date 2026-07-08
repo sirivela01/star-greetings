@@ -405,9 +405,13 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
     bkSetupMode = defaultMode || "offline";
     const isAiBot = bkSetupMode === "ai_bot";
 
-    const screens = ["login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen",
+    const screens = [
+      "login-screen", "signup-screen", "forgot-password-screen", "dashboard-screen",
       "setup-screen", "game-screen", "game-selection-screen",
-      "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen"];
+      "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen",
+      "theme-selection-screen", "online-lobby-screen", "online-waiting-screen",
+      "end-screen", "barakatta-online-lobby-screen", "barakatta-online-waiting-screen"
+    ];
     screens.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add("hidden");
@@ -508,7 +512,8 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       "game-selection-screen", "barakatta-dashboard-screen", 
       "barakatta-game-screen", "barakatta-setup-screen",
       "barakatta-online-lobby-screen", "barakatta-online-waiting-screen",
-      "online-lobby-screen", "online-waiting-screen"
+      "online-lobby-screen", "online-waiting-screen", "theme-selection-screen",
+      "end-screen"
     ];
     screens.forEach(id => {
       const el = document.getElementById(id);
