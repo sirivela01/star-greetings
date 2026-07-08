@@ -201,7 +201,7 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
         rockToken.style.setProperty("--base-z", `${baseZ}px`);
         rockToken.style.setProperty("--hop-z", `${baseZ + 20}px`);
         rockToken.style.setProperty("--token-rot", tokenRotVal);
-        setTimeout(() => rockToken.classList.remove("rock-hopping"), 400);
+        setTimeout(() => rockToken.classList.remove("rock-hopping"), 300);
       }
       
       rockToken.dataset.row = r;
@@ -233,11 +233,16 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
       }
       
       const cell = path[currentStep];
-      playStepSound();
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) {
+        playStepSound();
+      } else {
+        setTimeout(playStepSound, 300);
+      }
       moveTokenToCell(playerId, rockId, cell.row, cell.col);
       
       currentStep++;
-      setTimeout(nextStep, 600);
+      setTimeout(nextStep, 500);
     }
     
     nextStep();
