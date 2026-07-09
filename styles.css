@@ -2414,6 +2414,10 @@ select.form-select option {
 }
 
 
+#game-selection-screen {
+  background: #000000 !important;
+}
+
 /* ==========================================================================
    Cold Start Splash Loading Screen
    ========================================================================== */
