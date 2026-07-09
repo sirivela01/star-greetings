@@ -2418,6 +2418,22 @@ select.form-select option {
   background: #000000 !important;
 }
 
+#game-selection-screen .selection-box {
+  background: #000000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9) !important;
+}
+
+#game-selection-screen .game-select-card {
+  background: #000000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#game-selection-screen .game-select-card:hover {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.08) !important;
+}
+
 /* ==========================================================================
    Cold Start Splash Loading Screen
    ========================================================================== */
