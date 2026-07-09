@@ -1461,21 +1461,6 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
           setTimeout(() => {
             const actions = game.getLegalActions(activeBotId, rollValue);
-
-            const isBotYardEmpty = game.getBoardRocks(activeBotId).length === 0;
-            if (rollValue === 1 && isBotYardEmpty && Math.random() < 0.5) {
-              const activeBotName = game.players[activeBotId].name;
-              document.getElementById("bk-status-title").textContent = `${activeBotName} Passes Turn`;
-              document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a 1 and chooses to PASS.`;
-              
-              setTimeout(() => {
-                window.bkMultiplayer.sendPassAction().catch(err => {
-                  console.error("Bot pass failed:", err);
-                  window.bkMultiplayer.forceResyncState();
-                });
-              }, 1500);
-              return;
-            }
             
             if (actions.length === 0) {
               const activeBotName = game.players[activeBotId].name;
@@ -1563,19 +1548,6 @@ console.log("Barakatta UI Rendering Controller Loaded - Version 1.5.2");
 
       setTimeout(() => {
         const actions = game.getLegalActions(activeBotId, roll);
-
-        const isBotYardEmpty = game.getBoardRocks(activeBotId).length === 0;
-        if (roll === 1 && isBotYardEmpty && Math.random() < 0.5) {
-          const activeBotName = game.players[activeBotId].name;
-          document.getElementById("bk-status-title").textContent = `${activeBotName} Passes Turn`;
-          document.getElementById("bk-status-desc").textContent = `${activeBotName} rolled a 1 and chooses to PASS to wait for a 6.`;
-          
-          setTimeout(() => {
-            game.nextTurn();
-            triggerTurn();
-          }, 1500);
-          return;
-        }
         
         if (actions.length === 0) {
           const activeBotName = game.players[activeBotId].name;
