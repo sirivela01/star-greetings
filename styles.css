@@ -2425,7 +2425,7 @@ select.form-select option {
   width: 100dvw;
   height: 100vh;
   height: 100dvh;
-  background: radial-gradient(circle at center, #1b1612 0%, #080605 100%);
+  background: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
