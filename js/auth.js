@@ -449,6 +449,100 @@ const auth = new AuthManager();
 
 // --- DOM Page Navigation & View Transitions ---
 document.addEventListener("DOMContentLoaded", () => {
+  // Web Audio API Royal Fanfare sound synthesizer (triggered on first user interaction)
+  function playRoyalFanfare() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      const now = audioCtx.currentTime;
+
+      // Helper to play a warm brassy horn note using a sawtooth oscillator + lowpass filter sweep
+      function playHornNote(freq, startTime, duration, volume = 0.15) {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        // Lowpass filter sweep for a warm brassy fanfare sound
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(200, startTime);
+        filter.frequency.exponentialRampToValueAtTime(1000, startTime + 0.15);
+        filter.frequency.exponentialRampToValueAtTime(500, startTime + duration);
+
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.08); // soft attack
+        gainNode.gain.setValueAtTime(volume, startTime + duration - 0.2);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration); // smooth decay
+
+        osc.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      }
+
+      // Helper to play a high sparkling chime note
+      function playChimeNote(freq, startTime, volume = 0.08) {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gainNode.gain.setValueAtTime(volume, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.5);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + 1.6);
+      }
+
+      // Play a beautiful grand royal opening sequence (C major / G major pentatonic / orchestral chord)
+      // C3 (130.81Hz), G3 (196.00Hz), C4 (261.63Hz), E4 (329.63Hz), G4 (392.00Hz), C5 (523.25Hz)
+      
+      // 1. Root bass/horn foundation (warm, rising)
+      playHornNote(130.81, now, 3.0, 0.06); // C3
+      playHornNote(196.00, now + 0.25, 2.75, 0.06); // G3
+
+      // 2. Rising trumpet/horn arpeggio leading to the peak
+      playHornNote(261.63, now + 0.5, 2.2, 0.08);  // C4
+      playHornNote(329.63, now + 0.75, 1.95, 0.08); // E4
+      playHornNote(392.00, now + 1.0, 1.7, 0.09);  // G4
+      playHornNote(523.25, now + 1.25, 1.45, 0.11); // C5
+      playHornNote(659.25, now + 1.5, 1.2, 0.11);   // E5
+
+      // 3. Sparkling royal chimes at the peak of the fanfare chord
+      const chimeTimes = [1.25, 1.35, 1.45, 1.55, 1.65];
+      const chimeFreqs = [1046.50, 1318.51, 1567.98, 2093.00, 2637.02]; // C6, E6, G6, C7, E7
+      chimeTimes.forEach((t, i) => {
+        playChimeNote(chimeFreqs[i], now + t, 0.035);
+      });
+
+    } catch (e) {
+      console.warn("Failed to play royal fanfare:", e);
+    }
+  }
+
+  // Play fanfare on first click/touch interaction anywhere on the document (to satisfy browser autoplay policy)
+  function initFanfareTrigger() {
+    const triggerFanfare = () => {
+      playRoyalFanfare();
+      document.removeEventListener("click", triggerFanfare);
+      document.removeEventListener("touchstart", triggerFanfare);
+    };
+    document.addEventListener("click", triggerFanfare);
+    document.addEventListener("touchstart", triggerFanfare);
+  }
+  initFanfareTrigger();
+
   // Check if we are running in an Android WebView context
   const isWebView = window.location.protocol === 'file:' || navigator.userAgent.toLowerCase().includes('wv');
   if (isWebView) {
