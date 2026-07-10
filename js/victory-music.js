@@ -24,7 +24,7 @@
     prabhas:            { videoId: 'IBlnvjem8jI', start: 0,   song: 'Please... I Request (Dialogue)', movie: 'Salaar' },
     mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { videoId: 'y75QtkYiAwU', start: 0,   song: 'Fear Dialogue',          movie: 'Devara' },
-    ram_charan:         { videoId: 'VKIHgW5MAhQ', start: 0,   song: 'Six Sixers (Dialogue)', movie: 'Peddi' },
+    ram_charan:         { localFile: 'Ramcharan.mpeg', song: 'Six Sixers (Dialogue)', movie: 'Peddi' },
     samantha:           { videoId: 'u6BoyOceiPE', start: 20,  song: 'Oo Antava',              movie: 'Pushpa' },
     rashmika:           { videoId: 'C70GJYVoZ4Y', start: 10,  song: 'Saami Saami',            movie: 'Pushpa' },
     vijay_deverakonda:  { videoId: '8IyDUalEhrw', start: 5,   song: 'Angry Mass BGM',         movie: 'Arjun Reddy' },
@@ -76,6 +76,7 @@
   let pendingStarId = null;   // queued play request (API not yet ready)
   let currentStarId = null;   // currently loaded/playing star
   let audioUnlocked = false;
+  let localAudio    = null;   // local HTML5 audio player
   const isMobile    = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   /* ─── 3. LOAD YOUTUBE IFRAME API (once) ─────────────────────────────── */
@@ -340,17 +341,33 @@
       return;
     }
 
+    // Stop whatever is playing
+    stopSong(true /* silent */);
+
+    currentStarId = starId;
+
+    // Check if it's a local audio file
+    if (entry.localFile) {
+      try {
+        localAudio = new Audio('assets/' + entry.localFile);
+        localAudio.volume = 0.8;
+        localAudio.play().catch(e => {
+          console.warn('[VictoryMusic] Local audio autoplay blocked:', e);
+        });
+      } catch (e) {
+        console.warn('[VictoryMusic] Failed to load local audio:', e);
+      }
+      showToast(starId, entry.song, entry.movie, false);
+      stopTimer = setTimeout(() => stopSong(), PLAY_DURATION_MS);
+      return;
+    }
+
     // If API / player not ready yet, queue and ensure API is loading
     if (!apiReady || !playerReady || !ytPlayer || typeof ytPlayer.loadVideoById !== 'function') {
       pendingStarId = starId;
       loadYouTubeAPI();
       return;
     }
-
-    // Stop whatever is playing
-    stopSong(true /* silent */);
-
-    currentStarId = starId;
 
     let shouldAutoPlay = true;
     if (isMobile) {
@@ -383,6 +400,10 @@
     if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
     if (!silent) removeToast();
     currentStarId = null;
+    if (localAudio) {
+      try { localAudio.pause(); } catch(_) {}
+      localAudio = null;
+    }
     try {
       if (ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
     } catch (_) {}
