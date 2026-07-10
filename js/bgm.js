@@ -61,7 +61,7 @@ class BGMPlayer {
         node.gain.gain.setValueAtTime(node.gain.gain.value, this.audioCtx.currentTime);
         node.gain.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 0.5);
         setTimeout(() => {
-          try { osc.stop(); } catch(e) {}
+          try { node.osc.stop(); } catch(e) {}
         }, 600);
       } catch (e) {}
     });
@@ -156,8 +156,8 @@ class BGMPlayer {
   }
 }
 
-// Automatically create BGM button and trigger playback on first click
-document.addEventListener("DOMContentLoaded", () => {
+// Robust BGM initialization check preventing race conditions with DOMContentLoaded
+function initBGM() {
   window.bgm = new BGMPlayer();
 
   // Create UI Toggle Button
@@ -182,4 +182,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   document.addEventListener("click", triggerBgm);
   document.addEventListener("touchstart", triggerBgm);
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initBGM);
+} else {
+  initBGM();
+}
