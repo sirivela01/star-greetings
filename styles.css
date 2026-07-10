@@ -3888,26 +3888,26 @@ select.form-select option {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 10002;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  color: #fff;
+  color: #fbbf24;
   font-size: 1.1rem;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
 }
 
 .bgm-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(245, 158, 11, 0.6);
   transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
 }
 
 .bgm-toggle-btn:active {
@@ -3915,11 +3915,15 @@ select.form-select option {
 }
 
 .bgm-toggle-btn.muted {
-  background: rgba(0, 0, 0, 0.6);
-  opacity: 0.7;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #a1a1aa;
+  opacity: 0.8;
 }
 
 .bgm-toggle-btn.muted:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
   opacity: 1;
 }
 
