@@ -1131,6 +1131,15 @@ def return_greetings():
     update_firebase_data(f"players/{userId}", {"greetingsStack": new_greetings}, db_url)
     return jsonify({"success": True, "greetingsStack": new_greetings})
 
+# Disable caching of HTML and key assets to force browser updates
+@app.after_request
+def add_header(response):
+    if request.path == '/' or request.path.endswith('.html') or request.path.endswith('.js') or request.path.endswith('.css'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+    return response
+
 # Static file serving
 @app.route('/')
 def serve_index():
