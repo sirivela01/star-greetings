@@ -86,6 +86,18 @@ class BGMPlayer {
       btn.title = this.enabled ? "Mute Background Music" : "Play Background Music";
       btn.classList.toggle("muted", !this.enabled);
     }
+
+    const dashboardBtn = document.getElementById("dashboard-music-btn");
+    if (dashboardBtn) {
+      dashboardBtn.innerHTML = `<span class="music-icon">${this.enabled ? "🎵" : "🔇"}</span> Music ${this.enabled ? "On" : "Off"}`;
+      if (this.enabled) {
+        dashboardBtn.style.color = "#fbbf24";
+        dashboardBtn.style.borderColor = "rgba(245, 158, 11, 0.4)";
+      } else {
+        dashboardBtn.style.color = "#a1a1aa";
+        dashboardBtn.style.borderColor = "rgba(255, 255, 255, 0.15)";
+      }
+    }
   }
 
   scheduler() {
@@ -173,6 +185,18 @@ function initBGM() {
     e.stopPropagation();
     window.bgm.toggle();
   });
+
+  // Sync dashboard music button if it exists
+  const dashboardBtn = document.getElementById("dashboard-music-btn");
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.bgm.toggle();
+    });
+  }
+
+  // Set initial UI state for buttons
+  window.bgm.updateButtonUI();
 
   // Start music automatically on first user click or touch interaction
   const triggerBgm = () => {

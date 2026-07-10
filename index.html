@@ -358,8 +358,13 @@
             </div>
           </div>
 
-          <!-- RIGHT: Log Out -->
-          <button type="button" id="dashboard-logout-btn" class="btn danger-btn logout-small-btn">Log Out</button>
+          <!-- RIGHT: Actions (Log Out & Music) -->
+          <div class="profile-right-actions" style="display: flex; flex-direction: column; gap: 8px; align-items: stretch; justify-content: center; min-width: 90px;">
+            <button type="button" id="dashboard-logout-btn" class="btn danger-btn logout-small-btn" style="margin: 0; padding: 8px 12px; font-size: 0.75rem; width: 100%;">Log Out</button>
+            <button type="button" id="dashboard-music-btn" class="btn secondary-btn music-toggle-small-btn" style="margin: 0; padding: 8px 12px; font-size: 0.75rem; border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; width: 100%;">
+              <span class="music-icon">🎵</span> Music On
+            </button>
+          </div>
         </div>
 
         <!-- PLAY BUTTONS: original gradient style -->
