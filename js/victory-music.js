@@ -21,7 +21,7 @@
   const VICTORY_SONGS = {
     // ── TOLLYWOOD ────────────────────────────────────────────────────────
     allu_arjun:         { videoId: '09gyurxkX6A', start: 0,   song: 'Thaggede Le (Dialogue)', movie: 'Pushpa' },
-    prabhas:            { videoId: 'IBlnvjem8jI', start: 0,   song: 'Please... I Request (Dialogue)', movie: 'Salaar' },
+    prabhas:            { localFile: 'sallar.m4a', song: 'Please... I Request (Dialogue)', movie: 'Salaar' },
     mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { videoId: 'y75QtkYiAwU', start: 0,   song: 'Fear Dialogue',          movie: 'Devara' },
     ram_charan:         { localFile: 'Ramcharan.mpeg', song: 'Six Sixers (Dialogue)', movie: 'Peddi' },
