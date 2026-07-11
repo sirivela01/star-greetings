@@ -1726,12 +1726,10 @@ document.addEventListener("DOMContentLoaded", () => {
           refreshBtn(btn);
         }, 1000);
 
-        // Auto-play attempt (works if still within user-gesture chain)
-        setTimeout(() => {
-          if (window.VictoryMusic && !getIsPlaying()) {
-            window.VictoryMusic.play(winnerStarId);
-          }
-        }, 600);
+        // Play victory song immediately (must be synchronous to remain inside user-gesture chain)
+        if (window.VictoryMusic && !getIsPlaying()) {
+          window.VictoryMusic.play(winnerStarId);
+        }
 
       } else {
         songPlayerEl.style.display = "none";
