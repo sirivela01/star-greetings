@@ -46,6 +46,7 @@
     rangasthalam:       { videoId: '_C1THMQ36Yk', start: 0,   song: 'Sound Engineer (Dialogue)', movie: 'Rangasthalam' },
     race_gurram:        { videoId: 'jbLmIef84V8', start: 0,   song: 'Powerful Warning (Dialogue)', movie: 'Race Gurram' },
     gabbar_singh:       { videoId: 'uAXpRqU6sFo', start: 0,   song: 'Cutout Warning (Dialogue)', movie: 'Gabbar Singh' },
+    shambo_siva_shamboo: { localFile: 'Naresh.mpeg', song: 'Shambo Siva Shamboo (Dialogue)', movie: 'Shambo Siva Shambo' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },

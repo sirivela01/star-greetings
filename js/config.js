@@ -39,6 +39,7 @@ const STAR_CONFIG = {
     { id: "rangasthalam", name: "Chitti Babu (Rangasthalam)", industry: "Tollywood", imagePath: "assets/stars/rangasthalam.png", movie: "Rangasthalam" },
     { id: "race_gurram", name: "Lucky (Race Gurram)", industry: "Tollywood", imagePath: "assets/stars/race_gurram.png", movie: "Race Gurram" },
     { id: "gabbar_singh", name: "Gabbar Singh", industry: "Tollywood", imagePath: "assets/stars/gabbar_singh.png", movie: "Gabbar Singh" },
+    { id: "shambo_siva_shamboo", name: "Shambo Siva Shamboo", industry: "Tollywood", imagePath: "assets/stars/shambo_siva_shamboo.png", movie: "Shambo Siva Shambo" },
 
     // --- BOLLYWOOD (15 Stars) ---
     { id: "ranbir_kapoor", name: "Ranbir Kapoor", industry: "Bollywood", imagePath: "assets/stars/ranbir_kapoor.png", movie: "Ae Dil Hai Mushkil" },
