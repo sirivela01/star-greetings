@@ -552,26 +552,4 @@
   /* ─── 8. INIT — pre-load the API on page load ───────────────────────── */
   loadYouTubeAPI();
 
-  /* ─── 9. AUDIO UNLOCK FOR MOBILE ────────────────────────────────────── */
-  function unlockAudio() {
-    if (audioUnlocked || !ytPlayer || typeof ytPlayer.playVideo !== 'function') return;
-    try {
-      ytPlayer.mute();
-      ytPlayer.playVideo();
-      setTimeout(() => {
-        try {
-          ytPlayer.pauseVideo();
-          ytPlayer.unMute();
-          ytPlayer.setVolume(100);
-          audioUnlocked = true;
-          console.log('[VictoryMusic] Audio context unlocked.');
-        } catch (_) {}
-      }, 200);
-    } catch (_) {}
-    document.removeEventListener('touchend', unlockAudio);
-    document.removeEventListener('click', unlockAudio);
-  }
-  document.addEventListener('touchend', unlockAudio, { passive: true });
-  document.addEventListener('click', unlockAudio, { passive: true });
-
 })();
