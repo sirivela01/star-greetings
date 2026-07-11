@@ -78,6 +78,7 @@
   let currentStarId = null;   // currently loaded/playing star
   let audioUnlocked = false;
   let localAudio    = null;   // local HTML5 audio player
+  let playCount     = 0;      // tracks play repetition count
   const isMobile    = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   /* ─── 3. LOAD YOUTUBE IFRAME API (once) ─────────────────────────────── */
@@ -185,9 +186,9 @@
       } catch (_) {}
     }
     if (event.data === 0 /* ENDED */) {
-      // Loop the dialogue/song if the 20-second victory timer is still running
-      if (stopTimer) {
+      if (playCount < 2) {
         try {
+          playCount++;
           const entry = currentStarId ? VICTORY_SONGS[currentStarId] : null;
           ytPlayer.seekTo(entry ? entry.start || 0 : 0);
           ytPlayer.playVideo();
@@ -346,12 +347,25 @@
     stopSong(true /* silent */);
 
     currentStarId = starId;
+    playCount = 1;
 
     // Check if it's a local audio file
     if (entry.localFile) {
       try {
         localAudio = new Audio('assets/' + entry.localFile);
         localAudio.volume = 0.8;
+        localAudio.addEventListener('ended', () => {
+          if (playCount < 2) {
+            playCount++;
+            localAudio.currentTime = 0;
+            localAudio.play().catch(e => {
+              console.warn('[VictoryMusic] Local audio loop play blocked:', e);
+              stopSong();
+            });
+          } else {
+            stopSong();
+          }
+        });
         localAudio.play().catch(e => {
           console.warn('[VictoryMusic] Local audio autoplay blocked:', e);
         });
@@ -359,7 +373,7 @@
         console.warn('[VictoryMusic] Failed to load local audio:', e);
       }
       showToast(starId, entry.song, entry.movie, false);
-      stopTimer = setTimeout(() => stopSong(), PLAY_DURATION_MS);
+      stopTimer = setTimeout(() => stopSong(), 30000); // 30s safety timeout
       return;
     }
 
