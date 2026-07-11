@@ -35,7 +35,7 @@
     keerthy_suresh:     { videoId: 'U5D3LSwAmZY', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
     anushka_shetty:     { videoId: 'pTdwbwoERSA', start: 20,  song: 'Darlingey',              movie: 'Mirchi' },
     shruti_haasan:      { videoId: 'kYJ6_g9pG9s', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
-    pawan_kalyan:       { videoId: 'ePOglweqy7o', start: 0,   song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
+    pawan_kalyan:       { localFile: 'Pawankalyan.mp4', song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
     chiranjeevi:        { videoId: '6nH0YFbiRGA', start: 0,   song: 'Veera Shankar Reddy (Dialogue)', movie: 'Indra' },
     nagarjuna:          { videoId: '9pZENHoY4rc', start: 0,   song: 'Dhada Puttistha (Dialogue & Theme)', movie: 'Don' },
     balakrishna:        { localFile: 'Balayya.mp4', song: 'Flute Warning (Dialogue)', movie: 'Legend' },
