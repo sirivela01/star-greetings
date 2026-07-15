@@ -37,7 +37,6 @@ const STAR_CONFIG = {
     { id: "baahubali", name: "Baahubali", industry: "Tollywood", imagePath: "assets/stars/baahubali.png", movie: "Baahubali 2" },
     { id: "venkatesh", name: "Venkatesh", industry: "Tollywood", imagePath: "assets/stars/venkatesh.png", movie: "Tulasi" },
     { id: "rangasthalam", name: "Chitti Babu (Rangasthalam)", industry: "Tollywood", imagePath: "assets/stars/rangasthalam.png", movie: "Rangasthalam" },
-    { id: "race_gurram", name: "Lucky (Race Gurram)", industry: "Tollywood", imagePath: "assets/stars/race_gurram.png", movie: "Race Gurram" },
     { id: "gabbar_singh", name: "Gabbar Singh", industry: "Tollywood", imagePath: "assets/stars/gabbar_singh.png", movie: "Gabbar Singh" },
     { id: "shambo_siva_shamboo", name: "Shambo Siva Shamboo", industry: "Tollywood", imagePath: "assets/stars/shambo_siva_shamboo.png", movie: "Shambo Siva Shambo" },
 

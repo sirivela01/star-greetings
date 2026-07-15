@@ -203,7 +203,6 @@ class GameState {
     // Check if card matches the top card currently in the pot (same star ID or actor)
     const getActorId = (id) => {
       if (id === 'baahubali') return 'prabhas';
-      if (id === 'race_gurram') return 'allu_arjun';
       if (id === 'rangasthalam') return 'ram_charan';
       if (id === 'gabbar_singh') return 'pawan_kalyan';
       return id;

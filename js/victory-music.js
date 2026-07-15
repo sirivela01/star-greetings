@@ -44,7 +44,6 @@
     baahubali:          { videoId: 'uqHn-TCiJcc', start: 0,   song: 'Oath Ceremony (Dialogue)', movie: 'Baahubali 2' },
     venkatesh:          { videoId: 'riLlxPSzAWc', start: 0,   song: 'Sound Thagginchu (Dialogue)', movie: 'Tulasi' },
     rangasthalam:       { videoId: '_C1THMQ36Yk', start: 0,   song: 'Sound Engineer (Dialogue)', movie: 'Rangasthalam' },
-    race_gurram:        { videoId: 'jbLmIef84V8', start: 0,   song: 'Powerful Warning (Dialogue)', movie: 'Race Gurram' },
     gabbar_singh:       { videoId: 'uAXpRqU6sFo', start: 0,   song: 'Cutout Warning (Dialogue)', movie: 'Gabbar Singh' },
     shambo_siva_shamboo: { localFile: 'Naresh.mpeg', song: 'Shambo Siva Shamboo (Dialogue)', movie: 'Shambo Siva Shambo' },
 
