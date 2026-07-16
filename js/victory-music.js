@@ -49,6 +49,7 @@
     julyi:              { localFile: 'Julyee.mp4', song: 'Julyi Dialogue', movie: 'Julyi' },
     brahmanandam:       { localFile: 'Brahmanandam.mp4', song: 'Comedy King Dialogue', movie: 'Brahmanandam' },
     sunil:              { localFile: 'Sunil.mp3', song: 'Comedy All Rounder Dialogue', movie: 'Sunil' },
+    venu_madhav:        { localFile: 'Venu Madhav.mpeg', song: 'Comedy Tragic Hero Dialogue', movie: 'Venu Madhav' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },

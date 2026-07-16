@@ -42,6 +42,7 @@ const STAR_CONFIG = {
     { id: "julyi", name: "Julyi", industry: "Tollywood", imagePath: "assets/stars/julyi.png", movie: "Julyi" },
     { id: "brahmanandam", name: "Brahmanandam", industry: "Tollywood", imagePath: "assets/stars/brahmanandam.png", movie: "Comedy King" },
     { id: "sunil", name: "Sunil", industry: "Tollywood", imagePath: "assets/stars/sunil.png", movie: "Comedy Legend" },
+    { id: "venu_madhav", name: "Venu Madhav", industry: "Tollywood", imagePath: "assets/stars/venu_madhav.png", movie: "Comedy Legend" },
 
     // --- BOLLYWOOD (15 Stars) ---
     { id: "ranbir_kapoor", name: "Ranbir Kapoor", industry: "Bollywood", imagePath: "assets/stars/ranbir_kapoor.png", movie: "Ae Dil Hai Mushkil" },
