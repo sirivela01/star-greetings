@@ -47,6 +47,7 @@
     gabbar_singh:       { videoId: 'uAXpRqU6sFo', start: 0,   song: 'Cutout Warning (Dialogue)', movie: 'Gabbar Singh' },
     shambo_siva_shamboo: { localFile: 'Naresh.mpeg', song: 'Shambo Siva Shamboo (Dialogue)', movie: 'Shambo Siva Shambo' },
     julyi:              { localFile: 'Julyee.mp4', song: 'Julyi Dialogue', movie: 'Julyi' },
+    brahmanandam:       { localFile: 'Brahmanandam.mp4', song: 'Comedy King Dialogue', movie: 'Brahmanandam' },
 
     // ── BOLLYWOOD ────────────────────────────────────────────────────────
     shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
