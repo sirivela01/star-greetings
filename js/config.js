@@ -24,7 +24,7 @@ const STAR_CONFIG = {
     { id: "nani", name: "Nani", industry: "Tollywood", imagePath: "assets/stars/nani.png", movie: "HIT: The Third Case" },
     { id: "vijay_deverakonda", name: "Vijay Deverakonda", industry: "Tollywood", imagePath: "assets/stars/vijay_deverakonda.png", movie: "Arjun Reddy" },
     { id: "keerthy_suresh", name: "Keerthy Suresh", industry: "Tollywood", imagePath: "assets/stars/keerthy_suresh.png", movie: "Dasara" },
-    { id: "anushka_shetty", name: "Anushka Shetty", industry: "Tollywood", imagePath: "assets/stars/anushka_shetty.png", movie: "Mirchi" },
+    { id: "anushka_shetty", name: "Anushka", industry: "Tollywood", imagePath: "assets/stars/anushka_shetty.png", movie: "Mirchi" },
     { id: "kajal_aggarwal", name: "Kajal Agharwal", industry: "Tollywood", imagePath: "assets/stars/kajal_aggarwal.png", movie: "Mr Perfect" },
     { id: "sai_pallavi", name: "Sai Pallavi", industry: "Tollywood", imagePath: "assets/stars/sai_pallavi.png", movie: "Maari 2" },
     { id: "shruti_haasan", name: "Shruti Haasan", industry: "Tollywood", imagePath: "assets/stars/shruti_haasan.png", movie: "Srimanthudu" },
