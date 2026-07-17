@@ -555,210 +555,210 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Seating arrangement calculations (math to place players in a circle)
+  // Seating arrangement mapping coordinates
+  function getSeatMapping(total) {
+    const mapping = Array(6).fill(null);
+    if (total === 2) {
+      mapping[3] = 0; // Bottom Center
+      mapping[0] = 1; // Top Center
+    } else if (total === 3) {
+      mapping[3] = 0; // Bottom Center
+      mapping[1] = 1; // Top-Right
+      mapping[5] = 2; // Top-Left
+    } else if (total === 4) {
+      mapping[3] = 0; // Bottom Center
+      mapping[1] = 1; // Top-Right
+      mapping[0] = 2; // Top Center
+      mapping[5] = 3; // Top-Left
+    } else if (total === 5) {
+      mapping[3] = 0; // Bottom Center
+      mapping[2] = 1; // Bottom-Right
+      mapping[1] = 2; // Top-Right
+      mapping[5] = 3; // Top-Left
+      mapping[4] = 4; // Bottom-Left
+    } else if (total === 6) {
+      mapping[3] = 0; // Bottom Center
+      mapping[2] = 1; // Bottom-Right
+      mapping[1] = 2; // Top-Right
+      mapping[0] = 3; // Top Center
+      mapping[5] = 4; // Top-Left
+      mapping[4] = 5; // Bottom-Left
+    }
+    return mapping;
+  }
+
   function positionSeats() {
     const seats = document.querySelectorAll(".player-seat");
     if (seats.length === 0) return;
-    
-    const total = seats.length;
-    const wrapper = document.querySelector(".table-surface-wrapper");
-    if (!wrapper) return;
-    
-    const rect = wrapper.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const isMobile = window.innerWidth <= 640;
-    const isTablet = window.innerWidth <= 1024 && window.innerWidth > 640;
-    
-    let baseRadius = 290; // Desktop default
-    if (isMobile) {
-      baseRadius = 145;
-    } else if (isTablet) {
-      baseRadius = 210;
-    }
-    
-    // Angle offset so the active player is positioned nicely, or just start top/bottom.
-    // For 2 players: 180 degrees apart. Let's place them at top (270 deg) and bottom (90 deg).
-    const angleStart = -Math.PI / 2; // -90 deg (top center)
-    
-    seats.forEach((seat, index) => {
-      const playerId = parseInt(seat.dataset.playerId);
-      const playerObj = game.players.find(p => p.id === playerId);
-      
-      const angleOffset = playerObj ? (playerObj.angleOffset || 0) : 0;
-      const theta = angleStart + (index * (2 * Math.PI / total)) + angleOffset;
-      
-      const offset = playerObj ? (playerObj.radiusOffset || 0) : 0;
-      const radius = baseRadius + offset;
-      
-      const x = centerX + radius * Math.cos(theta);
-      const y = centerY + radius * Math.sin(theta);
-      
-      seat.style.setProperty("--x", `${x}px`);
-      seat.style.setProperty("--y", `${y}px`);
+
+    const SEAT_COORDS = [
+      { left: 50, top: 32 },  // Seat 0: Top center
+      { left: 76, top: 43 },  // Seat 1: Top-right
+      { left: 83, top: 68 },  // Seat 2: Bottom-right
+      { left: 50, top: 82 },  // Seat 3: Bottom center
+      { left: 17, top: 68 },  // Seat 4: Bottom-left
+      { left: 24, top: 43 }   // Seat 5: Top-left
+    ];
+
+    seats.forEach((seat) => {
+      const seatIdx = parseInt(seat.dataset.seatIndex);
+      const coord = SEAT_COORDS[seatIdx];
+      if (coord) {
+        seat.style.left = `${coord.left}%`;
+        seat.style.top = `${coord.top}%`;
+      }
     });
   }
-
-  // Listen for window resize to keep seats centered
-  window.addEventListener("resize", positionSeats);
 
   // Render Seated Players
   function renderSeats() {
     seatsContainer.innerHTML = "";
     const activePlayer = game.getCurrentPlayer();
-    
-    game.players.forEach(p => {
+    const total = game.players.length;
+    const seatMapping = getSeatMapping(total);
+
+    for (let seatIdx = 0; seatIdx < 6; seatIdx++) {
       const seat = document.createElement("div");
-      seat.className = `player-seat player-color-${p.id}`;
-      seat.dataset.playerId = p.id;
-      
-      const isActive = activePlayer && p.id === activePlayer.id;
-      const isEliminated = p.stackCount === 0;
-      
-      if (isActive) seat.classList.add("active-turn-seat");
-      if (isEliminated) seat.classList.add("eliminated-seat");
-      
-      // Determine Stack Thickness class
-      let thicknessClass = "stack-thin";
-      if (p.stackCount > 6) {
-        thicknessClass = "stack-thick";
-      } else if (p.stackCount > 3) {
-        thicknessClass = "stack-medium";
-      }
-      seat.classList.add(thicknessClass);
+      seat.className = `player-seat seat-pos-${seatIdx}`;
+      seat.dataset.seatIndex = seatIdx;
 
-      const statusSymbol = (window.playerStatusIndicators && window.playerStatusIndicators[p.id]) || "";
+      const playerIndex = seatMapping[seatIdx];
+      if (playerIndex !== null && playerIndex !== undefined) {
+        const p = game.players[playerIndex];
+        seat.classList.add(`player-color-${p.id}`);
+        seat.dataset.playerId = p.id;
 
-      // Setup Seat layout
-      seat.innerHTML = `
-        <div class="player-avatar-wrapper">
-          <img src="${p.avatar}" alt="${p.name}" draggable="false">
-          ${isActive ? `<span class="player-seat-active-badge">Playing</span>` : ""}
-          ${p.id === game.currentPotStarterIndex ? `<span class="player-seat-starter-badge" title="Starter (Played First)">⭐ Starter</span>` : ""}
-          ${statusSymbol ? `<span class="player-status-badge">${statusSymbol}</span>` : ""}
-        </div>
-        <div class="player-seat-info">
-          <span class="player-seat-name">${p.name} ${p.isBot ? '🤖' : ''}</span>
-          <span class="player-seat-count">${p.stackCount} cards | 🪙${p.coins}</span>
-          <div class="seat-adjust-controls">
-            <button type="button" class="btn-adjust move-front-btn" data-player-id="${p.id}" title="Move Front (Closer)">▲</button>
-            <button type="button" class="btn-adjust move-back-btn" data-player-id="${p.id}" title="Move Back (Further)">▼</button>
+        const isActive = activePlayer && p.id === activePlayer.id;
+        const isEliminated = p.stackCount === 0;
+
+        if (isActive) seat.classList.add("active-turn-seat");
+        if (isEliminated) seat.classList.add("eliminated-seat");
+
+        // Determine Stack Thickness class
+        let thicknessClass = "stack-thin";
+        if (p.stackCount > 6) {
+          thicknessClass = "stack-thick";
+        } else if (p.stackCount > 3) {
+          thicknessClass = "stack-medium";
+        }
+        seat.classList.add(thicknessClass);
+
+        const statusSymbol = (window.playerStatusIndicators && window.playerStatusIndicators[p.id]) || "";
+
+        // Setup Seat layout with floating badge and stack offset
+        seat.innerHTML = `
+          <div class="player-seat-info">
+            <img src="${p.avatar}" class="hud-avatar-thumb" alt="${p.name}" draggable="false">
+            <div class="hud-seat-text">
+              <span class="player-seat-name">${p.name} ${p.isBot ? '🤖' : ''}</span>
+              <span class="player-seat-count">${p.stackCount} cards | 🪙${p.coins}</span>
+            </div>
+            ${isActive ? `<span class="player-seat-active-dot" title="Active Turn"></span>` : ""}
+            ${p.id === game.currentPotStarterIndex ? `<span class="player-seat-starter-star" title="Starter (Played First)">⭐</span>` : ""}
+            ${statusSymbol ? `<span class="player-status-badge">${statusSymbol}</span>` : ""}
           </div>
-        </div>
-        <div class="player-seat-stack" id="stack-pile-${p.id}">
-          <!-- Top Card or Buy Overlay goes here -->
-        </div>
-      `;
-      
-      seatsContainer.appendChild(seat);
+          <div class="player-seat-stack" id="stack-pile-${p.id}">
+            <!-- Top Card or Buy Overlay goes here -->
+          </div>
+        `;
 
-      // Render top card of stack or Out overlay
-      const pile = document.getElementById(`stack-pile-${p.id}`);
-      if (!isEliminated) {
-        const isCardSelectable = window.isOnlineGame 
-          ? (p.username && window.auth.getCurrentUser() && p.username.toLowerCase().trim() === window.auth.getCurrentUser().username.toLowerCase().trim() && p.id === activePlayer.id)
-          : (p.id === activePlayer.id && !p.isBot);
+        seatsContainer.appendChild(seat);
 
-        if (isCardSelectable) {
-          // ACTIVE player sees top card face-up
-          // Clicking the card itself always plays it directly to the middle (top card of their stack)
-          const topCard = p.stack[0];
-          const cardEl = createCardElement(topCard, true, handleCardSelection, p.id);
-          pile.appendChild(cardEl);
-          
-          // Add shuffle button if player has multiple cards
-          if (p.stackCount > 1) {
-            const actionOverlay = document.createElement("div");
-            actionOverlay.className = "stack-action-overlay";
-            actionOverlay.style.display = "flex";
-            actionOverlay.style.flexDirection = "column";
-            actionOverlay.style.gap = "4px";
+        // Render top card of stack or Out overlay
+        const pile = document.getElementById(`stack-pile-${p.id}`);
+        if (!isEliminated) {
+          const isCardSelectable = window.isOnlineGame 
+            ? (p.username && window.auth.getCurrentUser() && p.username.toLowerCase().trim() === window.auth.getCurrentUser().username.toLowerCase().trim() && p.id === activePlayer.id)
+            : (p.id === activePlayer.id && !p.isBot);
+
+          if (isCardSelectable) {
+            // ACTIVE player sees top card face-up
+            // Clicking the card itself always plays it directly to the middle (top card of their stack)
+            const topCard = p.stack[0];
+            const cardEl = createCardElement(topCard, true, handleCardSelection, p.id);
+            pile.appendChild(cardEl);
             
-            actionOverlay.innerHTML = `<button type="button" class="btn secondary-btn" id="shuffle-btn-${p.id}" style="padding: 4px 8px; font-size: 0.75rem;">🔀 Shuffle</button>`;
-            seat.appendChild(actionOverlay);
-            
-            document.getElementById(`shuffle-btn-${p.id}`).addEventListener("click", (e) => {
-              e.stopPropagation();
-              if (!window.isOnlineGame) {
-                playShuffleSound();
-              }
-              if (window.isOnlineGame) {
-                window.multiplayer.shuffleStack();
-              } else {
-                game.shuffleStack(p.id);
-                renderSeats();
-                renderLogs();
-              }
-            });
+            // Add shuffle button if player has multiple cards
+            if (p.stackCount > 1) {
+              const actionOverlay = document.createElement("div");
+              actionOverlay.className = "stack-action-overlay";
+              actionOverlay.style.display = "flex";
+              actionOverlay.style.flexDirection = "column";
+              actionOverlay.style.gap = "4px";
+              
+              actionOverlay.innerHTML = `<button type="button" class="btn secondary-btn" id="shuffle-btn-${p.id}" style="padding: 4px 8px; font-size: 0.75rem;">🔀 Shuffle</button>`;
+              seat.appendChild(actionOverlay);
+              
+              document.getElementById(`shuffle-btn-${p.id}`).addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (!window.isOnlineGame) {
+                  playShuffleSound();
+                }
+                if (window.isOnlineGame) {
+                  window.multiplayer.shuffleStack();
+                } else {
+                  game.shuffleStack(p.id);
+                  renderSeats();
+                  renderLogs();
+                }
+              });
+            }
+          } else {
+            // NON-ACTIVE players see card face-down
+            const cardEl = createCardBackElement(p.id);
+            pile.appendChild(cardEl);
           }
         } else {
-          // NON-ACTIVE players see card face-down
-          const cardEl = createCardBackElement(p.id);
-          pile.appendChild(cardEl);
+          // Render WINNER overlay when a player reaches 0 cards
+          const buyOverlay = document.createElement("div");
+          buyOverlay.className = "buy-stack-overlay";
+          buyOverlay.innerHTML = `
+            <div class="buy-overlay-title" style="color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);">WINNER!</div>
+            <div class="buy-overlay-sub" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; font-weight: normal;">0 Greetings!</div>
+          `;
+          pile.appendChild(buyOverlay);
         }
       } else {
-        // Render WINNER overlay when a player reaches 0 cards
-        const buyOverlay = document.createElement("div");
-        buyOverlay.className = "buy-stack-overlay";
-        buyOverlay.innerHTML = `
-          <div class="buy-overlay-title" style="color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);">WINNER!</div>
-          <div class="buy-overlay-sub" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; font-weight: normal;">0 Greetings!</div>
+        // Unoccupied/Vacant Seat: Render shadow/blur overlay
+        seat.innerHTML = `
+          <div class="vacant-seat-overlay"></div>
         `;
-        pile.appendChild(buyOverlay);
+        seatsContainer.appendChild(seat);
       }
-    });
+    }
 
-    // Attach listeners to buy buttons in seats container
+    // Attach listeners to buy buttons in seats container (if any)
     seatsContainer.querySelectorAll(".buy-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const playerId = parseInt(btn.dataset.playerId);
-        
-        // Prevent clicking buy buttons on another player's seat during online matches
-        const playerObj = game.players.find(p => p.id === playerId);
-        if (window.isOnlineGame && playerObj && 
-            (!playerObj.username || !window.auth.getCurrentUser() || 
-             playerObj.username.toLowerCase().trim() !== window.auth.getCurrentUser().username.toLowerCase().trim())) {
-          return;
-        }
-
-        if (btn.classList.contains("free-buy-btn") || btn.classList.contains("coin-buy-btn")) {
-          if (window.isOnlineGame) {
-            window.multiplayer.buyStack();
-          } else {
-            const res = game.buyStack(playerId);
-            if (res.success) {
-              playReadySound();
-              renderSeats();
-              renderScoreboard();
-              renderLogs();
-              
-              // Update HUD elements
-              const activePlayer = game.getCurrentPlayer();
-              if (activePlayer) {
-                hudActivePlayerName.textContent = activePlayer.name;
-                hudRoundNum.textContent = game.roundNumber;
-              }
-            } else {
-              alert(res.error);
-            }
+        if (window.isOnlineGame) {
+          // Prevent clicking buy buttons on another player's seat during online matches
+          const playerObj = game.players.find(p => p.id === playerId);
+          if (playerObj && playerObj.username && window.auth.getCurrentUser() &&
+              playerObj.username.toLowerCase().trim() !== window.auth.getCurrentUser().username.toLowerCase().trim()) {
+            return;
           }
-        } else if (btn.classList.contains("broke-buy-btn")) {
-          if (window.isOnlineGame) {
-            window.multiplayer.buyCoins();
-          } else {
-            game.buyCoins(playerId);
-            playReadySound();
+        }
+        if (window.isOnlineGame) {
+          window.multiplayer.buyGreetings();
+        } else {
+          const humanPlayer = game.players[playerId];
+          const hasCoins = humanPlayer.coins >= game.config.REFILL_COIN_COST;
+          if (hasCoins) {
+            playBuySound();
+            game.buyGreetings(playerId);
             renderSeats();
-            renderScoreboard();
             renderLogs();
+          } else {
+            // Trigger refill modal
+            window.activeRefillPlayerId = playerId;
+            document.getElementById("refill-modal").classList.remove("hidden-modal");
           }
         }
       });
     });
 
-    // Align coordinates
     positionSeats();
   }
 

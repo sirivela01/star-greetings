@@ -635,34 +635,36 @@ select.form-select option {
 }
 
 /* Table Surface Area Wrapper */
+/* Table Surface Area Wrapper */
 .table-surface-wrapper {
-  flex: 1;
+  position: relative;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1024 / 819;
+  max-width: 100%;
+  max-height: calc(100vh - 64px);
+  max-height: calc(100dvh - 64px);
+  margin: 0 auto;
+  background-image: url('assets/room-bg.jpg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  width: 100%;
-  height: calc(100vh - 64px);
-  height: calc(100dvh - 64px);
+  overflow: hidden;
 }
 
-/* The Round Table surface */
+/* The Round Table surface (transparent over background table) */
 .game-round-table {
-  width: var(--table-diameter);
-  height: var(--table-diameter);
-  border-radius: 50%;
-  background: var(--table-felt);
+  width: 250px;
+  height: 250px;
   position: relative;
-  /* 3D Wood Rim effect */
-  border: 14px solid var(--table-wood-edge);
-  box-shadow: 
-    0 0 0 4px #120c07, /* edge border */
-    inset 0 0 40px rgba(0, 0, 0, 0.85), /* felt shade */
-    0 25px 60px -10px rgba(0, 0, 0, 0.8); /* drop shadow */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
+  transform: translateY(7.5%);
   transition: all 0.5s;
 }
 
@@ -762,40 +764,120 @@ select.form-select option {
 
 .player-seat {
   position: absolute;
-  left: var(--x);
-  top: var(--y);
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  pointer-events: auto; /* Re-enable clicks on seats */
+  width: 0;
+  height: 0;
   z-index: 25;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  width: 150px;
 }
 
-/* Instant response during dragging */
-.player-seat.dragging-active {
-  transition: none !important;
-  z-index: 100 !important;
-}
-
-/* Active Player Highlight */
+/* Active Turn Seat Highlight */
 .player-seat.active-turn-seat {
-  z-index: 30;
+  z-index: 35;
+}
+
+/* Vacant Seat Overlay */
+.vacant-seat-overlay {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(12, 10, 10, 0.6) 20%, rgba(10, 8, 8, 0.95) 85%);
+  backdrop-filter: blur(10px) grayscale(95%);
+  -webkit-backdrop-filter: blur(10px) grayscale(95%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.92;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9);
+  transition: all 0.5s ease;
+}
+
+/* Specific size/position for each vacant overlay to fit the characters precisely */
+.seat-pos-0 .vacant-seat-overlay { width: 200px; height: 260px; top: 10px; }
+.seat-pos-1 .vacant-seat-overlay { width: 200px; height: 260px; top: 20px; left: -10px; }
+.seat-pos-2 .vacant-seat-overlay { width: 220px; height: 290px; top: -10px; left: -20px; }
+.seat-pos-3 .vacant-seat-overlay { width: 250px; height: 320px; top: -50px; }
+.seat-pos-4 .vacant-seat-overlay { width: 220px; height: 290px; top: -10px; left: 20px; }
+.seat-pos-5 .vacant-seat-overlay { width: 200px; height: 260px; top: 20px; left: 10px; }
+
+/* Player Info Floating Badge */
+.player-seat-info {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 12, 41, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: auto;
+  z-index: 20;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s;
+}
+
+/* Highlight Active Turn Seat Info */
+.active-turn-seat .player-seat-info {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.4), 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  background: rgba(15, 12, 41, 0.95);
+}
+
+/* Info box placement offsets per seat */
+.seat-pos-0 .player-seat-info { top: -75px; left: 0; }
+.seat-pos-1 .player-seat-info { top: -75px; left: 75px; }
+.seat-pos-2 .player-seat-info { top: 30px; left: 95px; }
+.seat-pos-3 .player-seat-info { top: -25px; left: 145px; }
+.seat-pos-4 .player-seat-info { top: 30px; left: -95px; }
+.seat-pos-5 .player-seat-info { top: -75px; left: -75px; }
+
+/* Player Stack placement offsets per seat */
+.player-seat-stack {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 15;
+}
+
+.seat-pos-0 .player-seat-stack { top: 60px; left: 0; }
+.seat-pos-1 .player-seat-stack { top: 65px; left: -75px; }
+.seat-pos-2 .player-seat-stack { top: -85px; left: -85px; }
+.seat-pos-3 .player-seat-stack { top: -140px; left: 0; }
+.seat-pos-4 .player-seat-stack { top: -85px; left: 85px; }
+.seat-pos-5 .player-seat-stack { top: 65px; left: 75px; }
+
+.hud-avatar-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  object-fit: cover;
+}
+
+.hud-seat-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.player-seat-active-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-cyan);
+  margin-left: 4px;
+}
+
+.player-seat-starter-star {
+  font-size: 0.9rem;
+  margin-left: 2px;
 }
 
 .player-avatar-wrapper {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: #0f0c29;
-  border: 3px solid var(--player-border-color-translucent, rgba(255, 255, 255, 0.15));
-  padding: 2px;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  transition: all 0.3s;
+  display: none; /* Hide old avatar wrapper */
   touch-action: none; /* Prevent default touch panning while dragging */
   cursor: grab;
 }
