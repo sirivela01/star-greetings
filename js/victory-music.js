@@ -25,7 +25,7 @@
     mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { videoId: 'y75QtkYiAwU', start: 0,   song: 'Fear Dialogue',          movie: 'Devara' },
     ram_charan:         { localFile: 'Ramcharan.mpeg', song: 'Six Sixers (Dialogue)', movie: 'Peddi' },
-    samantha:           { videoId: 'u6BoyOceiPE', start: 20,  song: 'Oo Antava',              movie: 'Pushpa' },
+    samantha:           { videoId: 'u6BoyOceiPE', start: 20,  song: 'Oo Antava',              movie: 'Eega' },
     rashmika:           { videoId: 'C70GJYVoZ4Y', start: 10,  song: 'Saami Saami',            movie: 'Pushpa' },
     vijay_deverakonda:  { videoId: '8IyDUalEhrw', start: 5,   song: 'Angry Mass BGM',         movie: 'Arjun Reddy' },
     nani:               { videoId: 'kAtfaaUgDRU', start: 0,   song: 'Arjun Sarkaar (Dialogue)', movie: 'HIT: The Third Case' },
