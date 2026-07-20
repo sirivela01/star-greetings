@@ -182,6 +182,7 @@ class MultiplayerManager {
     const banner = document.getElementById("db-status-banner");
     const createBtn = document.getElementById("online-create-room-btn");
     const joinBtn = document.getElementById("online-join-room-btn");
+    const quickBtn = document.getElementById("online-quick-match-btn");
     
     if (banner) {
       banner.className = "db-status-banner " + (isConnected ? "connected" : "error");
@@ -200,9 +201,11 @@ class MultiplayerManager {
     if (isConnected) {
       if (createBtn) createBtn.removeAttribute("disabled");
       if (joinBtn) joinBtn.removeAttribute("disabled");
+      if (quickBtn) quickBtn.removeAttribute("disabled");
     } else {
       if (createBtn) createBtn.setAttribute("disabled", "true");
       if (joinBtn) joinBtn.setAttribute("disabled", "true");
+      if (quickBtn) quickBtn.setAttribute("disabled", "true");
     }
   }
 
@@ -534,6 +537,135 @@ class MultiplayerManager {
       this.openDbConfigModal();
     }
   }
+  async startQuickMatch(selectedTheme = "Tollywood") {
+    if (!this.db) {
+      alert("Firebase Database is not configured or failed to initialize.");
+      this.openDbConfigModal();
+      return;
+    }
+
+    this.currentUser = window.auth.getCurrentUser();
+    if (!this.currentUser) {
+      alert("Please log in first.");
+      return;
+    }
+
+    const quickMatchBtn = document.getElementById("online-quick-match-btn");
+    let originalText = "Quick Match";
+    if (quickMatchBtn) {
+      originalText = quickMatchBtn.innerHTML;
+      quickMatchBtn.setAttribute("disabled", "true");
+      quickMatchBtn.innerHTML = 'Searching for Match... <span class="spinner-small"></span>';
+    }
+
+    try {
+      // 1. Search for an existing waiting public room
+      const roomsRef = this.db.ref("rooms");
+      const snapshot = await roomsRef.orderByChild("status_public").equalTo("waiting_true").limitToFirst(5).once("value");
+      
+      let foundRoomCode = null;
+      if (snapshot.exists()) {
+        const rooms = snapshot.val();
+        // Find the first room that is not full
+        for (const code in rooms) {
+          const room = rooms[code];
+          const playersCount = Object.keys(room.players || {}).length;
+          if (playersCount < 6) {
+            foundRoomCode = code;
+            break;
+          }
+        }
+      }
+
+      if (foundRoomCode) {
+        // 2. Found room! Let's join it
+        this.roomCode = foundRoomCode;
+        this.isHost = false;
+        window.isOnlineGame = true;
+        window.currentUserUsername = this.currentUser.username;
+        this.hasDeductedGreetingsForMatch = false;
+        this.hasReturnedGreetingsForMatch = false;
+
+        const myUid = this.getMyUid();
+        const roomRef = this.db.ref(`rooms/${foundRoomCode}`);
+        const roomSnap = await roomRef.once("value");
+        const roomVal = roomSnap.val();
+        const playersCount = Object.keys(roomVal.players || {}).length;
+
+        const avatarIdx = playersCount % 6;
+        const avatarUrl = this.currentUser.avatar || `assets/avatars/avatar_${avatarIdx + 1}.png`;
+
+        await roomRef.child(`players/${myUid}`).set({
+          name: this.currentUser.name || this.currentUser.username || "Player",
+          username: this.currentUser.username,
+          avatar: avatarUrl || "assets/avatars/avatar_1.png",
+          coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
+          betVote: 25,
+          joinedAt: firebase.database.ServerValue.TIMESTAMP,
+          status: "connected",
+          greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 50
+        });
+
+        this.roomRef = roomRef;
+        await this.registerPresence();
+        this.listenToRoom();
+
+        // Update UI code label and go to lobby screen
+        const codeLabel = document.getElementById("lobby-room-code-lbl");
+        if (codeLabel) codeLabel.textContent = this.roomCode;
+        this.showScreen("online-waiting-screen");
+      } else {
+        // 3. No public rooms waiting. Create a new public room!
+        this.roomCode = this.generateRoomCode();
+        this.isHost = true;
+        window.isOnlineGame = true;
+        window.currentUserUsername = this.currentUser.username;
+        this.hasDeductedGreetingsForMatch = false;
+        this.hasReturnedGreetingsForMatch = false;
+
+        const myUid = this.getMyUid();
+        const roomData = {
+          roomCode: this.roomCode,
+          status: "waiting",
+          isPublic: true,
+          status_public: "waiting_true",
+          hostUsername: this.currentUser.username,
+          createdBy: myUid,
+          placementMode: "middle",
+          deckTheme: selectedTheme,
+          players: {
+            [myUid]: {
+              name: this.currentUser.name || this.currentUser.username || "Player",
+              username: this.currentUser.username,
+              avatar: this.currentUser.avatar || "assets/avatars/avatar_1.png",
+              coins: isNaN(parseInt(this.currentUser.coins, 10)) ? 300 : parseInt(this.currentUser.coins, 10),
+              betVote: 25,
+              joinedAt: firebase.database.ServerValue.TIMESTAMP,
+              status: "connected",
+              greetingsStack: this.currentUser.greetingsStack !== undefined ? this.currentUser.greetingsStack : 50
+            }
+          }
+        };
+
+        this.roomRef = this.db.ref(`rooms/${this.roomCode}`);
+        await this.roomRef.set(roomData);
+        await this.registerPresence();
+        this.listenToRoom();
+
+        const codeLabel = document.getElementById("lobby-room-code-lbl");
+        if (codeLabel) codeLabel.textContent = this.roomCode;
+        this.showScreen("online-waiting-screen");
+      }
+    } catch (e) {
+      alert("Matchmaking search failed: " + e.message);
+    } finally {
+      // Restore button text/status
+      if (quickMatchBtn) {
+        quickMatchBtn.removeAttribute("disabled");
+        quickMatchBtn.innerHTML = originalText;
+      }
+    }
+  }
 
   // Leave room
   async leaveRoom() {
@@ -566,6 +698,10 @@ class MultiplayerManager {
     if (this.disconnectTimer) {
       clearInterval(this.disconnectTimer);
       this.disconnectTimer = null;
+    }
+    if (this.matchmakingCountdownTimer) {
+      clearInterval(this.matchmakingCountdownTimer);
+      this.matchmakingCountdownTimer = null;
     }
     if (this.roomRef) {
       try {
@@ -879,6 +1015,49 @@ class MultiplayerManager {
         }
       }
     }
+
+    // Auto-start countdown for public matchmaking rooms
+    if (room.isPublic) {
+      if (players.length >= 2 && !hasLowGreetings) {
+        if (!this.matchmakingCountdownTimer) {
+          let count = 5;
+          const startBtn = document.getElementById("online-start-match-btn");
+          if (startBtn) startBtn.setAttribute("disabled", "true"); // Prevent double start
+          
+          this.matchmakingCountdownTimer = setInterval(() => {
+            const waitingMsg = document.getElementById("online-host-msg");
+            if (waitingMsg) {
+              waitingMsg.style.display = "block";
+              waitingMsg.innerHTML = `<span style="color: #06b6d4; font-weight: bold; font-size: 1.1rem;">🔥 Match found! Starting in ${count}...</span>`;
+            }
+            if (count <= 0) {
+              clearInterval(this.matchmakingCountdownTimer);
+              this.matchmakingCountdownTimer = null;
+              if (this.isHost) {
+                this.startMatch();
+              }
+            }
+            count--;
+          }, 1000);
+        }
+      } else {
+        // Cancel countdown if player leaves or someone is low on greetings
+        if (this.matchmakingCountdownTimer) {
+          clearInterval(this.matchmakingCountdownTimer);
+          this.matchmakingCountdownTimer = null;
+          const waitingMsg = document.getElementById("online-host-msg");
+          if (waitingMsg) {
+            waitingMsg.textContent = "Waiting for other players to join...";
+          }
+        }
+      }
+    } else {
+      // Non-public/private room: clear timer if any was running
+      if (this.matchmakingCountdownTimer) {
+        clearInterval(this.matchmakingCountdownTimer);
+        this.matchmakingCountdownTimer = null;
+      }
+    }
   }
 
   // Update personal bet vote in waiting lobby
@@ -966,6 +1145,7 @@ class MultiplayerManager {
       // Write to database
       await this.roomRef.update({
         status: "playing",
+        status_public: "playing_false",
         gameState: serializedGameState,
         lastAction: {
           type: "gameStart",

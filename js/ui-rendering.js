@@ -2789,6 +2789,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const onlineQuickMatchBtn = document.getElementById("online-quick-match-btn");
+  if (onlineQuickMatchBtn) {
+    onlineQuickMatchBtn.addEventListener("click", () => {
+      playTouchSound();
+      const lobbyView = document.getElementById("online-lobby-screen");
+      if (lobbyView) lobbyView.classList.add("hidden");
+      const themeSelectionView = document.getElementById("theme-selection-screen");
+      if (themeSelectionView) themeSelectionView.classList.remove("hidden");
+      window.themeSelectMode = "quick_match";
+    });
+  }
+
   // Confirm Theme Button Click
   const confirmThemeBtn = document.getElementById("confirm-theme-btn");
   if (confirmThemeBtn) {
@@ -2800,6 +2812,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (window.themeSelectMode === "online") {
         if (window.multiplayer) {
           window.multiplayer.createRoom(selectedTheme);
+        }
+      } else if (window.themeSelectMode === "quick_match") {
+        if (window.multiplayer) {
+          window.multiplayer.startQuickMatch(selectedTheme);
         }
       } else if (window.themeSelectMode === "ai_bot") {
         const allowed = await deductGreetingsForMatchStart();
