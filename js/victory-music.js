@@ -80,7 +80,7 @@
   let pendingStarId = null;   // queued play request (API not yet ready)
   let currentStarId = null;   // currently loaded/playing star
   let audioUnlocked = false;
-  let localAudio    = null;   // local HTML5 audio player
+  let localAudio    = new Audio();   // local HTML5 audio player
   let playCount     = 0;      // tracks play repetition count
   const isMobile    = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -355,9 +355,9 @@
     // Check if it's a local audio file
     if (entry.localFile) {
       try {
-        localAudio = new Audio('assets/' + entry.localFile);
+        localAudio.src = 'assets/' + entry.localFile;
         localAudio.volume = 0.8;
-        localAudio.addEventListener('ended', () => {
+        localAudio.onended = () => {
           if (playCount < 2) {
             playCount++;
             localAudio.currentTime = 0;
@@ -368,7 +368,7 @@
           } else {
             stopSong();
           }
-        });
+        };
         localAudio.play().catch(e => {
           console.warn('[VictoryMusic] Local audio autoplay blocked:', e);
         });
@@ -420,7 +420,6 @@
     currentStarId = null;
     if (localAudio) {
       try { localAudio.pause(); } catch(_) {}
-      localAudio = null;
     }
     try {
       if (ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
@@ -569,5 +568,25 @@
 
   /* ─── 8. INIT — pre-load the API on page load ───────────────────────── */
   loadYouTubeAPI();
+
+  // Mobile Audio Unlocker on first touch/click gesture
+  function unlockMobileAudio() {
+    if (localAudio) {
+      localAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      localAudio.play().then(() => {
+        localAudio.pause();
+        console.log('[VictoryMusic] Audio player successfully unlocked for mobile browsers!');
+      }).catch(e => {
+        console.warn('[VictoryMusic] Failed to unlock audio player:', e);
+      });
+    }
+    
+    // Remove listeners after first interaction
+    document.removeEventListener('click', unlockMobileAudio);
+    document.removeEventListener('touchstart', unlockMobileAudio);
+  }
+  
+  document.addEventListener('click', unlockMobileAudio);
+  document.addEventListener('touchstart', unlockMobileAudio);
 
 })();
