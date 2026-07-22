@@ -20,7 +20,7 @@ const STAR_CONFIG = {
     { id: "ram_charan", name: "Ram Charan", industry: "Tollywood", imagePath: "assets/stars/ram_charan.png", movie: "Peddi" },
     { id: "samantha", name: "Samantha", industry: "Tollywood", imagePath: "assets/stars/samantha.png", movie: "Eega" },
     { id: "rashmika", name: "Rashmika Mandanna", industry: "Tollywood", imagePath: "assets/stars/rashmika.png", movie: "Pushpa" },
-    { id: "pooja_hegde", name: "Pooja Hegde", industry: "Tollywood", imagePath: "assets/stars/pooja_hegde.png", movie: "Ala Vaikunthapurramuloo" },
+    { id: "pooja_hegde", name: "Ala Vaikuntapurramulo", industry: "Tollywood", imagePath: "assets/stars/pooja_hegde.png", movie: "Ala Vaikunthapurramuloo" },
     { id: "nani", name: "Nani", industry: "Tollywood", imagePath: "assets/stars/nani.png", movie: "HIT: The Third Case" },
     { id: "vijay_deverakonda", name: "Vijay Deverakonda", industry: "Tollywood", imagePath: "assets/stars/vijay_deverakonda.png", movie: "Arjun Reddy" },
     { id: "keerthy_suresh", name: "Keerthy Suresh", industry: "Tollywood", imagePath: "assets/stars/keerthy_suresh.png", movie: "Dasara" },
