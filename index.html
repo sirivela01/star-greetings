@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Star Greetings">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="description" content="Star Greetings - A highly engaging, fast-paced local multiplayer memory and bluffing card game themed around Tollywood and Bollywood stars.">
+  <meta name="description" content="Star Greetings - A highly engaging, fast-paced local multiplayer memory and bluffing card game themed around Tollywood stars.">
   <title>Star Greetings - Card Party Game</title>
   <!-- Google Fonts: Outfit and Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -175,7 +175,7 @@
             <div class="game-select-badge" style="font-size: 0.75rem; color: #f43f5e; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">CARD GAME</div>
             <span class="game-select-icon" style="display: block; margin-bottom: 12px;"><img src="assets/realistic_greetings.png" alt="Card Game" style="width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));"></span>
             <h3 class="game-select-title" style="font-size: 1.25rem; font-weight: 600; color: #fff; margin-bottom: 8px;">Star Greetings</h3>
-            <p class="game-select-desc" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin: 0;">Memory, bluffing, and celebrity showdowns in Tollywood & Bollywood!</p>
+            <p class="game-select-desc" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin: 0;">Memory, bluffing, and celebrity showdowns in Tollywood!</p>
           </div>
 
           <!-- Barakatta Card -->
@@ -391,26 +391,12 @@
           <p class="app-tagline">Choose a deck to play with</p>
         </header>
 
-        <div class="themes-grid" id="themes-selection-grid">
+        <div class="themes-grid" id="themes-selection-grid" style="display: flex; justify-content: center; margin: 25px 0;">
           <!-- Tollywood Card -->
-          <div class="theme-card active" data-theme="tollywood">
+          <div class="theme-card active" data-theme="tollywood" style="width: 100%; max-width: 280px; flex: 1;">
             <span class="theme-icon">🎬</span>
             <h3 class="theme-name">Tollywood</h3>
             <p class="theme-desc">🎬 Tollywood — Telugu cinema icons</p>
-          </div>
-
-          <!-- Bollywood Card -->
-          <div class="theme-card" data-theme="bollywood">
-            <span class="theme-icon">🎥</span>
-            <h3 class="theme-name">Bollywood</h3>
-            <p class="theme-desc">🎥 Bollywood — Hindi cinema icons</p>
-          </div>
-
-          <!-- Custom Theme Card -->
-          <div class="theme-card" data-theme="custom" id="custom-theme-card">
-            <span class="theme-icon">🎨</span>
-            <h3 class="theme-name">Custom Theme</h3>
-            <p class="theme-desc">🎨 AI Custom — Generate own custom stars</p>
           </div>
         </div>
 
@@ -530,7 +516,7 @@
           <div class="logo-icon">★</div>
           <div class="brand-badge">SIRIVELA</div>
           <h1 class="app-title">Star Greetings</h1>
-          <p class="app-tagline">The Tollywood & Bollywood Card Party Game</p>
+          <p class="app-tagline">The Tollywood Card Party Game</p>
         </header>
 
         <form id="game-setup-form" onsubmit="return false;">
