@@ -220,17 +220,59 @@
           <button type="button" id="barakatta-dashboard-back-btn" class="btn secondary-btn logout-small-btn" style="padding: 8px 12px; font-size: 0.85rem; border-color: rgba(245, 158, 11, 0.3); color: #fbbf24; width: auto; margin: 0;">Change Game</button>
         </div>
 
-        <!-- PLAY BUTTONS -->
-        <div class="dashboard-actions" style="display: flex; flex-direction: column; gap: 15px;">
-          <button type="button" id="barakatta-play-ai-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
-            Play with AI BOT<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Quick 1v1 match against Computer AI</span>
-          </button>
-          <button type="button" id="barakatta-play-offline-btn" class="btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); width: 100%;">
-            Play Offline (Pass & Play)<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Local 1v1 match on the same device</span>
-          </button>
-          <button type="button" id="barakatta-play-online-btn" class="btn secondary-btn play-mode-btn" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05); color: #fff; width: 100%;">
-            Play Online Game<span class="btn-sub" style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Create or Join a Real-Time Multiplayer Room</span>
-          </button>
+        <!-- CHOOSE MODE HEADER -->
+        <div class="choose-mode-header">CHOOSE YOUR <span style="background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">MODE</span></div>
+
+        <!-- PLAY BUTTONS: professional cards style -->
+        <div class="mode-container" style="margin-top: 10px;">
+          <!-- Play with AI BOT -->
+          <div class="mode-card ai-bot" id="barakatta-play-ai-btn">
+            <div class="mode-card-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <h3 class="mode-card-title">Play with AI BOT</h3>
+              <p class="mode-card-sub">Quick 1v1 match against Computer AI</p>
+            </div>
+            <div class="mode-card-illustration" style="background-image: url('assets/mode_ai_bot.jpg');"></div>
+          </div>
+
+          <!-- Play Offline Game -->
+          <div class="mode-card offline" id="barakatta-play-offline-btn">
+            <div class="mode-card-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <h3 class="mode-card-title">Play Offline Game</h3>
+              <p class="mode-card-sub">Local Pass-and-Play (2-6 Players)</p>
+            </div>
+            <div class="mode-card-illustration" style="background-image: url('assets/mode_offline.jpg');"></div>
+          </div>
+
+          <!-- Play Online Game -->
+          <div class="mode-card online" id="barakatta-play-online-btn">
+            <div class="mode-card-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <h3 class="mode-card-title">Play Online Game</h3>
+              <p class="mode-card-sub">Multiplayer Lobby (Real-time Rooms)</p>
+            </div>
+            <div class="mode-card-illustration" style="background-image: url('assets/mode_online.jpg');"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -367,17 +409,59 @@
           </div>
         </div>
 
-        <!-- PLAY BUTTONS: original gradient style -->
-        <div class="dashboard-actions">
-          <button type="button" id="play-ai-btn" class="btn play-mode-btn">
-            Play with AI BOT<span class="btn-sub">Quick 1v1 match against Computer AI</span>
-          </button>
-          <button type="button" id="play-offline-btn" class="btn primary-btn play-mode-btn">
-            Play Offline Game<span class="btn-sub">Local Pass-and-Play (2-6 Players)</span>
-          </button>
-          <button type="button" id="play-online-btn" class="btn secondary-btn play-mode-btn">
-            Play Online Game<span class="btn-sub">Multiplayer Lobby (Real-time Rooms)</span>
-          </button>
+        <!-- CHOOSE MODE HEADER -->
+        <div class="choose-mode-header">CHOOSE YOUR <span style="background: linear-gradient(135deg, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">MODE</span></div>
+
+        <!-- PLAY BUTTONS: professional cards style -->
+        <div class="mode-container" style="margin-top: 10px;">
+          <!-- Play with AI BOT -->
+          <div class="mode-card ai-bot" id="play-ai-btn">
+            <div class="mode-card-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <h3 class="mode-card-title">Play with AI BOT</h3>
+              <p class="mode-card-sub">Quick 1v1 match against Computer AI</p>
+            </div>
+            <div class="mode-card-illustration" style="background-image: url('assets/mode_ai_bot.jpg');"></div>
+          </div>
+
+          <!-- Play Offline Game -->
+          <div class="mode-card offline" id="play-offline-btn">
+            <div class="mode-card-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <h3 class="mode-card-title">Play Offline Game</h3>
+              <p class="mode-card-sub">Local Pass-and-Play (2-6 Players)</p>
+            </div>
+            <div class="mode-card-illustration" style="background-image: url('assets/mode_offline.jpg');"></div>
+          </div>
+
+          <!-- Play Online Game -->
+          <div class="mode-card online" id="play-online-btn">
+            <div class="mode-card-icon-circle">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <div class="mode-card-text">
+              <h3 class="mode-card-title">Play Online Game</h3>
+              <p class="mode-card-sub">Multiplayer Lobby (Real-time Rooms)</p>
+            </div>
+            <div class="mode-card-illustration" style="background-image: url('assets/mode_online.jpg');"></div>
+          </div>
         </div>
       </div>
     </section>
