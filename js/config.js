@@ -43,23 +43,6 @@ const STAR_CONFIG = {
     { id: "brahmanandam", name: "Brahmanandam", industry: "Tollywood", imagePath: "assets/stars/brahmanandam.png", movie: "Comedy King" },
     { id: "sunil", name: "Sunil", industry: "Tollywood", imagePath: "assets/stars/sunil.png", movie: "Comedy Legend" },
     { id: "venu_madhav", name: "Venu Madhav", industry: "Tollywood", imagePath: "assets/stars/venu_madhav.png", movie: "Comedy Legend" },
-
-    // --- BOLLYWOOD (15 Stars) ---
-    { id: "ranbir_kapoor", name: "Ranbir Kapoor", industry: "Bollywood", imagePath: "assets/stars/ranbir_kapoor.png", movie: "Ae Dil Hai Mushkil" },
-    { id: "ranveer_singh", name: "Ranveer Singh", industry: "Bollywood", imagePath: "assets/stars/ranveer_singh.png", movie: "Bajirao Mastani" },
-    { id: "alia_bhatt", name: "Alia Bhatt", industry: "Bollywood", imagePath: "assets/stars/alia_bhatt.png", movie: "Brahmastra" },
-    { id: "deepika_padukone", name: "Deepika Padukone", industry: "Bollywood", imagePath: "assets/stars/deepika_padukone.png", movie: "Ram-Leela" },
-    { id: "vicky_kaushal", name: "Vicky Kaushal", industry: "Bollywood", imagePath: "assets/stars/vicky_kaushal.png", movie: "Bad Newz" },
-    { id: "kiara_advani", name: "Kiara Advani", industry: "Bollywood", imagePath: "assets/stars/kiara_advani.png", movie: "Shershaah" },
-    { id: "shah_rukh_khan", name: "Shah Rukh Khan", industry: "Bollywood", imagePath: "assets/stars/shah_rukh_khan.png", movie: "Dil Se" },
-    { id: "katrina_kaif", name: "Katrina Kaif", industry: "Bollywood", imagePath: "assets/stars/katrina_kaif.png", movie: "Baar Baar Decho" },
-    { id: "hrithik_roshan", name: "Hrithik Roshan", industry: "Bollywood", imagePath: "assets/stars/hrithik_roshan.png", movie: "War" },
-    { id: "priyanka_chopra", name: "Priyanka Chopra", industry: "Bollywood", imagePath: "assets/stars/priyanka_chopra.png", movie: "Dostana" },
-    { id: "kareena_kapoor", name: "Kareena Kapoor", industry: "Bollywood", imagePath: "assets/stars/kareena_kapoor.png", movie: "Ra.One" },
-    { id: "ayushmann_khurrana", name: "Ayushmann Khurrana", industry: "Bollywood", imagePath: "assets/stars/ayushmann_khurrana.png", movie: "Bala" },
-    { id: "shraddha_kapoor", name: "Shraddha Kapoor", industry: "Bollywood", imagePath: "assets/stars/shraddha_kapoor.png", movie: "Ek Villain" },
-    { id: "rajkummar_rao", name: "Rajkummar Rao", industry: "Bollywood", imagePath: "assets/stars/rajkummar_rao.png", movie: "Stree" },
-    { id: "kriti_sanon", name: "Kriti Sanon", industry: "Bollywood", imagePath: "assets/stars/kriti_sanon.png", movie: "Mimi" }
   ]
 };
 

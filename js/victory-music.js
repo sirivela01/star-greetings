@@ -50,23 +50,6 @@
     brahmanandam:       { localFile: 'Brahmanandam.mp4', song: 'Comedy King Dialogue', movie: 'Brahmanandam' },
     sunil:              { localFile: 'Sunil.mp3', song: 'Comedy All Rounder Dialogue', movie: 'Sunil' },
     venu_madhav:        { localFile: 'Venu Madhav.mpeg', song: 'Comedy Tragic Hero Dialogue', movie: 'Venu Madhav' },
-
-    // ── BOLLYWOOD ────────────────────────────────────────────────────────
-    shah_rukh_khan:     { videoId: 'i9A9NuTHUag', start: 0,   song: 'Chaiyya Chaiyya',        movie: 'Dil Se' },
-    ranbir_kapoor:      { videoId: 'S7tYeUBgGHU', start: 60,  song: 'Channa Mereya',          movie: 'Ae Dil Hai Mushkil' },
-    ranveer_singh:      { videoId: 'lL3KXtRjjYI', start: 20,  song: 'Malhari',                movie: 'Bajirao Mastani' },
-    alia_bhatt:         { videoId: 'W1S9AbHpWFY', start: 15,  song: 'Kesariya',               movie: 'Brahmastra' },
-    deepika_padukone:   { videoId: 'ZLor6YJ1oWI', start: 60,  song: 'Nagada Sang Dhol',       movie: 'Ram-Leela' },
-    hrithik_roshan:     { videoId: 'Ir1J728cIck', start: 30,  song: 'Ghungroo',               movie: 'War' },
-    katrina_kaif:       { videoId: 'cCmZ7aFU1xY', start: 40,  song: 'Kala Chashma',           movie: 'Baar Baar Dekho' },
-    priyanka_chopra:    { videoId: 'wDIrpvH8MzE', start: 60,  song: 'Desi Girl',              movie: 'Dostana' },
-    kareena_kapoor:     { videoId: '_0nEaQRCtJ8', start: 10,  song: 'Chammak Challo',         movie: 'Ra.One' },
-    vicky_kaushal:      { videoId: '3YQKuAP79Q8', start: 30,  song: 'Tauba Tauba',            movie: 'Bad Newz' },
-    kiara_advani:       { videoId: 'UU-eUEt-tPg', start: 30,  song: 'Ranjha',                 movie: 'Shershaah' },
-    ayushmann_khurrana: { videoId: 'AWYwXlTWkAw', start: 0,   song: 'Bala',                   movie: 'Bala' },
-    shraddha_kapoor:    { videoId: 'orEN9VEVBK8', start: 60,  song: 'Galliyan',               movie: 'Ek Villain' },
-    rajkummar_rao:      { videoId: 'xbCntoTged4', start: 80,  song: 'Aao Kabhi Haveli Pe',    movie: 'Stree' },
-    kriti_sanon:        { videoId: 'sh9GS1sc_eg', start: 30,  song: 'Param Sundari',          movie: 'Mimi' },
   };
 
   const PLAY_DURATION_MS = 20000; // 20 seconds
