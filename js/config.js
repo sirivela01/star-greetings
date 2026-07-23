@@ -16,7 +16,7 @@ const STAR_CONFIG = {
     { id: "prabhas", name: "Prabhas", industry: "Tollywood", imagePath: "assets/stars/prabhas.png", movie: "Salaar" },
     { id: "mahesh_babu", name: "Mahesh Babu", industry: "Tollywood", imagePath: "assets/stars/mahesh_babu.png", movie: "Sarileru Neekevvaru" },
     { id: "allu_arjun", name: "Allu Arjun", industry: "Tollywood", imagePath: "assets/stars/allu_arjun.png", movie: "Pushpa" },
-    { id: "jr_ntr", name: "Jr NTR", industry: "Tollywood", imagePath: "assets/stars/jr_ntr.png", movie: "Devara" },
+    { id: "jr_ntr", name: "Devara", industry: "Tollywood", imagePath: "assets/stars/jr_ntr.png", movie: "Devara" },
     { id: "ram_charan", name: "Ram Charan", industry: "Tollywood", imagePath: "assets/stars/ram_charan.png", movie: "Peddi" },
     { id: "samantha", name: "Samantha", industry: "Tollywood", imagePath: "assets/stars/samantha.png", movie: "Eega" },
     { id: "rashmika", name: "Dear Comrade", industry: "Tollywood", imagePath: "assets/stars/rashmika.png", movie: "Dear Comrade" },
