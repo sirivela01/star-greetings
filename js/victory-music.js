@@ -20,7 +20,7 @@
   ──────────────────────────────────────────────────────────────────────── */
   const VICTORY_SONGS = {
     // ── TOLLYWOOD ────────────────────────────────────────────────────────
-    allu_arjun:         { videoId: '09gyurxkX6A', start: 0,   song: 'Thaggede Le (Dialogue)', movie: 'Pushpa' },
+    allu_arjun:         { localFile: 'pushpa.mp3', song: 'Pushpa Dialogue',            movie: 'Pushpa' },
     prabhas:            { localFile: 'sallar.m4a', song: 'Please... I Request (Dialogue)', movie: 'Salaar' },
     mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
     jr_ntr:             { localFile: 'Devara.aac', song: 'Devara Dialogue',            movie: 'Devara' },

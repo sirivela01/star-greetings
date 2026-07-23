@@ -540,8 +540,8 @@
     // Direct mappings on the compact string (no spaces)
     const cleanSpoken = normalizedSpoken.replace(/\s+/g, "");
     const nameMappings = {
-      "helloarjun": "Allu Arjun",
-      "hello": "Allu Arjun",
+       "helloarjun": "Pushpa",
+      "hello": "Pushpa",
       "nowthat": "Nagarjuna",
       "nowthere": "Nagarjuna",
       "now": "Nagarjuna",
@@ -551,10 +551,11 @@
       "prabha": "Prabhas",
       "mahesh": "Mahesh Babu",
       "maheshbabu": "Mahesh Babu",
-      "alluarjun": "Allu Arjun",
-      "allu": "Allu Arjun",
-      "arjun": "Allu Arjun",
-      "bunny": "Allu Arjun",
+      "alluarjun": "Pushpa",
+      "allu": "Pushpa",
+      "arjun": "Pushpa",
+      "bunny": "Pushpa",
+      "pushpa": "Pushpa",
       "ntr": "Devara",
       "juniorntr": "Devara",
       "tarak": "Devara",
