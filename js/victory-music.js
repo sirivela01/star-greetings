@@ -32,7 +32,7 @@
     pooja_hegde:        { localFile: 'Ala_vaikuntapuramulo.mp3', song: 'Butta Bomma Dialogue', movie: 'Ala Vaikuntapurramulo' },
     kajal_aggarwal:     { localFile: 'Mr_perfect.mp3', song: 'Mr Perfect Dialogue',    movie: 'Mr Perfect' },
     sai_pallavi:        { localFile: 'Maari_2.mp3', song: 'Rowdy Baby Dialogue',      movie: 'Maari 2' },
-    keerthy_suresh:     { videoId: 'U5D3LSwAmZY', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
+    keerthy_suresh:     { localFile: 'Dasara.mp3', song: 'Chamkeela Angeelesi Dialogue', movie: 'Dasara' },
     anushka_shetty:     { videoId: 'pTdwbwoERSA', start: 20,  song: 'Darlingey',              movie: 'Mirchi' },
     shruti_haasan:      { videoId: 'kYJ6_g9pG9s', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
     pawan_kalyan:       { localFile: 'Pawankalyan.mp4', song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
