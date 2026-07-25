@@ -31,7 +31,7 @@
     nani:               { videoId: 'kAtfaaUgDRU', start: 0,   song: 'Arjun Sarkaar (Dialogue)', movie: 'HIT: The Third Case' },
     pooja_hegde:        { localFile: 'Ala_vaikuntapuramulo.mp3', song: 'Butta Bomma Dialogue', movie: 'Ala Vaikuntapurramulo' },
     kajal_aggarwal:     { localFile: 'Mr_perfect.mp3', song: 'Mr Perfect Dialogue',    movie: 'Mr Perfect' },
-    sai_pallavi:        { videoId: '3nauk_scj9U', start: 15,  song: 'Rowdy Baby',             movie: 'Maari 2' },
+    sai_pallavi:        { localFile: 'Maari_2.mp3', song: 'Rowdy Baby Dialogue',      movie: 'Maari 2' },
     keerthy_suresh:     { videoId: 'U5D3LSwAmZY', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
     anushka_shetty:     { videoId: 'pTdwbwoERSA', start: 20,  song: 'Darlingey',              movie: 'Mirchi' },
     shruti_haasan:      { videoId: 'kYJ6_g9pG9s', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
