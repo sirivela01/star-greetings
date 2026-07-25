@@ -98,8 +98,9 @@
     // Recovery 3: Reset blank screen to theme selection or main dashboard
     const allScreens = [
       "login-screen", "signup-screen", "forgot-password-screen",
-      "dashboard-screen", "setup-screen", "theme-selection-screen",
-      "game-screen", "online-lobby-screen",
+      "game-selection-screen", "dashboard-screen", "setup-screen",
+      "theme-selection-screen", "game-screen", "online-lobby-screen",
+      "online-waiting-screen", "end-screen",
       "barakatta-dashboard-screen", "barakatta-game-screen", "barakatta-setup-screen",
       "barakatta-online-lobby-screen", "barakatta-online-waiting-screen"
     ];
@@ -111,7 +112,12 @@
       }
     });
     if (allHidden) {
-      const targetId = (window.selectedGame === "barakatta") ? "barakatta-dashboard-screen" : "dashboard-screen";
+      let targetId = "game-selection-screen";
+      if (window.selectedGame === "barakatta") {
+        targetId = "barakatta-dashboard-screen";
+      } else if (window.selectedGame === "star_greetings") {
+        targetId = "dashboard-screen";
+      }
       const dashboard = document.getElementById(targetId);
       if (dashboard) {
         dashboard.classList.remove("hidden");
