@@ -34,7 +34,7 @@
     sai_pallavi:        { localFile: 'Maari_2.mp3', song: 'Rowdy Baby Dialogue',      movie: 'Maari 2' },
     keerthy_suresh:     { localFile: 'Dasara.mp3', song: 'Chamkeela Angeelesi Dialogue', movie: 'Dasara' },
     anushka_shetty:     { localFile: 'Mirchi.mp3', song: 'Mirchi Dialogue',            movie: 'Mirchi' },
-    shruti_haasan:      { videoId: 'kYJ6_g9pG9s', start: 10,  song: 'Charuseela',             movie: 'Srimanthudu' },
+    shruti_haasan:      { localFile: 'Srimanthudu.mp3', song: 'Charuseela Dialogue',   movie: 'Srimanthudu' },
     pawan_kalyan:       { localFile: 'Pawankalyan.mp4', song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
     chiranjeevi:        { videoId: '6nH0YFbiRGA', start: 0,   song: 'Veera Shankar Reddy (Dialogue)', movie: 'Indra' },
     nagarjuna:          { videoId: '9pZENHoY4rc', start: 0,   song: 'Dhada Puttistha (Dialogue & Theme)', movie: 'Don' },
