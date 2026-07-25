@@ -26,7 +26,7 @@
     jr_ntr:             { localFile: 'Devara.aac', song: 'Devara Dialogue',            movie: 'Devara' },
     ram_charan:         { localFile: 'Ramcharan.mpeg', song: 'Six Sixers (Dialogue)', movie: 'Peddi' },
     samantha:           { localFile: 'Eega.aac', song: 'Eega Dialogue',               movie: 'Eega' },
-    rashmika:           { videoId: 'C70GJYVoZ4Y', start: 10,  song: 'Saami Saami',            movie: 'Dear Comrade' },
+    rashmika:           { localFile: 'dear_comrade.mp3', song: 'Dear Comrade Dialogue', movie: 'Dear Comrade' },
     vijay_deverakonda:  { localFile: 'Arjun_reddy.mp3', song: 'Arjun Reddy Dialogue',   movie: 'Arjun Reddy' },
     nani:               { videoId: 'kAtfaaUgDRU', start: 0,   song: 'Arjun Sarkaar (Dialogue)', movie: 'HIT: The Third Case' },
     pooja_hegde:        { videoId: 'EsLmVQKiEv0', start: 30,  song: 'Butta Bomma',            movie: 'Ala Vaikuntapurramulo' },
