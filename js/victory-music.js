@@ -29,7 +29,7 @@
     rashmika:           { localFile: 'dear_comrade.mp3', song: 'Dear Comrade Dialogue', movie: 'Dear Comrade' },
     vijay_deverakonda:  { localFile: 'Arjun_reddy.mp3', song: 'Arjun Reddy Dialogue',   movie: 'Arjun Reddy' },
     nani:               { videoId: 'kAtfaaUgDRU', start: 0,   song: 'Arjun Sarkaar (Dialogue)', movie: 'HIT: The Third Case' },
-    pooja_hegde:        { videoId: 'EsLmVQKiEv0', start: 30,  song: 'Butta Bomma',            movie: 'Ala Vaikuntapurramulo' },
+    pooja_hegde:        { localFile: 'Ala_vaikuntapuramulo.mp3', song: 'Butta Bomma Dialogue', movie: 'Ala Vaikuntapurramulo' },
     kajal_aggarwal:     { localFile: 'Mr_perfect.mp3', song: 'Mr Perfect Dialogue',    movie: 'Mr Perfect' },
     sai_pallavi:        { videoId: '3nauk_scj9U', start: 15,  song: 'Rowdy Baby',             movie: 'Maari 2' },
     keerthy_suresh:     { videoId: 'U5D3LSwAmZY', start: 60,  song: 'Chamkeela Angeelesi',    movie: 'Dasara' },
