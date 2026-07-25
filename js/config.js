@@ -25,7 +25,7 @@ const STAR_CONFIG = {
     { id: "vijay_deverakonda", name: "Vijay Deverakonda", industry: "Tollywood", imagePath: "assets/stars/vijay_deverakonda.png", movie: "Arjun Reddy" },
     { id: "keerthy_suresh", name: "Dasara", industry: "Tollywood", imagePath: "assets/stars/keerthy_suresh.png", movie: "Dasara" },
     { id: "anushka_shetty", name: "Anushka", industry: "Tollywood", imagePath: "assets/stars/anushka_shetty.png", movie: "Mirchi" },
-    { id: "kajal_aggarwal", name: "Kajal Agharwal", industry: "Tollywood", imagePath: "assets/stars/kajal_aggarwal.png", movie: "Kajal Agharwal" },
+    { id: "kajal_aggarwal", name: "Mr.Perfect", industry: "Tollywood", imagePath: "assets/stars/kajal_aggarwal.png", movie: "Mr Perfect" },
     { id: "sai_pallavi", name: "Maari 2", industry: "Tollywood", imagePath: "assets/stars/sai_pallavi.png", movie: "Maari 2" },
     { id: "shruti_haasan", name: "Srimanthudu", industry: "Tollywood", imagePath: "assets/stars/shruti_haasan.png", movie: "Srimanthudu" },
     { id: "pawan_kalyan", name: "Pawan Kalyan", industry: "Tollywood", imagePath: "assets/stars/pawan_kalyan.png", movie: "OG" },
