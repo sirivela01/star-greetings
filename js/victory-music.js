@@ -22,7 +22,7 @@
     // ── TOLLYWOOD ────────────────────────────────────────────────────────
     allu_arjun:         { localFile: 'pushpa.mp3', song: 'Pushpa Dialogue',            movie: 'Pushpa' },
     prabhas:            { localFile: 'sallar.m4a', song: 'Please... I Request (Dialogue)', movie: 'Salaar' },
-    mahesh_babu:        { videoId: 'VK77umRSaME', start: 10,  song: 'Mind Block',             movie: 'Sarileru Neekevvaru' },
+    mahesh_babu:        { localFile: 'pokiri.mp3', song: 'Pokiri Dialogue',            movie: 'Pokiri' },
     jr_ntr:             { localFile: 'Devara.aac', song: 'Devara Dialogue',            movie: 'Devara' },
     ram_charan:         { localFile: 'Ramcharan.mpeg', song: 'Six Sixers (Dialogue)', movie: 'Peddi' },
     samantha:           { localFile: 'Eega.aac', song: 'Eega Dialogue',               movie: 'Eega' },
