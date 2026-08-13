@@ -36,7 +36,7 @@
     anushka_shetty:     { localFile: 'Mirchi.mp3', song: 'Mirchi Dialogue',            movie: 'Mirchi' },
     shruti_haasan:      { localFile: 'Srimanthudu.mp3', song: 'Charuseela Dialogue',   movie: 'Srimanthudu' },
     pawan_kalyan:       { localFile: 'Pawankalyan.mp4', song: 'Hungry Cheetah (Dialogue)', movie: 'OG' },
-    chiranjeevi:        { videoId: '6nH0YFbiRGA', start: 0,   song: 'Veera Shankar Reddy (Dialogue)', movie: 'Indra' },
+    chiranjeevi:        { localFile: 'indra.mp3', song: 'Indra Dialogue',              movie: 'Indra' },
     nagarjuna:          { videoId: '9pZENHoY4rc', start: 0,   song: 'Dhada Puttistha (Dialogue & Theme)', movie: 'Don' },
     balakrishna:        { localFile: 'Balayya.mp4', song: 'Flute Warning (Dialogue)', movie: 'Legend' },
     manchu_manoj:       { videoId: 'sWPMVO40GLs', start: 5,   song: 'Pilla O Pilla', movie: 'Current Theega' },

@@ -29,7 +29,7 @@ const STAR_CONFIG = {
     { id: "sai_pallavi", name: "Maari 2", industry: "Tollywood", imagePath: "assets/stars/sai_pallavi.png", movie: "Maari 2" },
     { id: "shruti_haasan", name: "Srimanthudu", industry: "Tollywood", imagePath: "assets/stars/shruti_haasan.png", movie: "Srimanthudu" },
     { id: "pawan_kalyan", name: "Pawan Kalyan", industry: "Tollywood", imagePath: "assets/stars/pawan_kalyan.png", movie: "OG" },
-    { id: "chiranjeevi", name: "Chiranjeevi", industry: "Tollywood", imagePath: "assets/stars/chiranjeevi.png", movie: "Indra" },
+    { id: "chiranjeevi", name: "Indra", industry: "Tollywood", imagePath: "assets/stars/chiranjeevi.png", movie: "Indra" },
     { id: "nagarjuna", name: "Nagarjuna", industry: "Tollywood", imagePath: "assets/stars/nagarjuna.png", movie: "Don" },
     { id: "balakrishna", name: "Nandamuri Balakrishna", industry: "Tollywood", imagePath: "assets/stars/balakrishna.png", movie: "Legend" },
     { id: "manchu_manoj", name: "Manchu Manoj", industry: "Tollywood", imagePath: "assets/stars/manchu_manoj.png", movie: "Current Theega" },
